@@ -4,10 +4,9 @@ import db from "../../config/db.js";
 import jwt from "jsonwebtoken";
 
 export const signup = (req, res) => {
+  const userId = uuidv4();
 
-  const userId = uuidv4(); 
-
-  const { name, username, email, password,role } = req.body;
+  const { name, username, email, password, role } = req.body;
   console.log("ROLE FROM FRONTEND:", role);
 
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -17,19 +16,23 @@ export const signup = (req, res) => {
     VALUES (?, ?, ?, ?, ?,?)
   `;
 
-  db.query(sql, [userId, name, username, email, hashedPassword,role], (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
-    }
-
-    return res.status(201).json({
-      message: "Signup successful",
-      user: {
-        id: userId,
-        email
+  db.query(
+    sql,
+    [userId, name, username, email, hashedPassword, role],
+    (err, result) => {
+      if (err) {
+        return res.status(500).json(err);
       }
-    });
-  });
+
+      return res.status(201).json({
+        message: "Signup successful",
+        user: {
+          id: userId,
+          email,
+        },
+      });
+    },
+  );
 };
 
 export const login = (req, res) => {
@@ -38,7 +41,6 @@ export const login = (req, res) => {
   const sql = "SELECT * FROM Student_signup WHERE email = ?";
 
   db.query(sql, [email], async (err, result) => {
-
     if (err) return res.status(500).json(err);
 
     if (result.length === 0) {
@@ -57,20 +59,22 @@ export const login = (req, res) => {
       {
         id: user.id,
         email: user.email,
-        role: user.role   
+        role: user.role,
       },
       process.env.JWT_SECRET || "secretkey",
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     return res.status(200).json({
       message: "Login Successful",
-      token,  
+      token,
       user: {
         id: user.id,
+        name: user.name,
+        username: user.username,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
   });
 };

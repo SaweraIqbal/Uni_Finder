@@ -2,25 +2,16 @@ import React from "react";
 
 export default function ShimmerCard() {
   return (
-    <div className="animate-pulse bg-white rounded-xl shadow-md overflow-hidden">
-
-   
-      <div className="h-48 bg-gray-300"></div>
-
-      <div className="p-4 space-y-3">
-
-        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-
-        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-
-        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-
-        <div className="flex gap-2 mt-4">
-          <div className="h-6 w-16 bg-gray-300 rounded"></div>
-          <div className="h-6 w-20 bg-gray-300 rounded"></div>
-        </div>
-
-        <div className="h-6 w-24 bg-orange-200 rounded"></div>
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+      <div className="h-40 bg-gray-200 animate-pulse" />
+      <div className="p-3.5 space-y-2">
+        <div className="h-3.5 bg-gray-200 rounded animate-pulse w-3/4" />
+        <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
+        <div className="h-3 bg-gray-100 rounded animate-pulse w-3/5" />
+        <hr className="border-t border-gray-100 my-2" />
+        <div className="h-3 bg-gray-200 rounded animate-pulse w-2/5" />
+        <div className="h-3.5 bg-orange-100 rounded animate-pulse w-1/2" />
+        <div className="h-8 bg-gray-100 rounded-lg animate-pulse w-full mt-1" />
       </div>
     </div>
   );
