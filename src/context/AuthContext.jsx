@@ -7,13 +7,13 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (err) {
         console.error("Error parsing stored user:", err);
-        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
       }
     }
     setLoading(false);
@@ -35,17 +35,17 @@ export const AuthProvider = ({ children }) => {
       };
 
       setUser(finalUser);
-      localStorage.setItem("user", JSON.stringify(finalUser));
+      sessionStorage.setItem("user", JSON.stringify(finalUser));
     } catch (err) {
       console.error("Error fetching user data:", err);
       setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
+      sessionStorage.setItem("user", JSON.stringify(userData));
     }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
   };
 
   return (

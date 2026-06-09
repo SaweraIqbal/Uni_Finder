@@ -92,9 +92,9 @@ function Login() {
           role: data.user.role,
         });
 
-        localStorage.setItem("userId", data.user.id);
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage.setItem("userId", data.user.id);
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
 
         console.log("userId saved:", data.user.id);
         console.log("Token:", data.token);

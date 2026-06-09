@@ -1,8 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import { API } from "../api/client";
 
-export default function HeroSection() {
+const DEFAULT_BANNER =
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuC1Xz3eug4e42KFeJWWhUMRobzf3lfoNu7Jv9W-QR1dER6bNbt-0OXDIdxDkj8EtJITofOwuoDh7iNGbXQRT19Lk278bD8oieqE-neuEFHnmRnP8j9qBDjRxqKzNUWoROLnLIgusQsYCQ-SeCSq1r3TfPQ1Jp9CLw-LEnbJUJNMDG1Tntw2KJ9UZdTmX6s7ya5rBfgCAjxiOCE4WT9Zg4k7ZZARVdftxEm1uw6mI8rKPowGJgMftda-uPpLTFawPp6qSKqN1KM-QTM";
+
+export default function HeroSection({ university }) {
   const parallaxRef = useRef(null);
   const [scrollPos, setScrollPos] = useState(0);
+
+  const bannerUrl = university?.banner_url
+    ? `${API}${university.banner_url}`
+    : DEFAULT_BANNER;
+  const title =
+    university?.tagline || "Excellence in Education, Leadership for Life";
+  const subtitle =
+    university?.hero_subtitle ||
+    "To empower students through innovative learning and research.";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,7 +40,7 @@ export default function HeroSection() {
         ref={parallaxRef}
         className="absolute inset-0 z-0 parallax-bg will-change-transform"
         style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuC1Xz3eug4e42KFeJWWhUMRobzf3lfoNu7Jv9W-QR1dER6bNbt-0OXDIdxDkj8EtJITofOwuoDh7iNGbXQRT19Lk278bD8oieqE-neuEFHnmRnP8j9qBDjRxqKzNUWoROLnLIgusQsYCQ-SeCSq1r3TfPQ1Jp9CLw-LEnbJUJNMDG1Tntw2KJ9UZdTmX6s7ya5rBfgCAjxiOCE4WT9Zg4k7ZZARVdftxEm1uw6mI8rKPowGJgMftda-uPpLTFawPp6qSKqN1KM-QTM')`,
+          backgroundImage: `url('${bannerUrl}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -39,10 +52,10 @@ export default function HeroSection() {
       {/* Content */}
       <div className="relative z-10 text-center max-w-4xl px-6">
         <h1 className="font-bold text-4xl md:text-6xl text-white mb-4 drop-shadow-lg">
-          Excellence in Education, Leadership for Life
+          {title}
         </h1>
         <p className="text-lg text-white/90 mb-10 max-w-2xl mx-auto drop-shadow-md">
-          To empower students through innovative learning and research.
+          {subtitle}
         </p>
 
         {/* CTA Buttons */}

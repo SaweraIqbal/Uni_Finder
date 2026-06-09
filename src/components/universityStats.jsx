@@ -164,9 +164,18 @@ function StatCard({ stat, isVisible, delay }) {
   );
 }
 
-export default function UniversityStats() {
+export default function UniversityStats({ university }) {
   const sectionRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
+
+  // Override the data-backed values; keep the icons + decorative ones.
+  const liveStats = stats.map((s) => {
+    if (s.id === "students" && university?.students)
+      return { ...s, value: university.students, suffix: "" };
+    if (s.id === "campuses" && university?.total_campuses)
+      return { ...s, value: university.total_campuses, suffix: "" };
+    return s;
+  });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -187,7 +196,7 @@ export default function UniversityStats() {
     >
       <div className="max-w-5xl mx-auto px-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {stats.map((stat, i) => (
+          {liveStats.map((stat, i) => (
             <StatCard
               key={stat.id}
               stat={stat}

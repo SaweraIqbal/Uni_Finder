@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import heroVideo from "../assets/video1.mp4";
 import logo from "../assets/Logo.png";
 import SearchBar from "../components/SearchBar";
+import { listUniversities } from "../api/university";
+import { fileUrl } from "../api/client";
 import WhyChooseSection from "../components/WhyChooseSection";
 import PopularUniversities from "../components/PopularUniversities";
 import StatsSection from "../components/StatsSection";
@@ -326,7 +328,39 @@ function UniversityGrid({
   searchUniversity,
 }) {
   const [viewMode, setViewMode] = useState("grid");
-  const universities = [
+
+  // Real universities added by verified admins (shown first, before demo samples).
+  const [realUnis, setRealUnis] = useState([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await listUniversities();
+        if (Array.isArray(data)) {
+          setRealUnis(
+            data.map((u) => ({
+              id: `real-${u.id}`,
+              realId: u.id,
+              name: u.name,
+              location: u.city || "—",
+              genderType: "Co-Education",
+              entryTests: [],
+              programs: u.tagline ? [u.tagline] : ["View details for programs"],
+              admissionStatus: "open",
+              fee: 0,
+              rating: "—",
+              image: u.logo_url
+                ? fileUrl(u.logo_url)
+                : "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
+            }))
+          );
+        }
+      } catch {
+        /* keep demo data only */
+      }
+    })();
+  }, []);
+
+  const mockUniversities = [
     {
       id: 1,
       name: "LUMS Lahore",
@@ -379,6 +413,8 @@ function UniversityGrid({
       exchange: true,
     },
   ];
+
+  const universities = [...realUnis, ...mockUniversities];
 
   const filtered = universities.filter((uni) => {
     // --- Search bar filters ---
@@ -594,7 +630,7 @@ function UniversityCard({ uni }) {
             &#9733; {uni.rating} / 5
           </span>
           <span className="text-xs font-medium text-orange-600">
-            PKR {uni.fee.toLocaleString()} / sem
+            {uni.fee ? `PKR ${uni.fee.toLocaleString()} / sem` : "See details"}
           </span>
         </div>
 
@@ -613,7 +649,9 @@ function UniversityCard({ uni }) {
         {/* Action Buttons */}
         <div className="flex gap-2">
           <button
-            onClick={() => navigate("/university")}
+            onClick={() =>
+              navigate(uni.realId ? `/university?id=${uni.realId}` : "/university")
+            }
             className="flex-1 py-2 text-sm font-medium border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition-all duration-150 active:scale-95"
           >
             View details

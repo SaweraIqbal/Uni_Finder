@@ -26,7 +26,7 @@ export default function Profile() {
 
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
+    const userId = sessionStorage.getItem("userId");
     if (!userId) return;
 
     const loadData = async () => {
@@ -85,7 +85,7 @@ export default function Profile() {
   
   const handleCreate = async () => {
 
-    const userId = localStorage.getItem("userId");
+    const userId = sessionStorage.getItem("userId");
 
     const payload = {
       user_uid: userId,
@@ -112,7 +112,7 @@ export default function Profile() {
  
   const handleUpdate = async () => {
 
-    const userId = localStorage.getItem("userId");
+    const userId = sessionStorage.getItem("userId");
 
     const payload = {
       user_uid: userId,

@@ -98,6 +98,21 @@ function Signup() {
         // 🔥 IMPORTANT FIX: use backend role if available
         const userRole = data.user?.role || role;
 
+        // Persist user so ProtectedRoute + dashboards work right after signup
+        if (data.user?.id) {
+          sessionStorage.setItem("userId", data.user.id);
+          sessionStorage.setItem(
+            "user",
+            JSON.stringify({
+              id: data.user.id,
+              email: formData.email,
+              name: formData.fullName,
+              username: formData.username,
+              role: userRole,
+            })
+          );
+        }
+
         setTimeout(() => {
           switch (userRole) {
             case "student":

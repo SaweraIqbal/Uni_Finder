@@ -191,9 +191,7 @@ export default function LandingPage() {
 
                   {/* Button */}
                   <button
-                    onClick={() =>
-                      window.scrollTo({ top: 0, behavior: "smooth" })
-                    }
+                    onClick={() => navigate("/university")}
                     className="w-full py-2 text-xs font-medium border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition-all duration-150 active:scale-95"
                   >
                     View details

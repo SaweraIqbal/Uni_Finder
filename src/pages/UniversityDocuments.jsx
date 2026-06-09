@@ -34,7 +34,15 @@ function UniversityDocuments() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const userId = sessionStorage.getItem("userId");
+    if (!userId) {
+      toast.error("Session expired. Please log in again.");
+      setTimeout(() => navigate("/login"), 1500);
+      return;
+    }
+
     const formData = new FormData();
+    formData.append("user_uid", userId);
 
     Object.keys(documents).forEach((key) => {
       formData.append(key, documents[key]);
@@ -57,7 +65,7 @@ function UniversityDocuments() {
         );
 
         setTimeout(() => {
-          navigate("/pending-approval");
+          navigate("/university/dashboard");
         }, 2000);
       } else {
         toast.error(data.message);

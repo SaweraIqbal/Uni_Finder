@@ -25,6 +25,7 @@ node_modules/
 build/
 dist/
 .env
+src/backend/uploads/
 *.zip
 *.mp4
 *.apk

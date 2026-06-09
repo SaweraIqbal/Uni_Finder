@@ -70,7 +70,7 @@ function FadeIn({ isVisible, delay = 0, children, className = "" }) {
   );
 }
 
-function AboutCard({ isVisible }) {
+function AboutCard({ isVisible, estLine, title, text, more }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -89,18 +89,14 @@ function AboutCard({ isVisible }) {
         />
 
         <p className="text-[11px] font-semibold tracking-widest uppercase text-orange-500 mb-2.5">
-          Est. 1892 · Lahore, Pakistan
+          {estLine}
         </p>
 
         <h2 className="text-[22px] leading-tight text-slate-800 mb-3 font-bold">
-          Dedicated to Academic Rigor
+          {title}
         </h2>
 
-        <p className="text-sm leading-relaxed text-slate-500">
-          St. Jude University is a world-renowned institution fostering an
-          environment where innovation meets tradition. Over a century of
-          excellence in scholarship and research.
-        </p>
+        <p className="text-sm leading-relaxed text-slate-500">{text}</p>
 
         <div
           className="overflow-hidden transition-all duration-400 ease-in-out"
@@ -110,12 +106,7 @@ function AboutCard({ isVisible }) {
           }}
           aria-hidden={!expanded}
         >
-          <p className="text-sm leading-relaxed text-slate-500">
-            Our graduates lead industries across 60+ countries. With a 94%
-            graduate employment rate and 12 research centers, we bridge
-            knowledge with real-world impact through interdisciplinary
-            collaboration and hands-on learning.
-          </p>
+          <p className="text-sm leading-relaxed text-slate-500">{more}</p>
         </div>
 
         <button
@@ -151,7 +142,7 @@ function AboutCard({ isVisible }) {
   );
 }
 
-function RankingCard({ isVisible }) {
+function RankingCard({ isVisible, ranking, label }) {
   return (
     <FadeIn isVisible={isVisible} delay={80}>
       <div
@@ -199,11 +190,11 @@ function RankingCard({ isVisible }) {
           <span className="text-orange-400 font-bold text-2xl mt-2 mr-0.5">
             #
           </span>
-          <span className="text-white text-6xl leading-none">48</span>
+          <span className="text-white text-6xl leading-none">{ranking}</span>
         </div>
 
         <p className="text-[11px] font-semibold tracking-widest uppercase text-white/40 mt-2 relative z-10">
-          World University Ranking
+          {label}
         </p>
 
         <div className="flex gap-2 mt-4 flex-wrap justify-center relative z-10">
@@ -322,6 +313,32 @@ export default function UniversityInfo({ university }) {
     return () => observer.disconnect();
   }, []);
 
+  // Build content from the real university record, falling back to placeholders.
+  const estParts = [
+    university?.established_year && `Est. ${university.established_year}`,
+    university?.city,
+  ].filter(Boolean);
+  const estLine = estParts.length ? estParts.join(" · ") : "Est. 1892 · Lahore, Pakistan";
+
+  const aboutTitle = university?.about_title || "Dedicated to Academic Rigor";
+  const aboutText =
+    university?.about_text ||
+    "A world-renowned institution fostering an environment where innovation meets tradition.";
+  const aboutMore =
+    university?.description ||
+    "Bridging knowledge with real-world impact through interdisciplinary collaboration and hands-on learning.";
+
+  const liveMvCards = [
+    { ...mvCards[0], body: university?.mission || mvCards[0].body },
+    { ...mvCards[1], body: university?.vision || mvCards[1].body },
+  ];
+
+  const liveStats = [
+    { value: university?.students || "12k+", label: "Active students" },
+    { value: university?.employment_rate || "94%", label: "Graduate employment" },
+    { value: university?.partner_countries || "60+", label: "Partner countries" },
+  ];
+
   return (
     <section
       className="py-16 bg-gray-50"
@@ -330,9 +347,19 @@ export default function UniversityInfo({ university }) {
     >
       <div className="max-w-5xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          <AboutCard isVisible={isVisible} />
-          <RankingCard isVisible={isVisible} />
-          {mvCards.map((card, i) => (
+          <AboutCard
+            isVisible={isVisible}
+            estLine={estLine}
+            title={aboutTitle}
+            text={aboutText}
+            more={aboutMore}
+          />
+          <RankingCard
+            isVisible={isVisible}
+            ranking={university?.ranking || "48"}
+            label={university?.ranking_label || "World University Ranking"}
+          />
+          {liveMvCards.map((card, i) => (
             <MissionVisionCard
               key={card.id}
               card={card}
@@ -347,7 +374,7 @@ export default function UniversityInfo({ university }) {
           role="list"
           aria-label="University statistics"
         >
-          {stats.map((stat, i) => (
+          {liveStats.map((stat, i) => (
             <StatCard
               key={stat.label}
               stat={stat}
