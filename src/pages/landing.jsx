@@ -4,41 +4,11 @@ import heroVideo from "../assets/video2.mp4";
 import ShimmerCard from "../components/ShimmerCard";
 import SearchBar from "../components/SearchBar";
 import StatsSection from "../components/StatsSection";
+import { listUniversities } from "../api/university";
+import { fileUrl } from "../api/client";
 
-const universities = [
-  {
-    name: "LUMS Lahore",
-    location: "Lahore",
-    program: "BS Computer Science",
-    fee: "8 Lac / year",
-    rating: "4.5",
-    image:
-      "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
-  },
-  {
-    name: "FAST University",
-    location: "Karachi",
-    program: "BS Software Engineering",
-    fee: "6 Lac / year",
-    rating: "4.3",
-    image:
-      "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
-  },
-  {
-    name: "NUST Islamabad",
-    location: "Islamabad",
-    program: "Engineering",
-    fee: "7 Lac / year",
-    rating: "4.6",
-    image:
-      "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
-  },
-];
-
-const uniList = Array.from({ length: 12 }, (_, i) => ({
-  ...universities[i % 3],
-  id: i,
-}));
+const FALLBACK_IMAGE =
+  "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -49,17 +19,33 @@ export default function LandingPage() {
   });
 
   const [loading, setLoading] = useState(true);
-  const [visible, setVisible] = useState(false);
+  const [uniList, setUniList] = useState([]);
   const ref = useRef();
 
   useEffect(() => {
-    setLoading(true);
-
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await listUniversities();
+        if (Array.isArray(data)) {
+          setUniList(
+            data.map((u) => ({
+              id: u.id,
+              name: u.name,
+              location: u.city || "—",
+              program: u.tagline || "View details for programs",
+              fee: "See details",
+              rating: "—",
+              image: u.logo_url ? fileUrl(u.logo_url) : FALLBACK_IMAGE,
+            }))
+          );
+        }
+      } catch {
+        /* keep empty list */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
   const [programQuery, setProgramQuery] = useState("");
   const [cityQuery, setCityQuery] = useState("");
@@ -101,7 +87,7 @@ export default function LandingPage() {
           <source src={heroVideo} type="video/mp4" />{" "}
         </video>
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>{" "}
-        <div className="relative z-10 text-center text-white max-w-3xl px-4">
+        <div className="relative z-10 text-center text-white px-4">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Find Your Future at the Perfect University{" "}
           </h2>
@@ -191,7 +177,7 @@ export default function LandingPage() {
 
                   {/* Button */}
                   <button
-                    onClick={() => navigate("/university")}
+                    onClick={() => navigate(`/university?id=${uni.id}`)}
                     className="w-full py-2 text-xs font-medium border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition-all duration-150 active:scale-95"
                   >
                     View details
