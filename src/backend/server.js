@@ -5,9 +5,11 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth_route/authRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import universityRoutes from "./routes/universityRoutes.js";
+import campusRoutes from "./routes/campusRoutes.js";
 import db from "./config/db.js";
 import initSchema from "./config/schema.js";
 import seedSuperAdmin from "./config/seedAdmin.js";
+import backfillAssignedIds from "./config/backfillIds.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -15,7 +17,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded docs/images (e.g. /uploads/161234-charter.pdf)
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 db.connect((err) => {
@@ -62,11 +64,14 @@ db.connect((err) => {
                 console.log("Student Profile table ready");
               }
 
-              // Create all Uni Finder tables (verification, universities, campuses, ...)
+
               initSchema(db);
 
-              // Ensure a default SuperAdmin login always exists
+
               seedSuperAdmin();
+
+
+              setTimeout(backfillAssignedIds, 1500);
             },
           );
         }
@@ -78,8 +83,9 @@ db.connect((err) => {
 app.use("/api/auth", authRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", universityRoutes);
+app.use("/api", campusRoutes);
 
-// Turn upload / unexpected errors into clean JSON instead of crashing the request.
+
 app.use((err, req, res, next) => {
   if (err) {
     console.log("Request error:", err.message);

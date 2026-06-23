@@ -4,7 +4,6 @@ import { listPrograms, addProgram, deleteProgram } from "../../api/university";
 
 const EMPTY = { name: "", level: "BS", duration: "", fee: "", description: "" };
 
-// Programs manager: add programs (name/level/duration/fee), list and delete them.
 export default function ProgramsTab({ universityId }) {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +22,7 @@ export default function ProgramsTab({ universityId }) {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [universityId]);
 
   const change = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -63,7 +62,7 @@ export default function ProgramsTab({ universityId }) {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Add form */}
+
       <form onSubmit={add} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-1">Add Program</h2>
         <p className="text-sm text-gray-500 mb-4">
@@ -99,7 +98,6 @@ export default function ProgramsTab({ universityId }) {
         </button>
       </form>
 
-      {/* List */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-400">Loading…</div>

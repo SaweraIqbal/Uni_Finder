@@ -1,7 +1,4 @@
-// Seeds a default SuperAdmin account so the platform always has one login that
-// can verify university admins. Safe to run repeatedly (upserts by email).
-//
-// Run:  node config/seedAdmin.js
+
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import db from "./db.js";
@@ -46,7 +43,6 @@ export const seedSuperAdmin = () =>
     );
   });
 
-// Allow running this file directly: `node config/seedAdmin.js`
 if (process.argv[1] && process.argv[1].endsWith("seedAdmin.js")) {
   seedSuperAdmin().then(() => process.exit(0));
 }

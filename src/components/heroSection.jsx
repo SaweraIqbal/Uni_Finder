@@ -35,7 +35,7 @@ export default function HeroSection({ university }) {
 
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Parallax Background */}
+      
       <div
         ref={parallaxRef}
         className="absolute inset-0 z-0 parallax-bg will-change-transform"
@@ -49,7 +49,7 @@ export default function HeroSection({ university }) {
         <div className="absolute inset-0 bg-orange-500/40 backdrop-brightness-75"></div>
       </div>
 
-      {/* Content */}
+      
       <div className="relative z-10 text-center max-w-4xl px-6">
         <h1 className="font-bold text-4xl md:text-6xl text-white mb-4 drop-shadow-lg">
           {title}
@@ -58,7 +58,7 @@ export default function HeroSection({ university }) {
           {subtitle}
         </p>
 
-        {/* CTA Buttons */}
+       
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             className="bg-orange-500 text-white px-8 py-3 rounded-lg text-sm font-bold hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"

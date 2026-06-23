@@ -103,7 +103,6 @@ const stats = [
   },
 ];
 
-// ─── Single stat card ─────────────────────────────────────────────────────────
 
 function StatCard({ stat, isVisible, delay }) {
   const [hovered, setHovered] = useState(false);
@@ -124,7 +123,7 @@ function StatCard({ stat, isVisible, delay }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Icon chip */}
+
       <div
         className={`
           w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
@@ -139,7 +138,7 @@ function StatCard({ stat, isVisible, delay }) {
         {stat.icon}
       </div>
 
-      {/* Value */}
+
       <div className="text-[22px] font-bold leading-none text-slate-800 mt-0.5 tabular-nums">
         {stat.value}
         {stat.suffix && (
@@ -149,7 +148,7 @@ function StatCard({ stat, isVisible, delay }) {
         )}
       </div>
 
-      {/* Divider bar – slides in on hover */}
+
       <div
         className={`h-0.5 rounded-full bg-orange-500 transition-all duration-200 ${
           hovered ? "w-5 opacity-100" : "w-0 opacity-0"
@@ -168,7 +167,6 @@ export default function UniversityStats({ university }) {
   const sectionRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Override the data-backed values; keep the icons + decorative ones.
   const liveStats = stats.map((s) => {
     if (s.id === "students" && university?.students)
       return { ...s, value: university.students, suffix: "" };

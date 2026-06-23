@@ -1,4 +1,4 @@
-// University verification: uni admin submits docs -> superadmin approves/rejects.
+
 import { v4 as uuidv4 } from "uuid";
 import db from "../../config/db.js";
 import { sendNotification } from "../../utils/notify.js";
@@ -8,9 +8,6 @@ const fileUrl = (files, field) =>
     ? `/uploads/${files[field][0].filename}`
     : null;
 
-// ---------------------------------------------------------------------------
-// UNI ADMIN: submit verification documents
-// ---------------------------------------------------------------------------
 export const submitDocuments = (req, res) => {
   const {
     user_uid,
@@ -61,9 +58,6 @@ export const submitDocuments = (req, res) => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// UNI ADMIN: get my latest verification status
-// ---------------------------------------------------------------------------
 export const getMyVerification = (req, res) => {
   const { uid } = req.params;
   db.query(
@@ -76,9 +70,6 @@ export const getMyVerification = (req, res) => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// SUPERADMIN: list verification requests (optional ?status=pending)
-// ---------------------------------------------------------------------------
 export const listRequests = (req, res) => {
   const { status } = req.query;
   const base = `
@@ -96,9 +87,6 @@ export const listRequests = (req, res) => {
   });
 };
 
-// ---------------------------------------------------------------------------
-// SUPERADMIN: approve a request -> notify uni admin
-// ---------------------------------------------------------------------------
 export const approveRequest = (req, res) => {
   const { id } = req.params;
   const reviewerUid = req.user?.id || null;
@@ -141,9 +129,6 @@ export const approveRequest = (req, res) => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// SUPERADMIN: reject a request with a reason -> notify uni admin
-// ---------------------------------------------------------------------------
 export const rejectRequest = (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;

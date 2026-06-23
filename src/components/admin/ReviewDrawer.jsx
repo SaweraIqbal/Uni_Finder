@@ -1,5 +1,4 @@
-// Slide-in panel showing one verification request's full details + documents,
-// with Approve / Reject actions. Used by the SuperAdmin dashboard.
+
 import StatusBadge from "../StatusBadge";
 import { fileUrl } from "../../api/client";
 

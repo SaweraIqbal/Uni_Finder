@@ -313,7 +313,6 @@ export default function UniversityInfo({ university }) {
     return () => observer.disconnect();
   }, []);
 
-  // Build content from the real university record, falling back to placeholders.
   const estParts = [
     university?.established_year && `Est. ${university.established_year}`,
     university?.city,

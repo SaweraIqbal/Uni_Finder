@@ -33,3 +33,6 @@ src/backend/uploads/
 *.pkl
 .DS_Store
 
+
+# Original (uncompressed) hero videos — local backup, do not commit
+.video-originals/

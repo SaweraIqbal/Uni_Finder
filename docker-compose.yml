@@ -1,0 +1,50 @@
+# Uni Finder — DEV mode in containers (hot-reload). Database stays in XAMPP MySQL.
+#
+#   1. Start XAMPP (MySQL on port 3306)   <- your database + phpMyAdmin
+#   2. docker compose up -d               <- runs the app (first run installs deps, ~1-2 min)
+#   3. open http://localhost:8080         <- the app
+#
+# Your source code is mounted into the containers, so any change you save shows
+# up LIVE at http://localhost:8080 — no rebuild needed.
+# The backend connects to your XAMPP MySQL (host.docker.internal:3306), so all
+# data + changes are visible in your normal phpMyAdmin.
+
+services:
+  backend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run start" # nodemon -> auto-restart on change
+    environment:
+      DB_HOST: host.docker.internal
+      DB_USER: root
+      DB_PASS: ""
+      DB_NAME: uni_finder
+      JWT_SECRET: secretkey
+      CHOKIDAR_USEPOLLING: "true" # reliable file-watching on Windows mounts
+    ports:
+      - "5000:5000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./src/backend:/app
+      - backend_node_modules:/app/node_modules
+    restart: unless-stopped
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    environment:
+      IN_DOCKER: "true" # turns on host/polling/HMR config in vite.config.js
+    ports:
+      - "8080:5173" # browser uses 8080; Vite runs on 5173 inside the container
+    volumes:
+      - .:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:

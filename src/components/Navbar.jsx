@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { setFlash } from "../utils/flash";
 import logo from "../assets/Logo.png";
 
 export default function Navbar() {
@@ -11,7 +12,7 @@ export default function Navbar() {
   const dropdownRef = useRef(null);
   const signupRef = useRef(null);
 
-  // Close dropdowns on outside click
+
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target))
@@ -26,7 +27,7 @@ export default function Navbar() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo */}
+
         <div
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => navigate("/")}
@@ -35,23 +36,28 @@ export default function Navbar() {
           <h1 className="text-xl font-bold text-orange-500">UniFinder</h1>
         </div>
 
-        {/* Right side */}
+
         {user ? (
-          /* ── LOGGED IN ── */
+
           <div className="flex items-center gap-4" ref={dropdownRef}>
             <span className="text-sm text-gray-600 hidden sm:block">
               {console.log("User info in Navbar:", user)}
               Hi, {user.name}
             </span>
 
-            {/* Profile avatar + dropdown */}
+
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen((prev) => !prev)}
                 className="w-10 h-10 rounded-full overflow-hidden border-2 border-orange-500 hover:scale-105 transition focus:outline-none"
               >
                 <img
-                  src={user.avatar || "https://i.pravatar.cc/100"}
+                  src={
+                    user.avatar ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user.name || "User"
+                    )}&background=f97316&color=fff`
+                  }
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -71,7 +77,13 @@ export default function Navbar() {
                   <hr className="border-gray-100" />
                   <button
                     onClick={() => {
+                      const name = (user?.name || "").split(" ")[0];
                       logout();
+                      setFlash(
+                        name
+                          ? `👋 Thanks ${name}, see you soon!`
+                          : "👋 Thanks for visiting — see you soon!"
+                      );
                       navigate("/");
                       setDropdownOpen(false);
                     }}
@@ -84,7 +96,7 @@ export default function Navbar() {
             </div>
           </div>
         ) : (
-          /* ── NOT LOGGED IN ── */
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/login")}
@@ -93,7 +105,7 @@ export default function Navbar() {
               Log In
             </button>
 
-            {/* Sign Up with role dropdown */}
+
             <div className="relative" ref={signupRef}>
               <button
                 onClick={() => setSignupOpen((prev) => !prev)}
@@ -137,6 +149,21 @@ export default function Navbar() {
                       <p className="text-sm font-medium">University</p>
                       <p className="text-xs text-gray-400">
                         Register your university
+                      </p>
+                    </span>
+                  </button>
+
+                  <hr className="border-gray-100" />
+
+                  <button
+                    onClick={() => navigate("/signup/campus")}
+                    className="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 hover:text-orange-500 transition text-left"
+                  >
+                    <span className="text-lg">🏛️</span>
+                    <span>
+                      <p className="text-sm font-medium">Campus</p>
+                      <p className="text-xs text-gray-400">
+                        Register a university campus
                       </p>
                     </span>
                   </button>

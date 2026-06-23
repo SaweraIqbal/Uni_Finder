@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// Simple Chevron Icon Component
+import { listUniversities } from "../api/university";
 const ChevronIcon = ({ isOpen }) => (
   <svg
     className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -17,11 +17,41 @@ const ChevronIcon = ({ isOpen }) => (
   </svg>
 );
 
-function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
+function SearchBar({
+  onShowAdvancedFilters,
+  searchValues,
+  onSearchChange,
+  resultsPath = "/homepage",
+}) {
   const navigate = useNavigate();
 
   const { program, city, university } = searchValues;
   const [activeDropdown, setActiveDropdown] = useState(null);
+
+
+
+  const [universities, setUniversities] = useState([]);
+  const [cities, setCities] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await listUniversities();
+        if (Array.isArray(data)) {
+          setUniversities([...new Set(data.map((u) => u.name).filter(Boolean))]);
+          setCities([
+            ...new Set(
+              data
+                .map((u) => (u.city || "").split(",")[0].trim())
+                .filter(Boolean),
+            ),
+          ]);
+        }
+      } catch {
+
+      }
+    })();
+  }, []);
 
   const programs = [
     "BS Computer Science",
@@ -29,27 +59,10 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
     "BBA",
     "MBBS",
     "BS Engineering",
-    "More Programs",
-  ];
-  const cities = [
-    "Islamabad",
-    "Lahore",
-    "Karachi",
-    "Peshawar",
-    "Multan",
-    "More Cities",
-  ];
-  const universities = [
-    "LUMS Lahore",
-    "FAST University",
-    "NUST Islamabad",
-    "UET Lahore",
-    "Iqra University",
-    "More Universities",
   ];
 
   const handleSearch = () => {
-    navigate("/homepage", {
+    navigate(resultsPath, {
       state: {
         program,
         city,
@@ -71,7 +84,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
     isFirst,
   }) => (
     <div className={`flex-1 relative group ${borderClass}`}>
-      {/* Trigger Button */}
+
       <div
         onClick={onToggle}
         className={`w-full px-6 py-4 flex justify-between items-center cursor-pointer transition-colors duration-200 ${
@@ -86,7 +99,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
         <ChevronIcon isOpen={isOpen} />
       </div>
 
-      {/* Dropdown List */}
+
       {isOpen && (
         <ul className="absolute w-full top-full left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in-down">
           {options.map((option, i) => (
@@ -95,7 +108,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(option);
-                setActiveDropdown(null); // Close dropdown
+                setActiveDropdown(null);
               }}
               className={`px-6 py-3 cursor-pointer transition-colors duration-150 ${
                 value === option
@@ -113,7 +126,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
 
   return (
     <div className="bg-white rounded-3xl md:rounded-full shadow-2xl flex flex-col md:flex-row relative w-full max-w-4xl mx-auto border border-gray-100">
-      {/* Program Dropdown */}
+
       <DropdownField
         label="Program"
         value={program}
@@ -127,7 +140,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
         isFirst={true}
       />
 
-      {/* City Dropdown */}
+
       <DropdownField
         label="City"
         value={city}
@@ -138,7 +151,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
         borderClass="border-b md:border-b-0 md:border-r border-gray-200"
       />
 
-      {/* University Dropdown */}
+
       <DropdownField
         label="University"
         value={university}
@@ -151,7 +164,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange }) {
         borderClass="border-b md:border-b-0 md:border-r border-gray-200"
       />
 
-      {/* Search Button */}
+
       <button
         onClick={handleSearch}
         className="bg-orange-500 text-white font-bold hover:bg-orange-600 transition-all duration-200 hover:shadow-lg py-4 px-8 rounded-2xl md:rounded-r-full whitespace-nowrap m-1 md:m-0"

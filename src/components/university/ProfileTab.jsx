@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getAccount, updateAccount } from "../../api/university";
+import AvatarUploader from "../AvatarUploader";
 
-// Lets the uni admin manage their own login account (name, username, email,
-// and optionally a new password).
 export default function ProfileTab({ uid }) {
   const [form, setForm] = useState({ name: "", username: "", email: "", password: "" });
+  const [avatar, setAvatar] = useState(null);
+  const [assignedId, setAssignedId] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
@@ -13,12 +14,22 @@ export default function ProfileTab({ uid }) {
     (async () => {
       try {
         const data = await getAccount(uid);
-        if (data) setForm((f) => ({ ...f, name: data.name || "", username: data.username || "", email: data.email || "" }));
+        if (data) {
+          setForm((f) => ({ ...f, name: data.name || "", username: data.username || "", email: data.email || "" }));
+          setAvatar(data.avatar_url || null);
+          setAssignedId(data.assigned_id || "");
+        }
       } finally {
         setLoading(false);
       }
     })();
   }, [uid]);
+
+  const onAvatar = (url) => {
+    setAvatar(url);
+    const stored = JSON.parse(sessionStorage.getItem("user") || "{}");
+    sessionStorage.setItem("user", JSON.stringify({ ...stored, avatar: url }));
+  };
 
   const change = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -32,7 +43,7 @@ export default function ProfileTab({ uid }) {
       const { ok, data } = await updateAccount(payload);
       if (ok) {
         toast.success(data.message || "Profile updated");
-        // keep local storage user in sync so the navbar/greeting updates
+
         const stored = JSON.parse(sessionStorage.getItem("user") || "{}");
         sessionStorage.setItem(
           "user",
@@ -56,6 +67,29 @@ export default function ProfileTab({ uid }) {
     <form onSubmit={submit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-2xl">
       <h2 className="text-lg font-bold text-gray-800 mb-1">My Profile</h2>
       <p className="text-sm text-gray-500 mb-6">Manage your admin account details.</p>
+
+      <div className="mb-6">
+        <AvatarUploader uid={uid} avatarUrl={avatar} name={form.name} onUploaded={onAvatar} />
+      </div>
+
+      {assignedId && (
+        <div className="mb-6 flex items-center justify-between bg-[#c88410]/10 border border-[#c88410]/20 rounded-xl px-4 py-3">
+          <div>
+            <p className="text-xs text-gray-500">Your Assigned ID</p>
+            <p className="text-lg font-bold text-[#c88410] tracking-wide">{assignedId}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(assignedId);
+              toast.success("ID copied");
+            }}
+            className="text-sm text-[#c88410] font-medium hover:underline"
+          >
+            Copy
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Full Name" name="name" value={form.name} onChange={change} />

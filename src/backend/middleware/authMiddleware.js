@@ -33,7 +33,7 @@ export const verifyToken = (req, res, next) => {
 };
 
 
-// ROLE MIDDLEWARE
+
 export const authorizeRoles = (...roles) => {
 
   return (req, res, next) => {

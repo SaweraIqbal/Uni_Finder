@@ -1,5 +1,4 @@
-// Coloured status chip (pending / approved / rejected). Shared by the
-// SuperAdmin dashboard and the University status page.
+
 const STYLES = {
   pending: "bg-amber-100 text-amber-700 border-amber-200",
   approved: "bg-green-100 text-green-700 border-green-200",

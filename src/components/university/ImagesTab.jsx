@@ -3,8 +3,6 @@ import { toast } from "react-toastify";
 import { listImages, addImage, deleteImage } from "../../api/university";
 import { fileUrl } from "../../api/client";
 
-// Gallery manager: upload campus/university photos, see them, delete them.
-// `universityId` is the saved university's id.
 export default function ImagesTab({ universityId }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +22,7 @@ export default function ImagesTab({ universityId }) {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [universityId]);
 
   const upload = async (e) => {
@@ -67,7 +65,7 @@ export default function ImagesTab({ universityId }) {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Upload form */}
+
       <form onSubmit={upload} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-1">Gallery</h2>
         <p className="text-sm text-gray-500 mb-4">
@@ -97,7 +95,6 @@ export default function ImagesTab({ universityId }) {
         </div>
       </form>
 
-      {/* Grid */}
       {loading ? (
         <div className="text-gray-400">Loading…</div>
       ) : images.length === 0 ? (

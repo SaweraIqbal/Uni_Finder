@@ -1,7 +1,5 @@
-// Multer disk storage for uploaded docs/images.
-// Files are saved under backend/uploads/ and we store the public path
-// (e.g. /uploads/161234-charter.pdf) in MySQL. Later this path can be
-// swapped for an S3 URL without touching the rest of the code.
+
+
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -10,7 +8,6 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.join(__dirname, "..", "uploads");
 
-// Make sure the uploads folder exists.
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -27,7 +24,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Accept common doc + image types, max 10 MB each.
 const fileFilter = (req, file, cb) => {
   const allowed = /pdf|doc|docx|png|jpe?g|webp/i;
   const ok =

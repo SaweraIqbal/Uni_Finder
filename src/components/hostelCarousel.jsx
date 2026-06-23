@@ -62,7 +62,7 @@ const hostels = [
 function HostelCard({ hostel }) {
   return (
     <article className="min-w-[280px] max-w-[280px] bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:-translate-y-1 transition-all duration-200 scroll-snap-align-start">
-      {/* Image */}
+
       <div className="relative h-44 overflow-hidden">
         <img
           src={hostel.image}
@@ -77,7 +77,7 @@ function HostelCard({ hostel }) {
         )}
       </div>
 
-      {/* Body */}
+
       <div className="p-4">
         <h3 className="font-semibold text-gray-800 text-[15px] mb-1.5">
           {hostel.name}
@@ -119,7 +119,7 @@ export default function HostelCarousel() {
 
   return (
     <section className="py-12 bg-gray-50 overflow-hidden">
-      {/* Header */}
+
       <div className="max-w-7xl mx-auto px-6 mb-5 flex justify-between items-end">
         <div>
           <p className="text-xs font-semibold text-orange-500 uppercase tracking-widest mb-1">
@@ -128,7 +128,7 @@ export default function HostelCarousel() {
           <h2 className="text-2xl font-bold text-gray-800">Nearby hostels</h2>
         </div>
 
-        {/* Nav buttons */}
+
         <div className="flex gap-2">
           <button
             onClick={() => scroll(-1)}
@@ -169,7 +169,7 @@ export default function HostelCarousel() {
         </div>
       </div>
 
-      {/* Scrollable track */}
+
       <div
         ref={trackRef}
         className="flex gap-3.5 overflow-x-auto px-6 pb-4 [scroll-snap-type:x_mandatory] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"

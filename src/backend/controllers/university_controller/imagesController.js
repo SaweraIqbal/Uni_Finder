@@ -1,8 +1,7 @@
-// University gallery images: add / list / delete.
+
 import { v4 as uuidv4 } from "uuid";
 import db from "../../config/db.js";
 
-// POST /university/images  (multipart: image file + university_id + caption)
 export const addImage = (req, res) => {
   const { university_id, caption } = req.body;
   if (!university_id || !req.file) {
@@ -20,7 +19,7 @@ export const addImage = (req, res) => {
   );
 };
 
-// GET /university/:id/images
+
 export const listImages = (req, res) => {
   db.query(
     "SELECT * FROM university_images WHERE university_id = ? ORDER BY created_at DESC",
@@ -32,7 +31,7 @@ export const listImages = (req, res) => {
   );
 };
 
-// DELETE /university/images/:imageId
+
 export const deleteImage = (req, res) => {
   db.query(
     "DELETE FROM university_images WHERE id = ?",

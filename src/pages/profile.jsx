@@ -1,13 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaEdit } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { uploadAvatar } from "../api/university";
+import { fileUrl } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
+
+  const storedUser = JSON.parse(sessionStorage.getItem("user") || "{}");
 
   const [step, setStep] = useState(1);
   const [profileExists, setProfileExists] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [avatar, setAvatar] = useState(storedUser.avatar || null);
+  const { updateUser } = useAuth();
+  const avatarInputRef = useRef(null);
+
+
+
+  const avatarSrc = avatar
+    ? avatar.startsWith("http")
+      ? avatar
+      : fileUrl(avatar)
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        storedUser.name || "User"
+      )}&background=f97316&color=fff&size=300`;
+
+  const handleAvatarFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const uid = sessionStorage.getItem("userId");
+    const { ok, data } = await uploadAvatar(uid, file);
+    if (ok) {
+      const full = fileUrl(data.avatar_url);
+      setAvatar(full);
+      updateUser({ avatar: full });
+      toast.success("Profile picture updated");
+    } else {
+      toast.error(data.message || "Upload failed");
+    }
+  };
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -32,7 +66,7 @@ export default function Profile() {
     const loadData = async () => {
       try {
 
-       
+
         const userRes = await fetch(
           `http://localhost:5000/api/auth/user/${userId}`
         );
@@ -44,6 +78,9 @@ export default function Profile() {
           username: userData.username || "",
           email: userData.email || "",
         }));
+
+
+        if (userData.avatar_url) setAvatar(userData.avatar_url);
 
         const profileRes = await fetch(
           `http://localhost:5000/api/auth/student_profile/${userId}`
@@ -74,7 +111,7 @@ export default function Profile() {
     loadData();
   }, []);
 
-  
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -82,7 +119,7 @@ export default function Profile() {
     });
   };
 
-  
+
   const handleCreate = async () => {
 
     const userId = sessionStorage.getItem("userId");
@@ -109,7 +146,7 @@ export default function Profile() {
     );
   };
 
- 
+
   const handleUpdate = async () => {
 
     const userId = sessionStorage.getItem("userId");
@@ -136,7 +173,7 @@ export default function Profile() {
     );
   };
 
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -178,16 +215,14 @@ export default function Profile() {
 
     <div className="min-h-screen bg-gray-100 p-6">
 
-   
       <div className="max-w-4xl mx-auto mb-10">
-       <ToastContainer position="top-right" autoClose={2000} />
         <ol className="flex items-center w-full text-sm font-medium text-center sm:text-base">
 
           {[1, 2, 3].map((num) => (
 
             <li
               key={num}
-              className={`flex items-center w-full 
+              className={`flex items-center w-full
               ${step >= num ? "text-orange-500" : "text-gray-400"}`}
             >
 
@@ -230,18 +265,18 @@ export default function Profile() {
 
       </div>
 
-   
+
       <form
          onSubmit={handleSubmit}
         className="max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-lg space-y-8"
       >
 
-     
+
         {step === 1 && (
 
           <div className="flex flex-col md:flex-row gap-10 items-center">
 
-      
+
             <div className="flex-1 space-y-4">
 
               <h2 className="text-3xl font-bold text-orange-500">
@@ -295,7 +330,7 @@ export default function Profile() {
 
             </div>
 
-    
+
             <div className="flex flex-col items-center">
 
               <div className="relative">
@@ -303,16 +338,26 @@ export default function Profile() {
                 <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-orange-500 shadow-lg">
 
                   <img
-                    src="https://i.pravatar.cc/300"
+                    src={avatarSrc}
                     alt="profile"
                     className="w-full h-full object-cover"
                   />
 
                 </div>
 
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarFile}
+                />
+
                 <button
                   type="button"
-                  className="absolute bottom-2 right-2 bg-orange-500 p-3 rounded-full text-white shadow-lg"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute bottom-2 right-2 bg-orange-500 p-3 rounded-full text-white shadow-lg hover:bg-orange-600"
+                  title="Change profile picture"
                 >
                   <FaEdit />
                 </button>
@@ -329,7 +374,7 @@ export default function Profile() {
 
         )}
 
-  
+
         {step === 2 && (
 
           <div className="space-y-5">
@@ -387,7 +432,7 @@ export default function Profile() {
 
         )}
 
-        
+
         {step === 3 && (
 
           <div className="space-y-5">
@@ -431,7 +476,7 @@ export default function Profile() {
 
         )}
 
-      
+
         <div className="flex justify-between pt-6">
 
           {step > 1 && (

@@ -78,7 +78,6 @@ function UniversityDocuments() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
-      <ToastContainer />
 
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl p-8">
 
