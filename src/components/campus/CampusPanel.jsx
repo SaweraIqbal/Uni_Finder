@@ -37,7 +37,7 @@ export default function CampusPanel({ ownerUid, adminEmail }) {
   const handleLogout = () => {
     const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
     sessionStorage.clear();
-    setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
+    setFlash(name ? ` Thanks ${name}, see you soon!` : " Thanks for visiting — see you soon!");
     navigate("/login");
   };
 
@@ -75,7 +75,7 @@ export default function CampusPanel({ ownerUid, adminEmail }) {
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 bg-green-50 border border-green-100 text-green-700 px-3 py-1 rounded-lg text-sm font-medium">
-            ✅ Approved
+             Approved
             {campus?.university_name ? ` — part of ${campus.university_name}` : ""}
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mt-3">

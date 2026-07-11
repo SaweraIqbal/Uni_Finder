@@ -10,6 +10,8 @@ import db from "./config/db.js";
 import initSchema from "./config/schema.js";
 import seedSuperAdmin from "./config/seedAdmin.js";
 import backfillAssignedIds from "./config/backfillIds.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
