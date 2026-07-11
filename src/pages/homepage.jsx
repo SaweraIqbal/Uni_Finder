@@ -6,9 +6,6 @@ import SearchBar from "../components/SearchBar";
 import ShimmerCard from "../components/ShimmerCard";
 import { listUniversities } from "../api/university";
 import { fileUrl } from "../api/client";
-import WhyChooseSection from "../components/WhyChooseSection";
-import PopularUniversities from "../components/PopularUniversities";
-import StatsSection from "../components/StatsSection";
 import Footer from "../components/footer";
 import { useLocation } from "react-router-dom";
 
@@ -19,6 +16,8 @@ function HomePage() {
   const [filters, setFilters] = useState({
     admissionStatus: "",
     genderType: [],
+    universityType: [],
+    campusType: [],
     minMarks: 50,
     minFee: 0,
     maxFee: 1000000,
@@ -38,6 +37,8 @@ function HomePage() {
     setFilters({
       admissionStatus: "",
       genderType: [],
+      universityType: [],
+      campusType: [],
       minMarks: 50,
       minFee: 0,
       maxFee: 1000000,
@@ -67,7 +68,7 @@ function HomePage() {
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6">
           <div className="text-center text-white mb-12">
-            <h2 className="text-5xl md:text-6xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
               Find Your Future at the Perfect University
             </h2>
             <p className="text-lg md:text-xl text-gray-100 max-w-3xl mx-auto">
@@ -112,10 +113,6 @@ function HomePage() {
           </div>
         </div>
       </section>
-
-      <WhyChooseSection />
-      <PopularUniversities />
-      <StatsSection />
     </div>
   );
 }
@@ -140,10 +137,28 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
         : [...prev.entryTests, test],
     }));
 
+  const handleUniversityTypeChange = (type) =>
+    setFilters((prev) => ({
+      ...prev,
+      universityType: prev.universityType.includes(type)
+        ? prev.universityType.filter((t) => t !== type)
+        : [...prev.universityType, type],
+    }));
+
+  const handleCampusTypeChange = (type) =>
+    setFilters((prev) => ({
+      ...prev,
+      campusType: prev.campusType.includes(type)
+        ? prev.campusType.filter((t) => t !== type)
+        : [...prev.campusType, type],
+    }));
+
   const handleResetAll = () => {
     setFilters({
       admissionStatus: "",
       genderType: [],
+      universityType: [],
+      campusType: [],
       minMarks: 50,
       minFee: 0,
       maxFee: 1000000,
@@ -165,14 +180,61 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
         </button>
       </div>
 
+      {/* University Type */}
+      <div className="mb-8">
+        <h4 className="font-semibold text-gray-700 mb-3">University Type</h4>
+        <div className="flex gap-1 flex-wrap">
+          {[
+            { label: "🏛️ Govt.", value: "Govt." },
+            { label: "🏢 Semi-Govt.", value: "Semi-Govt." },
+            { label: "🏫 Pvt.", value: "Pvt." },
+          ].map((type) => (
+            <button
+              key={type.value}
+              onClick={() => handleUniversityTypeChange(type.value)}
+              className={`px-2 py-1 text-[11px] font-medium rounded-full whitespace-nowrap transition ${
+                filters.universityType.includes(type.value)
+                  ? "bg-orange-500 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {type.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
+      {/* Campus Type */}
+      <div className="mb-8">
+        <h4 className="font-semibold text-gray-700 mb-3">Campus Type</h4>
+        <div className="flex gap-1 flex-wrap">
+          {[
+            { label: "🏟️ Main", value: "Main" },
+            { label: "🏙️ City", value: "City" },
+          ].map((type) => (
+            <button
+              key={type.value}
+              onClick={() => handleCampusTypeChange(type.value)}
+              className={`px-2 py-1 text-[11px] font-medium rounded-full whitespace-nowrap transition ${
+                filters.campusType.includes(type.value)
+                  ? "bg-orange-500 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {type.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Admission Status */}
       <div className="mb-8">
         <h4 className="font-semibold text-gray-700 mb-3">Admission Status</h4>
         <div className="flex gap-1 flex-wrap">
           {[
             { label: "🟢 Open", value: "open" },
             { label: "⚪ Closed", value: "closed" },
-            { label: "🔵 Coming", value: "coming" },
+            { label: "🔵 Unknown", value: "unknown" },
           ].map((status) => (
             <button
               key={status.value}
@@ -341,27 +403,21 @@ function UniversityGrid({
         const data = await listUniversities();
         if (Array.isArray(data)) {
           setRealUnis(
-            data.map((u) => {
-
-
-              const cover = u.cover_image || u.banner_url;
-              return {
-                id: `real-${u.id}`,
-                realId: u.id,
-                name: u.name,
-                location: u.city || "—",
-                genderType: "Co-Education",
-                entryTests: [],
-                programs: u.tagline ? [u.tagline] : ["View details for programs"],
-                admissionStatus: "open",
-                fee: 0,
-                rating: "—",
-                image: cover
-                  ? fileUrl(cover)
-                  : "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
-                logo: u.logo_url ? fileUrl(u.logo_url) : null,
-              };
-            })
+            data.map((u) => ({
+              id: `real-${u.id}`,
+              realId: u.id,
+              name: u.name,
+              location: u.city || "—",
+              genderType: "Co-Education",
+              entryTests: [],
+              programs: u.tagline ? [u.tagline] : ["View details for programs"],
+              admissionStatus: "open",
+              fee: 0,
+              rating: "—",
+              image: u.logo_url
+                ? fileUrl(u.logo_url)
+                : "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
+            })),
           );
         }
       } catch {
@@ -372,61 +428,7 @@ function UniversityGrid({
     })();
   }, []);
 
-  const mockUniversities = [
-    {
-      id: 1,
-      name: "LUMS Lahore",
-      location: "Lahore",
-      genderType: "Co-Education",
-      entryTests: ["NAT", "University Own Test"],
-      programs: ["BS Computer Science", "BBA"],
-      admissionStatus: "open",
-      fee: 800000,
-      rating: 4.5,
-      image:
-        "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
-      hostel: true,
-      labs: true,
-      library: true,
-      exchange: true,
-    },
-    {
-      id: 2,
-      name: "FAST University",
-      location: "Karachi",
-      genderType: "Co-Education",
-      entryTests: ["ECAT", "NAT"],
-      programs: ["BS Software Engineering", "BS CS"],
-      admissionStatus: "open",
-      fee: 600000,
-      rating: 4.3,
-      image:
-        "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
-      hostel: true,
-      labs: true,
-      library: true,
-      exchange: false,
-    },
-    {
-      id: 3,
-      name: "NUST Islamabad",
-      location: "Islamabad",
-      genderType: "Co-Education",
-      entryTests: ["ECAT", "MDCAT"],
-      programs: ["Engineering", "MBBS"],
-      admissionStatus: "closed",
-      fee: 700000,
-      rating: 4.6,
-      image:
-        "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg",
-      hostel: true,
-      labs: true,
-      library: true,
-      exchange: true,
-    },
-  ];
-
-  const universities = [...realUnis, ...mockUniversities];
+  const universities = [...realUnis];
 
   const filtered = universities.filter((uni) => {
 
@@ -470,6 +472,18 @@ function UniversityGrid({
     if (
       filters.entryTests.length > 0 &&
       !filters.entryTests.some((t) => uni.entryTests.includes(t))
+    )
+      return false;
+
+    if (
+      filters.universityType.length > 0 &&
+      !filters.universityType.includes(uni.universityType)
+    )
+      return false;
+
+    if (
+      filters.campusType.length > 0 &&
+      !filters.campusType.includes(uni.campusType)
     )
       return false;
 
@@ -595,13 +609,13 @@ function UniversityCard({ uni }) {
   const admissionStyle = {
     open: "bg-green-100 text-green-800",
     closed: "bg-slate-100 text-slate-600",
-    coming: "bg-blue-100 text-blue-800",
+    unknown: "bg-blue-100 text-blue-800",
   };
 
   const admissionLabel = {
     open: "Open",
     closed: "Closed",
-    coming: "Coming Soon",
+    unknown: "<Unknown>",
   };
 
   return (
@@ -674,9 +688,7 @@ function UniversityCard({ uni }) {
 
         <div className="flex gap-2">
           <button
-            onClick={() =>
-              navigate(uni.realId ? `/university?id=${uni.realId}` : "/university")
-            }
+            onClick={() => navigate("/campus")}
             className="flex-1 py-2 text-sm font-medium border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition-all duration-150 active:scale-95"
           >
             View details

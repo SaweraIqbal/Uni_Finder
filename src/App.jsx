@@ -23,6 +23,7 @@ import UniversityDashboard from "./pages/UniversityDashboard.jsx";
 import CampusDashboard from "./pages/CampusDashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UniversityDetailPage from "./pages/UniversityDetailPage.jsx";
+import CampusPage from "./pages/CampusPage.jsx";
 
 function App() {
   return (
@@ -62,6 +63,10 @@ function App() {
 
 
             <Route path="/university" element={<UniversityDetailPage />} />
+
+            {/* Campus Page */}
+            <Route path="/campus" element={<CampusPage />} />
+
             {/* University Documents */}
             <Route
               path="/university/documents"
