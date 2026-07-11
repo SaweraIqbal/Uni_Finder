@@ -37,7 +37,7 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
   const handleLogout = () => {
     const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
     sessionStorage.clear();
-    setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
+    setFlash(name ? ` Thanks ${name}, see you soon!` : " Thanks for visiting — see you soon!");
     navigate("/login");
   };
 
