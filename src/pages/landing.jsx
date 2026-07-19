@@ -6,6 +6,7 @@ import SearchBar from "../components/SearchBar";
 import StatsSection from "../components/StatsSection";
 import { listUniversities } from "../api/university";
 import { fileUrl } from "../api/client";
+import HomePage from "./homepage";
 
 const DEFAULT_COVER =
   "https://i.pinimg.com/736x/7a/39/0b/7a390b0d75f6973efed81f41df0038d0.jpg";
@@ -110,7 +111,7 @@ export default function LandingPage() {
           <SearchBar
             searchValues={searchValues}
             onSearchChange={setSearchValues}
-            resultsPath="/explore"
+            resultsPath="/HomePage"
           />
         </div>
       </section>
