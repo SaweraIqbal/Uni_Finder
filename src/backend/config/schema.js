@@ -1,15 +1,7 @@
-// Centralised database schema for Uni Finder.
-// All tables are created here so the flow (superadmin -> university admin -> campus admin)
-// has one source of truth. Run automatically on server start from server.js.
-//
-// Docs/images: for now we store a local upload PATH in the *_url columns.
-// Later, when we move to S3, only the value stored in those columns changes
-// (local path -> S3 link); the schema stays the same.
+
 
 const tables = [
-  // ---------------------------------------------------------------------------
-  // 1. SIMULATED EMAIL / NOTIFICATIONS
-  // ---------------------------------------------------------------------------
+
   `CREATE TABLE IF NOT EXISTS notifications (
     id            VARCHAR(255) PRIMARY KEY,
     recipient_uid VARCHAR(255),
@@ -21,9 +13,6 @@ const tables = [
     created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 2. UNIVERSITY VERIFICATION REQUESTS
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS university_verification (
     id                VARCHAR(255) PRIMARY KEY,
     user_uid          VARCHAR(255) NOT NULL,
@@ -43,9 +32,6 @@ const tables = [
     FOREIGN KEY (user_uid) REFERENCES Student_signup(id)
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 3. UNIVERSITIES (the real record the uni admin fills after approval)
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS universities (
     id              VARCHAR(255) PRIMARY KEY,
     owner_uid       VARCHAR(255) NOT NULL,
@@ -64,9 +50,6 @@ const tables = [
     FOREIGN KEY (owner_uid) REFERENCES Student_signup(id)
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 4. UNIVERSITY IMAGES (gallery — many per university)
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS university_images (
     id            VARCHAR(255) PRIMARY KEY,
     university_id VARCHAR(255) NOT NULL,
@@ -76,9 +59,6 @@ const tables = [
     FOREIGN KEY (university_id) REFERENCES universities(id) ON DELETE CASCADE
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 5. PROGRAMS (offered by a university; campuses pick from these)
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS programs (
     id            VARCHAR(255) PRIMARY KEY,
     university_id VARCHAR(255) NOT NULL,
@@ -91,9 +71,6 @@ const tables = [
     FOREIGN KEY (university_id) REFERENCES universities(id) ON DELETE CASCADE
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 6. CAMPUS VERIFICATION REQUESTS (campus admin -> uni admin)
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS campus_verification (
     id              VARCHAR(255) PRIMARY KEY,
     campus_admin_uid VARCHAR(255) NOT NULL,
@@ -111,9 +88,6 @@ const tables = [
     FOREIGN KEY (university_id) REFERENCES universities(id) ON DELETE CASCADE
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 7. CAMPUSES (auto-added to the university when approved)
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS campuses (
     id               VARCHAR(255) PRIMARY KEY,
     university_id    VARCHAR(255) NOT NULL,
@@ -133,9 +107,6 @@ const tables = [
     FOREIGN KEY (university_id) REFERENCES universities(id) ON DELETE CASCADE
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 8. CAMPUS IMAGES
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS campus_images (
     id         VARCHAR(255) PRIMARY KEY,
     campus_id  VARCHAR(255) NOT NULL,
@@ -145,9 +116,6 @@ const tables = [
     FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE
   )`,
 
-  // ---------------------------------------------------------------------------
-  // 9. CAMPUS_PROGRAMS (which programs run at a campus + that campus's fee/duration)
-  // ---------------------------------------------------------------------------
   `CREATE TABLE IF NOT EXISTS campus_programs (
     id         VARCHAR(255) PRIMARY KEY,
     campus_id  VARCHAR(255) NOT NULL,
@@ -160,10 +128,9 @@ const tables = [
   )`,
 ];
 
-// Extra columns added AFTER the universities table already exists (so users who
-// ran an earlier version still get them). These hold the rich content shown on
-// the public university detail page (hero, about, mission/vision, ranking, stats).
 const columnMigrations = [
+  ["Student_signup", "avatar_url", "VARCHAR(500)"],
+  ["Student_signup", "assigned_id", "VARCHAR(30)"],
   ["universities", "tagline", "VARCHAR(255)"],
   ["universities", "hero_subtitle", "VARCHAR(500)"],
   ["universities", "banner_url", "VARCHAR(500)"],
@@ -179,7 +146,6 @@ const columnMigrations = [
   ["universities", "total_campuses", "VARCHAR(50)"],
 ];
 
-// Add a column only if it doesn't already exist (MySQL lacks ADD COLUMN IF NOT EXISTS).
 const ensureColumns = (db, done) => {
   let i = 0;
   const next = () => {
@@ -197,7 +163,7 @@ const ensureColumns = (db, done) => {
           console.log("Migration check error:", err.message);
           return next();
         }
-        if (rows[0].c > 0) return next(); // already exists
+        if (rows[0].c > 0) return next();
         db.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`, (err2) => {
           if (err2) console.log("Migration error:", err2.message);
           next();
@@ -208,8 +174,6 @@ const ensureColumns = (db, done) => {
   next();
 };
 
-// Create tables in order (parents before children so foreign keys resolve),
-// then run column migrations.
 export const initSchema = (db) => {
   let i = 0;
   const next = () => {

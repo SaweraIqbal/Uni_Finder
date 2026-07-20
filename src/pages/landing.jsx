@@ -37,7 +37,7 @@ export default function LandingPage() {
               fee: "See details",
               rating: "—",
               image: u.logo_url ? fileUrl(u.logo_url) : FALLBACK_IMAGE,
-            }))
+            })),
           );
         }
       } catch {

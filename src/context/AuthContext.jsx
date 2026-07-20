@@ -8,15 +8,43 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error("Error parsing stored user:", err);
-        sessionStorage.removeItem("user");
-      }
+    if (!storedUser) {
+      setLoading(false);
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(storedUser);
+      setUser(parsed);
+    } catch (err) {
+      console.error("Error parsing stored user:", err);
+      sessionStorage.removeItem("user");
+      setLoading(false);
+      return;
     }
     setLoading(false);
+
+
+
+    if (parsed?.id) {
+      fetch(`http://localhost:5000/api/auth/user/${parsed.id}`)
+        .then((r) => r.json())
+        .then((u) => {
+          if (!u || !u.id) return;
+          const merged = {
+            ...parsed,
+            name: u.name ?? parsed.name,
+            username: u.username ?? parsed.username,
+            assigned_id: u.assigned_id ?? parsed.assigned_id,
+            avatar: u.avatar_url
+              ? `http://localhost:5000${u.avatar_url}`
+              : parsed.avatar,
+          };
+          setUser(merged);
+          sessionStorage.setItem("user", JSON.stringify(merged));
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const login = async (userData) => {
@@ -32,6 +60,10 @@ export const AuthProvider = ({ children }) => {
         role: userData.role,
         name: completeUser.name,
         username: completeUser.username,
+        assigned_id: completeUser.assigned_id,
+        avatar: completeUser.avatar_url
+          ? `http://localhost:5000${completeUser.avatar_url}`
+          : undefined,
       };
 
       setUser(finalUser);
@@ -48,8 +80,17 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem("user");
   };
 
+
+  const updateUser = (patch) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...patch };
+      sessionStorage.setItem("user", JSON.stringify(next));
+      return next;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

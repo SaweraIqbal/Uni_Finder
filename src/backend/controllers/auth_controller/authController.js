@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import db from "../../config/db.js";
 import jwt from "jsonwebtoken";
+import { assignedIdFor } from "../../utils/assignedId.js";
 
 export const signup = (req, res) => {
   const userId = uuidv4();
@@ -11,14 +12,16 @@ export const signup = (req, res) => {
 
   const hashedPassword = bcrypt.hashSync(password, 10);
 
+  const assignedId = assignedIdFor(role, userId);
+
   const sql = `
-    INSERT INTO Student_signup (id, name, username, email, password,role)
-    VALUES (?, ?, ?, ?, ?,?)
+    INSERT INTO Student_signup (id, name, username, email, password, role, assigned_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
-    [userId, name, username, email, hashedPassword, role],
+    [userId, name, username, email, hashedPassword, role, assignedId],
     (err, result) => {
       if (err) {
         return res.status(500).json(err);
@@ -29,6 +32,7 @@ export const signup = (req, res) => {
         user: {
           id: userId,
           email,
+          assigned_id: assignedId,
         },
       });
     },

@@ -1,19 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 
-/* ─── NOTE: Add this to your <head> in index.html ─────────────────────────────
-   <link
-     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-     rel="stylesheet"
-   />
-   <link
-     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-     rel="stylesheet"
-   />
-   And in tailwind.config.js:
-     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-─────────────────────────────────────────────────────────────────────────────── */
-
-// ─── MATERIAL ICON ──────────────────────────────────────────────────────────
 const Icon = ({ name, size = 24, filled = false, className = "" }) => (
   <span
     className={`material-symbols-outlined select-none ${className}`}
@@ -26,7 +12,6 @@ const Icon = ({ name, size = 24, filled = false, className = "" }) => (
   </span>
 );
 
-// ─── INTERSECTION OBSERVER HOOK ─────────────────────────────────────────────
 function useReveal(threshold = 0.12) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -52,8 +37,6 @@ const reveal = (v) =>
   `transition-all duration-700 ease-out ${
     v ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
   }`;
-
-// ─── MOCK DATA ──────────────────────────────────────────────────────────────
 
 const PROGRAMS = [
   {
@@ -158,7 +141,6 @@ const RATING_BARS = [
   { label: "1 star", pct: 1, count: 2 },
 ];
 
-// ─── STICKY TABS ────────────────────────────────────────────────────────────
 function StickyTabs({ active }) {
   const tabs = ["programs", "facilities", "hostels", "transport", "reviews"];
   return (
@@ -182,12 +164,13 @@ function StickyTabs({ active }) {
   );
 }
 
-// ─── PROGRAMS SECTION ───────────────────────────────────────────────────────
-function ProgramsSection() {
+function ProgramsSection({ programs }) {
   const [ref, v] = useReveal();
   const [filter, setFilter] = useState("All");
   const FILTERS = ["All", "UG", "MS", "PhD"];
-  const rows = PROGRAMS.filter((p) => filter === "All" || p.level === filter);
+
+  const source = programs && programs.length ? programs : PROGRAMS;
+  const rows = source.filter((p) => filter === "All" || p.level === filter);
 
   const badge = (level, accent) => {
     if (accent === "orange")
@@ -200,7 +183,6 @@ function ProgramsSection() {
   return (
     <section id="programs" ref={ref} className={`py-20 bg-white ${reveal(v)}`}>
       <div className="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-10">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
@@ -227,9 +209,7 @@ function ProgramsSection() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white">
-          {/* Desktop header */}
           <div className="hidden md:grid grid-cols-[1fr_110px_130px_120px] bg-orange-500 px-6 py-3.5">
             {["Course Name", "Level", "Duration", ""].map((h, i) => (
               <span
@@ -241,14 +221,12 @@ function ProgramsSection() {
             ))}
           </div>
 
-          {/* Empty state */}
           {rows.length === 0 && (
             <div className="px-6 py-12 text-center text-slate-400 text-sm">
               No programs found for this level.
             </div>
           )}
 
-          {/* Rows */}
           {rows.map((p, idx) => (
             <div
               key={p.name}
@@ -281,7 +259,6 @@ function ProgramsSection() {
   );
 }
 
-// ─── FACILITIES SECTION ─────────────────────────────────────────────────────
 function FacilitiesSection() {
   const [ref, v] = useReveal();
 
@@ -324,7 +301,6 @@ function FacilitiesSection() {
   );
 }
 
-// ─── HOSTELS SECTION ────────────────────────────────────────────────────────
 function HostelsSection() {
   const [ref, v] = useReveal();
   const [saved, setSaved] = useState({});
@@ -349,7 +325,6 @@ function HostelsSection() {
               className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
               style={{ transitionDelay: `${i * 60}ms` }}
             >
-              {/* Image */}
               <div className="relative h-48 overflow-hidden">
                 <img
                   src={h.img}
@@ -373,7 +348,6 @@ function HostelsSection() {
                 </button>
               </div>
 
-              {/* Body */}
               <div className="p-5">
                 <h3 className="text-base font-bold text-slate-800">{h.name}</h3>
                 <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
@@ -406,7 +380,6 @@ function HostelsSection() {
   );
 }
 
-// ─── TRANSPORT SECTION ──────────────────────────────────────────────────────
 function TransportSection() {
   const [refL, vL] = useReveal();
   const [refR, vR] = useReveal();
@@ -415,7 +388,6 @@ function TransportSection() {
     <section id="transport" className="py-20 bg-orange-50/30">
       <div className="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          {/* Left — timeline */}
           <div ref={refL} className={reveal(vL)}>
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight mb-6">
               Shuttle Network
@@ -441,7 +413,6 @@ function TransportSection() {
             </div>
           </div>
 
-          {/* Right — map card */}
           <div
             ref={refR}
             className={`bg-white rounded-3xl p-3 shadow-md overflow-hidden group border border-slate-200 ${reveal(vR)}`}
@@ -454,7 +425,6 @@ function TransportSection() {
               />
               <div className="absolute inset-0 bg-black/5 pointer-events-none" />
 
-              {/* Live tracking badge */}
               <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full px-4 flex justify-center pointer-events-none">
                 <div className="bg-white/70 backdrop-blur-md px-5 py-2 rounded-full border border-white/40 shadow-lg flex items-center gap-3 animate-pulse">
                   <div className="relative flex h-2.5 w-2.5">
@@ -471,7 +441,6 @@ function TransportSection() {
                 </div>
               </div>
 
-              {/* Bus marker */}
               <div className="absolute top-1/2 left-1/3 -translate-y-1/2 group-hover:-translate-y-[calc(50%+4px)] transition-transform duration-500 pointer-events-none">
                 <div className="bg-orange-500 text-white p-2 rounded-full shadow-lg">
                   <Icon name="directions_bus" size={16} />
@@ -481,7 +450,6 @@ function TransportSection() {
                 </div>
               </div>
 
-              {/* Zoom controls */}
               <div className="absolute bottom-4 right-4 flex flex-col gap-2">
                 <button className="bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-md hover:bg-white transition-colors">
                   <Icon name="add" size={18} />
@@ -498,7 +466,6 @@ function TransportSection() {
   );
 }
 
-// ─── STARS COMPONENT ────────────────────────────────────────────────────────
 function Stars({ count, size = 16 }) {
   return (
     <div className="flex gap-0.5">
@@ -515,7 +482,6 @@ function Stars({ count, size = 16 }) {
   );
 }
 
-// ─── REVIEWS SECTION ────────────────────────────────────────────────────────
 function ReviewsSection() {
   const [ref, v] = useReveal();
 
@@ -531,7 +497,6 @@ function ReviewsSection() {
           </p>
         </div>
 
-        {/* Rating overview card */}
         <div className="flex flex-col md:flex-row gap-10 items-start mb-14 p-7 bg-orange-50 rounded-2xl border border-orange-100">
           <div className="flex flex-col items-center justify-center min-w-[120px]">
             <span className="text-6xl font-extrabold text-orange-500 leading-none">
@@ -563,7 +528,6 @@ function ReviewsSection() {
           </div>
         </div>
 
-        {/* Review cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           {REVIEWS.map((r, i) => (
             <div
@@ -605,8 +569,7 @@ function ReviewsSection() {
   );
 }
 
-// ─── ROOT COMPONENT ─────────────────────────────────────────────────────────
-export default function CampusDetail() {
+export default function CampusDetail({ programs }) {
   const [active, setActive] = useState("programs");
 
   useEffect(() => {
@@ -629,7 +592,7 @@ export default function CampusDetail() {
   return (
     <div className="font-sans min-h-screen bg-white text-slate-900 antialiased">
       <StickyTabs active={active} />
-      <ProgramsSection />
+      <ProgramsSection programs={programs} />
       <FacilitiesSection />
       <HostelsSection />
       <TransportSection />

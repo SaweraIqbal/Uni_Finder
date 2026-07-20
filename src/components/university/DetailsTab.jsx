@@ -3,9 +3,6 @@ import { toast } from "react-toastify";
 import { saveUniversity } from "../../api/university";
 import { fileUrl, API } from "../../api/client";
 
-// Rich form whose sections mirror the public university detail page, so whatever
-// the admin fills here shows up live for students. `initial` is the existing
-// record (or null). Calls onSaved() so the parent can refresh.
 export default function DetailsTab({ ownerUid, initial, onSaved }) {
   const [form, setForm] = useState({
     name: initial?.name || "",
@@ -68,7 +65,7 @@ export default function DetailsTab({ ownerUid, initial, onSaved }) {
 
   return (
     <form onSubmit={submit} className="space-y-6 max-w-3xl pb-10">
-      {/* Branding: logo + banner */}
+
       <Section title="Branding" subtitle="Logo and the big banner image at the top of your page.">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
@@ -92,14 +89,12 @@ export default function DetailsTab({ ownerUid, initial, onSaved }) {
         </div>
       </Section>
 
-      {/* Hero */}
       <Section title="Hero" subtitle="The headline students see first.">
         <Input label="University Name *" name="name" value={form.name} onChange={change} />
         <Input label="Tagline / Headline" name="tagline" value={form.tagline} onChange={change} placeholder="Excellence in Education, Leadership for Life" />
         <Textarea label="Hero subtitle" name="hero_subtitle" value={form.hero_subtitle} onChange={change} rows={2} />
       </Section>
 
-      {/* About */}
       <Section title="About" subtitle="The 'About' card on your page.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="Established Year" name="established_year" value={form.established_year} onChange={change} placeholder="1999" />
@@ -110,13 +105,11 @@ export default function DetailsTab({ ownerUid, initial, onSaved }) {
         <Textarea label="Short description (used in listings)" name="description" value={form.description} onChange={change} rows={2} />
       </Section>
 
-      {/* Mission & Vision */}
       <Section title="Mission & Vision">
         <Textarea label="Mission" name="mission" value={form.mission} onChange={change} rows={3} />
         <Textarea label="Vision" name="vision" value={form.vision} onChange={change} rows={3} />
       </Section>
 
-      {/* Ranking & Stats */}
       <Section title="Ranking & Stats" subtitle="Numbers shown in the highlight cards.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="World Ranking (number)" name="ranking" value={form.ranking} onChange={change} placeholder="48" />
@@ -128,7 +121,6 @@ export default function DetailsTab({ ownerUid, initial, onSaved }) {
         </div>
       </Section>
 
-      {/* Contact */}
       <Section title="Contact">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="Website" name="website" value={form.website} onChange={change} placeholder="https://" />

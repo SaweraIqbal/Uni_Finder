@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import signupImg from "../assets/signup.png";
 import logo from "../assets/Logo.png";
 import nameIcon from "../assets/name.png";
 import usernameIcon from "../assets/username.png";
@@ -9,15 +8,14 @@ import emailIcon from "../assets/email.png";
 import lockIcon from "../assets/password.png";
 import googleIcon from "../assets/google.png";
 import facebookIcon from "../assets/facebook.png";
+import { setFlash } from "../utils/flash";
 
 function Signup() {
   const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const { role } = useParams();
-  // /signup/student  → role = "student"
-  // /signup/university → role = "university"
-  // /signup/hostel → role = "hostel"
+
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -65,7 +63,9 @@ function Signup() {
 
     if (!validate()) return;
 
-    const allowedRoles = ["student", "university", "hostel", "admin"];
+
+
+    const allowedRoles = ["student", "university", "hostel", "campus"];
 
     if (!role || !allowedRoles.includes(role)) {
       toast.error("Invalid role in URL");
@@ -93,12 +93,11 @@ function Signup() {
       console.log("BACKEND RESPONSE:", data);
 
       if (res.ok) {
-        toast.success(data.message || "Signup successful");
 
-        // 🔥 IMPORTANT FIX: use backend role if available
+        setFlash(data.message || "Signup successful");
+
         const userRole = data.user?.role || role;
 
-        // Persist user so ProtectedRoute + dashboards work right after signup
         if (data.user?.id) {
           sessionStorage.setItem("userId", data.user.id);
           sessionStorage.setItem(
@@ -121,6 +120,10 @@ function Signup() {
 
             case "university":
               navigate("/university/dashboard", { replace: true });
+              break;
+
+            case "campus":
+              navigate("/campus/dashboard", { replace: true });
               break;
 
             case "hostel":
@@ -147,14 +150,15 @@ function Signup() {
   return (
     <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center font-['Poppins',sans-serif] bg-gray-100 p-4">
       <div className="relative flex w-[1000px] h-[650px] max-h-[90vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.1)]">
-        <ToastContainer position="top-right" autoClose={2000} />
 
-        <div className="relative w-1/2 hidden md:flex items-center bg-white overflow-hidden">
+        <div className="relative w-1/2 hidden md:block overflow-hidden">
           <img
-            src={signupImg}
-            alt="Signup Illustration"
-            className="absolute left-[70px] w-[180%] max-w-none h-auto object-contain opacity-90 pointer-events-none top-1/2 -translate-y-1/2 z-10"
+            src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80"
+            alt="Smiling university students"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
+
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/40" />
         </div>
 
         <div className="relative w-full md:w-1/2 flex flex-col bg-white z-[20]">

@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 export const getUserById = (req, res) => {
   const { id } = req.params;
 
-  const sql = "SELECT id, name, username, email FROM Student_signup WHERE id = ?";
+  const sql = "SELECT id, name, username, email, avatar_url, assigned_id, role FROM Student_signup WHERE id = ?";
 
   db.query(sql, [id], (err, result) => {
     if (err) {

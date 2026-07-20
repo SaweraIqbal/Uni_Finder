@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/Logo.png";
 import { getMyUniversity } from "../../api/university";
+import Skeleton from "../Skeleton";
 import DetailsTab from "./DetailsTab";
 import ProfileTab from "./ProfileTab";
 import ImagesTab from "./ImagesTab";
 import ProgramsTab from "./ProgramsTab";
+import CampusRequestsTab from "./CampusRequestsTab";
+import { setFlash } from "../../utils/flash";
 
-const TABS = ["Details", "Profile", "Images", "Programs", "Users"];
+const TABS = ["Details", "Profile", "Images", "Programs", "Campuses", "Users"];
 
-// Full dashboard for an approved university admin. Loads the university record
-// and renders the active tab. Images/Programs/Users come in later steps.
 export default function UniversityPanel({ ownerUid, adminEmail }) {
   const navigate = useNavigate();
   const [active, setActive] = useState("Details");
@@ -21,7 +22,7 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
     try {
       const data = await getMyUniversity(ownerUid);
       setUniversity(data);
-      // If details aren't filled yet, keep the user on the Details tab.
+
       if (!data) setActive("Details");
     } finally {
       setLoading(false);
@@ -30,17 +31,19 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [ownerUid]);
 
   const handleLogout = () => {
+    const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
     sessionStorage.clear();
+    setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
     navigate("/login");
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex font-['Poppins',sans-serif]">
-      {/* Sidebar */}
+
       <aside className="w-64 bg-[#1e293b] text-white flex flex-col">
         <div className="flex items-center gap-2 px-6 py-6 border-b border-white/10">
           <img src={logo} alt="logo" className="w-8" />
@@ -71,7 +74,6 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
         </button>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-800">
@@ -81,7 +83,17 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
         </div>
 
         {loading ? (
-          <div className="text-gray-400">Loading…</div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-3xl space-y-4">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-24 w-full" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+            </div>
+            <Skeleton className="h-12 w-40" />
+          </div>
         ) : active === "Details" ? (
           <DetailsTab ownerUid={ownerUid} initial={university} onSaved={load} />
         ) : active === "Profile" ? (
@@ -92,6 +104,8 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
           <ImagesTab universityId={university.id} />
         ) : active === "Programs" ? (
           <ProgramsTab universityId={university.id} />
+        ) : active === "Campuses" ? (
+          <CampusRequestsTab ownerUid={ownerUid} />
         ) : (
           <Placeholder note={`🚧 ${active} section coming in the next step.`} />
         )}

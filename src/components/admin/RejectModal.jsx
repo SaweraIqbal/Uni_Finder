@@ -1,5 +1,4 @@
-// Modal that collects a rejection reason before rejecting a request.
-// The reason is emailed to the university admin.
+
 export default function RejectModal({ request, reason, setReason, busy, onCancel, onConfirm }) {
   if (!request) return null;
 

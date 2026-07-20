@@ -1,19 +1,20 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import loginImg from "../assets/login.png";
 import emailIcon from "../assets/email.png";
 import passwordIcon from "../assets/password.png";
 import logo from "../assets/Logo.png";
 import google from "../assets/google.png";
 import facebook from "../assets/facebook.png";
 import { useAuth } from "../context/AuthContext";
+import { setFlash } from "../utils/flash";
 
 function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -74,13 +75,7 @@ function Login() {
         }),
       });
 
-      // console.log("STATUS:", res.status);
 
-      // const text = await res.text();
-      // console.log("RAW RESPONSE:", text);
-
-      // const data = JSON.parse(text);
-      // console.log("DATA:", res.data);
       const data = await res.json();
 
       if (res.ok) {
@@ -94,42 +89,26 @@ function Login() {
 
         sessionStorage.setItem("userId", data.user.id);
         sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("user", JSON.stringify(data.user));
 
-        console.log("userId saved:", data.user.id);
-        console.log("Token:", data.token);
+
+
+
+        setFlash("Login Successful");
 
         const role = data.user.role;
 
         if (role === "admin") {
-          navigate("/admin/dashboard", {
-            replace: true,
-            state: { message: "Login Successful" },
-          });
+          navigate("/admin/dashboard", { replace: true });
         } else if (role === "student") {
-          navigate("/homepage", {
-            replace: true,
-            state: { message: "Login Successful" },
-          });
+          navigate("/homepage", { replace: true });
         } else if (role === "university") {
-          navigate("/university/dashboard", {
-            replace: true,
-            state: { message: "Login Successful" },
-          });
+          navigate("/university/dashboard", { replace: true });
+        } else if (role === "campus") {
+          navigate("/campus/dashboard", { replace: true });
         } else if (role === "hostel") {
-          navigate("/hostel/dashboard", {
-            replace: true,
-            state: { message: "Login Successful" },
-          });
+          navigate("/hostel/dashboard", { replace: true });
         } else {
-          navigate(
-            "/homepage",
-            {
-              replace: true,
-              state: { message: "Login Successful" },
-            },
-            500,
-          );
+          navigate("/homepage", { replace: true });
         }
       } else {
         toast.error(data.message || "Invalid email or password");
@@ -138,136 +117,143 @@ function Login() {
       console.log("Error:", error);
       toast.error("Server error ");
     } finally {
-      setLoading(false); // ← STOP loading
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center font-['Poppins',sans-serif]">
-      <div className="relative flex w-[1000px] min-h-[600px] max-w-[90%] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.1)]">
-        <div className="relative w-1/2 px-[60px] py-[60px] flex flex-col justify-center z-[12] bg-gradient-to-r from-white via-white/90 to-transparent">
-          <ToastContainer position="top-right" autoClose={2000} />
+    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center p-4 bg-gray-100 font-['Poppins',sans-serif]">
+      <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
 
-          <div className="flex items-center justify-center gap-[10px] mb-6 ml-[140px]">
-            <img src={logo} alt="Uni Finder Logo" className="w-[35px]" />
-            <h2 className="text-2xl font-medium text-[#333]">
+        <div className="relative w-full md:w-1/2 px-[50px] py-[40px] flex flex-col justify-center overflow-y-auto">
+
+          <div className="flex items-center gap-2 mb-8">
+            <img src={logo} alt="Uni Finder Logo" className="w-8" />
+            <h2 className="text-xl font-semibold text-gray-700">
               Uni <span className="text-orange-500">Finder</span>
             </h2>
           </div>
 
-          <h1 className="text-[30px] font-bold text-black text-center -mt-5 mb-[1px]">
-            Welcome Back
-          </h1>
-
-          <p className="text-center text-[20px] text-[#555] mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-1">Welcome Back</h1>
+          <p className="text-gray-500 mb-7">
             Log in to your account to{" "}
-            <span className="text-orange-500 font-semibold">Continue</span>
+            <span className="text-orange-500 font-semibold">continue</span>
           </p>
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <div
-                className={`flex items-center border-2 ${errors.email ? "border-red-500" : "border-black"} rounded-[20px] px-5 py-3`}
-              >
-                <img src={emailIcon} alt="Email" className="w-6 h-6" />
+          <form onSubmit={handleSubmit} className="space-y-4">
 
+            <div>
+              <div
+                className={`flex items-center gap-3 border-2 rounded-2xl px-4 py-3 transition-colors ${
+                  errors.email
+                    ? "border-red-400"
+                    : "border-gray-200 focus-within:border-orange-500"
+                }`}
+              >
+                <img src={emailIcon} alt="" className="w-5 h-5 opacity-70" />
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Email"
-                  className="border-none outline-none w-full text-[18px] ml-[15px] bg-transparent"
+                  placeholder="Email address"
+                  className="border-none outline-none w-full text-[15px] bg-transparent"
                 />
               </div>
-
               {errors.email && (
-                <p className="text-red-500 text-sm ml-3 mt-1">{errors.email}</p>
+                <p className="text-red-500 text-xs ml-2 mt-1">{errors.email}</p>
               )}
             </div>
 
-            <div className="mb-3">
-              <div
-                className={`flex items-center border-2 ${errors.password ? "border-red-500" : "border-black"} rounded-[20px] px-5 py-3`}
-              >
-                <img src={passwordIcon} alt="Password" className="w-6 h-6" />
 
+            <div>
+              <div
+                className={`flex items-center gap-3 border-2 rounded-2xl px-4 py-3 transition-colors ${
+                  errors.password
+                    ? "border-red-400"
+                    : "border-gray-200 focus-within:border-orange-500"
+                }`}
+              >
+                <img src={passwordIcon} alt="" className="w-5 h-5 opacity-70" />
                 <input
-                  type="password"
+                  type={showPass ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="•••••••••"
-                  className="border-none outline-none w-full text-[18px] ml-[15px] bg-transparent"
+                  placeholder="Password"
+                  className="border-none outline-none w-full text-[15px] bg-transparent"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPass((v) => !v)}
+                  className="text-[11px] font-bold text-orange-500 hover:text-orange-600"
+                >
+                  {showPass ? "HIDE" : "SHOW"}
+                </button>
               </div>
-
               {errors.password && (
-                <p className="text-red-500 text-sm ml-3 mt-1">
-                  {errors.password}
-                </p>
+                <p className="text-red-500 text-xs ml-2 mt-1">{errors.password}</p>
               )}
             </div>
 
-            <a
-              href="#"
-              className="text-orange-500 no-underline text-[18px] font-medium text-right block mb-[10px] hover:text-orange-600 hover:underline"
-            >
-              Forgot Password?
-            </a>
+            <div className="text-right">
+              <a
+                href="#"
+                className="text-sm text-orange-500 font-medium hover:underline"
+              >
+                Forgot Password?
+              </a>
+            </div>
 
             <button
               type="submit"
-              className="w-full py-[15px] border-none rounded-[20px]  bg-orange-500 text-white text-[22px] font-semibold cursor-pointer transition-all duration-300 mb-[15px] hover:bg-orange-600 hover:-translate-y-[2px]"
+              disabled={loading}
+              className="w-full py-3.5 rounded-2xl bg-orange-500 text-white text-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              Log In
+              {loading ? "Logging in…" : "Log In"}
             </button>
           </form>
 
-          <p className="text-center text-[16px]">
+          <p className="text-center text-sm text-gray-500 mt-5">
             Don't have an account?{" "}
             <span
-              onClick={() => navigate("/Signup")}
-              className="text-orange-500 font-bold cursor-pointer hover:underline"
+              onClick={() => navigate("/signup")}
+              className="text-orange-500 font-semibold cursor-pointer hover:underline"
             >
               Sign Up
             </span>
           </p>
 
           <div className="flex items-center my-5">
-            <div className="flex-1 h-[2px] bg-black" />
-
-            <p className="mx-[15px] text-[18px] font-medium">
-              Or <span className="font-bold text-orange-500">log in</span> with
+            <div className="flex-1 h-px bg-gray-200" />
+            <p className="mx-4 text-xs text-gray-400 font-medium">
+              Or log in with
             </p>
-
-            <div className="flex-1 h-[2px] bg-black" />
+            <div className="flex-1 h-px bg-gray-200" />
           </div>
 
-          <div className="flex gap-[15px] justify-center mt-[15px]">
-            <button className="flex items-center justify-center gap-[10px] w-[160px] px-[15px] py-[10px] rounded-[20px] border-2 border-black bg-white text-[16px] font-medium cursor-pointer transition-all duration-300 hover:bg-[#f5f5f5] hover:-translate-y-[2px] hover:border-[#c88410]">
-              <img src={google} alt="Google" className="w-[22px] h-[22px]" />
+          <div className="flex gap-3 justify-center">
+            <button className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-orange-400 hover:-translate-y-[1px]">
+              <img src={google} alt="Google" className="w-5 h-5" />
               Google
             </button>
-
-            <button className="flex items-center justify-center gap-[10px] w-[160px] px-[15px] py-[10px] rounded-[20px] border-2 border-black bg-white text-[16px] font-medium cursor-pointer transition-all duration-300 hover:bg-[#f5f5f5] hover:-translate-y-[2px] hover:border-[#c88410]">
-              <img
-                src={facebook}
-                alt="Facebook"
-                className="w-[22px] h-[22px]"
-              />
+            <button className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-orange-400 hover:-translate-y-[1px]">
+              <img src={facebook} alt="Facebook" className="w-5 h-5" />
               Facebook
             </button>
           </div>
         </div>
 
-        <div className="relative w-1/2 flex items-center justify-end bg-white">
+
+        <div className="relative w-1/2 hidden md:block overflow-hidden">
           <img
-            src={loginImg}
-            alt="Login Illustration"
-            className="absolute right-[-400px] bottom-5 w-[200%] max-w-none h-auto object-contain opacity-90 pointer-events-none top-[60%] -translate-y-1/2"
+            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80"
+            alt="University students group"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent to-white/30" />
         </div>
+
       </div>
     </div>
   );

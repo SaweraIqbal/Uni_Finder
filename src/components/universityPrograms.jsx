@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { listPrograms } from "../api/university";
 
-// Public "Programs offered" section on the university detail page.
-// Renders nothing if the university has no programs yet.
+
 export default function UniversityPrograms({ universityId }) {
   const [programs, setPrograms] = useState([]);
 

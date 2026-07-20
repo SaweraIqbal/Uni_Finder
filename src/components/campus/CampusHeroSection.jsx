@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-// ─── Inline SVG Icons ──────────────────────────────────────────────────────
-
 const IconArrowLeft = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -38,8 +36,6 @@ const IconMapPin = () => (
   </svg>
 );
 
-// ─── useReveal hook ────────────────────────────────────────────────────────
-
 function useReveal(threshold = 0.15) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -60,8 +56,6 @@ function useReveal(threshold = 0.15) {
   }, [threshold]);
   return [ref, visible];
 }
-
-// ─── Component ─────────────────────────────────────────────────────────────
 
 export default function CampusHeroSection({
   universityName = "Tech-Poly University",
@@ -86,7 +80,6 @@ export default function CampusHeroSection({
       onMouseLeave={() => setHovered(false)}
       role="banner"
     >
-      {/* Hero image — zoom on hover */}
       <img
         src={heroImage}
         alt={`${universityName} main campus`}
@@ -97,7 +90,6 @@ export default function CampusHeroSection({
         }}
       />
 
-      {/* Bottom-up gradient for text legibility */}
       <div
         className="absolute inset-0"
         style={{
@@ -107,7 +99,6 @@ export default function CampusHeroSection({
         aria-hidden="true"
       />
 
-      {/* ── Back button ── */}
       <button
         onClick={onBack}
         aria-label="Go back"
@@ -126,7 +117,6 @@ export default function CampusHeroSection({
         <IconArrowLeft />
       </button>
 
-      {/* ── Campus badge ── */}
       <span
         className="
           absolute top-4 right-5
@@ -141,8 +131,6 @@ export default function CampusHeroSection({
         {campusType}
       </span>
 
-      {/* ── University name + location ─────────────────────────────────── */}
-      {/* Sits 56px from bottom — leaves room for overlapping stat cards   */}
       <div className="absolute left-6" style={{ bottom: "58px" }}>
         <h1 className="text-[28px] font-bold text-white leading-tight tracking-tight drop-shadow-sm">
           {universityName}

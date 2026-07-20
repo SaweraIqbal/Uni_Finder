@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Hooks
-// ─────────────────────────────────────────────────────────────────────────────
-
 function useReveal(threshold = 0.15) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -66,10 +62,6 @@ function useCountdown(deadlineMs) {
   }, [calc]);
   return time;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SVG Icons
-// ─────────────────────────────────────────────────────────────────────────────
 
 const IconSchool = () => (
   <svg
@@ -166,10 +158,6 @@ const IconArrowRight = () => (
   </svg>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Stagger reveal helper
-// ─────────────────────────────────────────────────────────────────────────────
-
 const tileBase = "transition-all duration-500 ease-out";
 
 const tileReveal = (visible, delay = 0) => ({
@@ -178,14 +166,7 @@ const tileReveal = (visible, delay = 0) => ({
   transitionDelay: `${delay}ms`,
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Deadline — module-level (stable across re-renders)
-// ─────────────────────────────────────────────────────────────────────────────
 const DEADLINE = Date.now() + 12 * 86400000 + 8 * 3600000 + 45 * 60000;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BentoStats
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function BentoStats({ heroImage, onApply }) {
   const [wrapRef, wrapVisible] = useReveal(0.1);
@@ -210,7 +191,6 @@ export default function BentoStats({ heroImage, onApply }) {
     { val: time.s, lbl: "Sec" },
   ];
 
-  // Shared card base classes
   const card =
     "bg-white border border-slate-200/70 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md";
 
@@ -220,9 +200,7 @@ export default function BentoStats({ heroImage, onApply }) {
       className="relative z-10 max-w-6xl mx-auto px-6 md:px-8 lg:px-12"
       style={{ marginTop: "-48px" }}
     >
-      {/* ── Row 1: campus photo · programs · students ─────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-        {/* Campus thumbnail */}
         <div
           className={`${tileBase} ${card} overflow-hidden shadow-md`}
           style={{ ...tileReveal(wrapVisible, 0), minHeight: "130px" }}
@@ -238,7 +216,6 @@ export default function BentoStats({ heroImage, onApply }) {
           />
         </div>
 
-        {/* Programs counter */}
         <div
           className={`${tileBase} ${card} shadow-md flex flex-col items-center justify-center text-center p-4 gap-1.5`}
           style={tileReveal(wrapVisible, 60)}
@@ -256,7 +233,6 @@ export default function BentoStats({ heroImage, onApply }) {
           </p>
         </div>
 
-        {/* Students counter */}
         <div
           className={`${tileBase} ${card} shadow-md flex flex-col items-center justify-center text-center p-4 gap-1.5`}
           style={tileReveal(wrapVisible, 120)}
@@ -275,15 +251,12 @@ export default function BentoStats({ heroImage, onApply }) {
         </div>
       </div>
 
-      {/* ── Row 2: top program (2/3) · CTA (1/3) ──────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Top program card */}
         <div
           className={`${tileBase} ${card} sm:col-span-2 p-4`}
           style={tileReveal(wrapVisible, 180)}
           role="article"
         >
-          {/* Header */}
           <div className="flex justify-between items-start mb-3 gap-2">
             <div>
               <p className="text-[10px] font-semibold tracking-widest uppercase text-orange-500 mb-0.5">
@@ -298,7 +271,6 @@ export default function BentoStats({ heroImage, onApply }) {
             </span>
           </div>
 
-          {/* Meta */}
           <div className="flex flex-col sm:flex-row gap-3 mb-3.5">
             {[
               { icon: <IconCreditCard />, text: "$15k / year" },
@@ -314,7 +286,6 @@ export default function BentoStats({ heroImage, onApply }) {
             ))}
           </div>
 
-          {/* Progress bar */}
           <div>
             <div className="flex justify-between text-[11px] mb-1">
               <span className="text-slate-400 font-medium">
@@ -340,7 +311,6 @@ export default function BentoStats({ heroImage, onApply }) {
           </div>
         </div>
 
-        {/* CTA / countdown card */}
         <div
           className={`${tileBase} bg-orange-500 rounded-2xl p-4 flex flex-col justify-between
             hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/25`}
@@ -357,7 +327,6 @@ export default function BentoStats({ heroImage, onApply }) {
           </div>
 
           <div>
-            {/* Countdown */}
             <div
               className="flex items-center gap-1 my-2.5 overflow-x-auto"
               aria-label="Time remaining"
@@ -387,7 +356,6 @@ export default function BentoStats({ heroImage, onApply }) {
               ))}
             </div>
 
-            {/* Apply button */}
             <button
               onClick={() => onApply?.()}
               className="group w-full py-2 bg-white text-orange-500 font-bold text-[12px] rounded-xl

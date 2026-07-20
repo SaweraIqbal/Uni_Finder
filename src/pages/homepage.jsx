@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import heroVideo from "../assets/video1.mp4";
 import logo from "../assets/Logo.png";
 import SearchBar from "../components/SearchBar";
+import ShimmerCard from "../components/ShimmerCard";
 import { listUniversities } from "../api/university";
 import { fileUrl } from "../api/client";
 import Footer from "../components/footer";
@@ -50,12 +51,13 @@ function HomePage() {
   const { program, city, university } = locationState;
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* Hero Section */}
       <section className="relative h-[600px] flex items-center justify-center">
         <video
           autoPlay
           loop
           muted
+          playsInline
+          preload="auto"
           className="absolute w-full h-full object-cover"
         >
           <source src={heroVideo} type="video/mp4" />
@@ -74,7 +76,6 @@ function HomePage() {
             </p>
           </div>
 
-          {/* Search Bar Component */}
           <SearchBar
             onShowAdvancedFilters={() => setShowAdvancedFilters(true)}
             searchValues={searchValues}
@@ -83,10 +84,8 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Main Content with Sidebar */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Advanced Filters */}
           {showAdvancedFilters && (
             <div className="lg:col-span-1">
               <AdvancedFilters
@@ -97,7 +96,6 @@ function HomePage() {
             </div>
           )}
 
-          {/* Universities Grid */}
           <div
             className={showAdvancedFilters ? "lg:col-span-3" : "lg:col-span-4"}
           >
@@ -162,7 +160,7 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
       entryTests: [],
       hostelAvailable: false,
     });
-    setSearchValues({ program: "", city: "", university: "" }); // ← also clears search bar
+    setSearchValues({ program: "", city: "", university: "" });
   };
 
   return (
@@ -248,7 +246,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
         </div>
       </div>
 
-      {/* Campus Gender Type */}
       <div className="mb-8">
         <h4 className="font-semibold text-gray-700 mb-3">Campus Gender Type</h4>
         <div className="space-y-2">
@@ -269,7 +266,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
         </div>
       </div>
 
-      {/* Minimum Marks */}
       <div className="mb-8">
         <h4 className="font-semibold text-gray-700 mb-3">
           Minimum Marks: {filters.minMarks}%
@@ -293,7 +289,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
         </div>
       </div>
 
-      {/* Tuition Fee Range */}
       <div className="mb-8">
         <h4 className="font-semibold text-gray-700 mb-3">
           Tuition Fee Range (PKR)
@@ -327,7 +322,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
         </div>
       </div>
 
-      {/* Entry Test Requirement */}
       <div className="mb-8">
         <h4 className="font-semibold text-gray-700 mb-3">
           Entry Test Requirement
@@ -358,7 +352,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
         </div>
       </div>
 
-      {/* Hostel Availability */}
       <div className="mb-8">
         <h4 className="font-semibold text-gray-700 mb-3">
           Hostel Availability
@@ -382,7 +375,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
   );
 }
 
-// University Grid Component
 function UniversityGrid({
   filters,
   searchProgram,
@@ -391,8 +383,8 @@ function UniversityGrid({
 }) {
   const [viewMode, setViewMode] = useState("grid");
 
-  // Real universities added by verified admins (shown first, before demo samples).
   const [realUnis, setRealUnis] = useState([]);
+  const [loadingUnis, setLoadingUnis] = useState(true);
   useEffect(() => {
     (async () => {
       try {
@@ -417,7 +409,8 @@ function UniversityGrid({
           );
         }
       } catch {
-        /* keep demo data only */
+      } finally {
+        setLoadingUnis(false);
       }
     })();
   }, []);
@@ -425,7 +418,6 @@ function UniversityGrid({
   const universities = [...realUnis];
 
   const filtered = universities.filter((uni) => {
-    // --- Search bar filters ---
     if (
       searchProgram &&
       !uni.programs.some((p) =>
@@ -443,7 +435,6 @@ function UniversityGrid({
     )
       return false;
 
-    // --- Sidebar filters ---
     if (
       filters.admissionStatus &&
       uni.admissionStatus !== filters.admissionStatus
@@ -486,7 +477,6 @@ function UniversityGrid({
 
   return (
     <div>
-      {/* View Mode Toggle */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-gray-500">
           Showing{" "}
@@ -555,8 +545,13 @@ function UniversityGrid({
         </div>
       </div>
 
-      {/* No Results State */}
-      {filtered.length === 0 ? (
+      {loadingUnis ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ShimmerCard key={i} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <span className="text-5xl mb-4">🔍</span>
           <h3 className="text-lg font-semibold text-gray-700 mb-1">
@@ -568,7 +563,6 @@ function UniversityGrid({
         </div>
       ) : (
         <>
-          {/* Grid View */}
           {viewMode === "grid" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((uni) => (
@@ -577,7 +571,6 @@ function UniversityGrid({
             </div>
           )}
 
-          {/* List View */}
           {viewMode === "list" && (
             <div className="space-y-4">
               {filtered.map((uni) => (
@@ -608,7 +601,6 @@ function UniversityCard({ uni }) {
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 hover:-translate-y-0.5 transition-all duration-200">
-      {/* Image + Badges */}
       <div className="relative h-44 overflow-hidden">
         <img
           src={uni.image}
@@ -625,15 +617,19 @@ function UniversityCard({ uni }) {
         </span>
       </div>
 
-      {/* Card Body */}
       <div className="p-4">
-        {/* Name + Location */}
-        <p className="font-medium text-[15px] text-gray-900 mb-0.5">
-          {uni.name}
-        </p>
+        <div className="flex items-center gap-2 mb-0.5">
+          {uni.logo && (
+            <img
+              src={uni.logo}
+              alt={`${uni.name} logo`}
+              className="w-8 h-8 rounded-full object-cover border border-gray-200 flex-shrink-0"
+            />
+          )}
+          <p className="font-medium text-[15px] text-gray-900">{uni.name}</p>
+        </div>
         <p className="text-xs text-gray-400 mb-3">{uni.location}</p>
 
-        {/* Programs */}
         <div className="mb-3">
           {uni.programs.map((prog, idx) => (
             <p key={idx} className="text-xs text-gray-500 leading-5">
@@ -644,7 +640,6 @@ function UniversityCard({ uni }) {
 
         <hr className="border-t border-gray-100 my-2.5" />
 
-        {/* Rating + Fee */}
         <div className="flex items-center justify-between mb-3">
           <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-800 text-xs font-medium px-2 py-1 rounded-md">
             &#9733; {uni.rating} / 5
@@ -654,7 +649,6 @@ function UniversityCard({ uni }) {
           </span>
         </div>
 
-        {/* Entry Test Pills */}
         <div className="flex flex-wrap gap-1.5 mb-4">
           {uni.entryTests.map((test) => (
             <span
@@ -666,7 +660,6 @@ function UniversityCard({ uni }) {
           ))}
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-2">
           <button
             onClick={() => navigate("/campus")}

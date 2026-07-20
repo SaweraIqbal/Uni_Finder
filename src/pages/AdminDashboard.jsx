@@ -5,11 +5,17 @@ import logo from "../assets/Logo.png";
 import StatusBadge from "../components/StatusBadge";
 import ReviewDrawer from "../components/admin/ReviewDrawer";
 import RejectModal from "../components/admin/RejectModal";
+import AvatarUploader from "../components/AvatarUploader";
+import AccountSearch from "../components/admin/AccountSearch";
+import { SkeletonRow } from "../components/Skeleton";
+import { setFlash } from "../utils/flash";
 import {
   listVerifications,
   approveVerification,
   rejectVerification,
 } from "../api/verification";
+import { getAccount } from "../api/university";
+import { useAuth } from "../context/AuthContext";
 
 function StatCard({ label, value, accent }) {
   return (
@@ -25,12 +31,24 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("pending");
-  const [selected, setSelected] = useState(null); // request being viewed
-  const [rejecting, setRejecting] = useState(null); // request being rejected
+  const [selected, setSelected] = useState(null);
+  const [rejecting, setRejecting] = useState(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
   const admin = JSON.parse(sessionStorage.getItem("user") || "{}");
+  const { updateUser } = useAuth();
+  const [avatar, setAvatar] = useState(null);
+
+  useEffect(() => {
+    if (admin.id) getAccount(admin.id).then((a) => a && setAvatar(a.avatar_url || null));
+
+  }, []);
+
+  const onAvatar = (url) => {
+    setAvatar(url);
+    updateUser({ avatar: url });
+  };
 
   const loadRequests = async () => {
     setLoading(true);
@@ -51,7 +69,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadRequests();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const counts = useMemo(() => {
@@ -107,15 +125,15 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = () => {
+    const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
     sessionStorage.clear();
+    setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
     navigate("/login");
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex font-['Poppins',sans-serif]">
-      <ToastContainer position="top-right" autoClose={2500} />
 
-      {/* Sidebar */}
       <aside className="w-64 bg-[#1e293b] text-white flex flex-col">
         <div className="flex items-center gap-2 px-6 py-6 border-b border-white/10">
           <img src={logo} alt="logo" className="w-8" />
@@ -145,7 +163,6 @@ export default function AdminDashboard() {
         </button>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -155,9 +172,13 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
-            <div className="w-9 h-9 rounded-full bg-[#c88410] text-white flex items-center justify-center font-semibold">
-              {(admin.email || "A")[0].toUpperCase()}
-            </div>
+            <AvatarUploader
+              uid={admin.id}
+              avatarUrl={avatar}
+              name={admin.name || admin.email}
+              onUploaded={onAvatar}
+              size={40}
+            />
             <div className="text-sm">
               <p className="font-medium text-gray-700">SuperAdmin</p>
               <p className="text-gray-400 text-xs">{admin.email}</p>
@@ -165,14 +186,14 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Stats */}
+        <AccountSearch />
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
           <StatCard label="Pending" value={counts.pending} accent="text-amber-500" />
           <StatCard label="Approved" value={counts.approved} accent="text-green-600" />
           <StatCard label="Rejected" value={counts.rejected} accent="text-red-500" />
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 mb-5">
           {["pending", "approved", "rejected", "all"].map((t) => (
             <button
@@ -189,10 +210,13 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* List */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {loading ? (
-            <div className="p-10 text-center text-gray-400">Loading…</div>
+            <div>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonRow key={i} cols={5} />
+              ))}
+            </div>
           ) : visible.length === 0 ? (
             <div className="p-10 text-center text-gray-400">
               No {filter !== "all" ? filter : ""} requests found.

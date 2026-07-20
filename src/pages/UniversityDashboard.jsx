@@ -4,10 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import logo from "../assets/Logo.png";
 import { getMyVerification } from "../api/verification";
 import UniversityPanel from "../components/university/UniversityPanel";
-
-// University admin landing. While verification is pending/rejected/not-submitted
-// this is a status screen. Once approved, the full management dashboard
-// (details, images, programs, users) takes over.
+import { setFlash } from "../utils/flash";
 export default function UniversityDashboard() {
   const navigate = useNavigate();
   const [verification, setVerification] = useState(null);
@@ -34,22 +31,22 @@ export default function UniversityDashboard() {
   }, [uid, navigate]);
 
   const handleLogout = () => {
+    const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
     sessionStorage.clear();
+    setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
     navigate("/login");
   };
 
   const status = verification?.status;
 
-  // Approved -> full management dashboard takes over the whole screen.
   if (status === "approved") {
     return <UniversityPanel ownerUid={uid} adminEmail={user.email} />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 font-['Poppins',sans-serif]">
-      <ToastContainer position="top-right" autoClose={2500} />
 
-      {/* Top bar */}
+
       <header className="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src={logo} alt="logo" className="w-8" />

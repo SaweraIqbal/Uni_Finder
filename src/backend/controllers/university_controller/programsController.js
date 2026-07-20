@@ -1,8 +1,7 @@
-// University programs: add / list / delete.
+
 import { v4 as uuidv4 } from "uuid";
 import db from "../../config/db.js";
 
-// POST /university/programs
 export const addProgram = (req, res) => {
   const { university_id, name, level, duration, fee, description } = req.body;
   if (!university_id || !name) {
@@ -20,7 +19,6 @@ export const addProgram = (req, res) => {
   );
 };
 
-// GET /university/:id/programs
 export const listPrograms = (req, res) => {
   db.query(
     "SELECT * FROM programs WHERE university_id = ? ORDER BY created_at DESC",
@@ -32,7 +30,6 @@ export const listPrograms = (req, res) => {
   );
 };
 
-// DELETE /university/programs/:programId
 export const deleteProgram = (req, res) => {
   db.query(
     "DELETE FROM programs WHERE id = ?",

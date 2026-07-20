@@ -1,10 +1,9 @@
-// University profile: the verified uni admin creates/edits their university
-// record (the rich content shown on the public detail page). One per owner.
+
+
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import db from "../../config/db.js";
 
-// All editable content columns (besides id/owner/verification/timestamps).
 const FIELDS = [
   "name", "tagline", "hero_subtitle", "description",
   "about_title", "about_text", "mission", "vision",
@@ -18,7 +17,6 @@ const fileUrl = (files, field) =>
     ? `/uploads/${files[field][0].filename}`
     : null;
 
-// GET the university owned by a given uni-admin uid (or null if none yet).
 export const getMyUniversity = (req, res) => {
   const { uid } = req.params;
   db.query(
@@ -31,10 +29,13 @@ export const getMyUniversity = (req, res) => {
   );
 };
 
-// PUBLIC: list all universities (for the homepage / detail picker).
 export const listUniversities = (req, res) => {
   db.query(
-    "SELECT id, name, city, logo_url, tagline FROM universities ORDER BY name",
+    `SELECT u.id, u.name, u.city, u.logo_url, u.banner_url, u.tagline,
+       (SELECT image_url FROM university_images
+        WHERE university_id = u.id ORDER BY created_at DESC LIMIT 1) AS cover_image
+     FROM universities u
+     ORDER BY u.name`,
     (err, rows) => {
       if (err) return res.status(500).json({ message: "DB error", error: err.message });
       return res.status(200).json(rows);
@@ -42,7 +43,6 @@ export const listUniversities = (req, res) => {
   );
 };
 
-// PUBLIC: full university record by id (shown on the detail page).
 export const getUniversityById = (req, res) => {
   const { id } = req.params;
   db.query("SELECT * FROM universities WHERE id = ? LIMIT 1", [id], (err, rows) => {
@@ -52,8 +52,6 @@ export const getUniversityById = (req, res) => {
   });
 };
 
-// CREATE or UPDATE the university record for this owner (upsert by owner_uid).
-// Logo/banner are optional; only overwritten when a new file is uploaded.
 export const saveUniversity = (req, res) => {
   const { owner_uid } = req.body;
   const name = req.body.name;
@@ -71,7 +69,6 @@ export const saveUniversity = (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ message: "DB error", error: err.message });
 
-      // Build the SET / VALUES list from FIELDS that were sent.
       const cols = [];
       const vals = [];
       FIELDS.forEach((f) => {
@@ -83,7 +80,6 @@ export const saveUniversity = (req, res) => {
       if (logoUrl) { cols.push("logo_url"); vals.push(logoUrl); }
       if (bannerUrl) { cols.push("banner_url"); vals.push(bannerUrl); }
 
-      // UPDATE existing
       if (rows.length > 0) {
         const id = rows[0].id;
         const setClause = cols.map((c) => `${c}=?`).join(", ");
@@ -97,7 +93,6 @@ export const saveUniversity = (req, res) => {
         );
       }
 
-      // INSERT new — link to the latest approved verification if present
       db.query(
         `SELECT id FROM university_verification
          WHERE user_uid = ? AND status = 'approved'
@@ -123,7 +118,6 @@ export const saveUniversity = (req, res) => {
   );
 };
 
-// UNI ADMIN: update own account (name, username, email, optional new password).
 export const updateAccount = (req, res) => {
   const { user_uid, name, username, email, password } = req.body;
   if (!user_uid) return res.status(400).json({ message: "user_uid is required" });
@@ -151,15 +145,28 @@ export const updateAccount = (req, res) => {
   );
 };
 
-// UNI ADMIN: get own account info.
 export const getAccount = (req, res) => {
   const { uid } = req.params;
   db.query(
-    "SELECT id, name, username, email, role FROM Student_signup WHERE id=?",
+    "SELECT id, name, username, email, role, avatar_url, assigned_id FROM Student_signup WHERE id=?",
     [uid],
     (err, rows) => {
       if (err) return res.status(500).json({ message: "DB error", error: err.message });
       return res.status(200).json(rows[0] || null);
+    }
+  );
+};
+
+export const uploadAvatar = (req, res) => {
+  const { uid } = req.params;
+  if (!req.file) return res.status(400).json({ message: "No image provided" });
+  const avatarUrl = `/uploads/${req.file.filename}`;
+  db.query(
+    "UPDATE Student_signup SET avatar_url=? WHERE id=?",
+    [avatarUrl, uid],
+    (err) => {
+      if (err) return res.status(500).json({ message: "DB error", error: err.message });
+      return res.status(200).json({ message: "Profile picture updated", avatar_url: avatarUrl });
     }
   );
 };

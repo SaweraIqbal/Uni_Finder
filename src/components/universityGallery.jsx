@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { listImages } from "../api/university";
 import { fileUrl } from "../api/client";
 
-// Public photo gallery on the university detail page.
-// Renders nothing if the university has no images yet.
 export default function UniversityGallery({ universityId }) {
   const [images, setImages] = useState([]);
 
@@ -20,9 +18,7 @@ export default function UniversityGallery({ universityId }) {
   return (
     <section className="py-12 bg-gray-50">
       <div className="max-w-5xl mx-auto px-6">
-        <p className="text-xs font-semibold text-orange-500 uppercase tracking-widest mb-1">
-          Campus life
-        </p>
+
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Gallery</h2>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
