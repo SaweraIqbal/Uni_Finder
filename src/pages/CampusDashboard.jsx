@@ -50,7 +50,7 @@ export default function CampusDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-['Poppins',sans-serif]">
+    <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src={logo} alt="logo" className="w-8" />

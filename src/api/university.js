@@ -76,3 +76,86 @@ export async function deleteProgram(programId) {
   const res = await fetch(`${API}/api/university/programs/${programId}`, { method: "DELETE" });
   return { ok: res.ok, data: await res.json() };
 }
+
+// ── /me API (Phase 1) ────────────────────────────────────────────────────────
+import { authHeaders } from "./client";
+
+export async function getMe() {
+  const res = await fetch(`${API}/api/universities/me`, { headers: authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || "Failed to load university data.");
+  return data;
+}
+
+export async function getMeStats() {
+  const res = await fetch(`${API}/api/universities/me/stats`, { headers: authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || "Failed to load stats.");
+  return data;
+}
+
+export async function getMePrograms({ level, status, q, page = 1, limit = 25 } = {}) {
+  const params = new URLSearchParams();
+  if (level)  params.set("level",  level);
+  if (status) params.set("status", status);
+  if (q)      params.set("q",      q);
+  params.set("page",  String(page));
+  params.set("limit", String(limit));
+  const res = await fetch(`${API}/api/universities/me/programs?${params}`, { headers: authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || "Failed to load programs.");
+  return data;
+}
+
+export async function getMeActivity(limit = 10) {
+  const res = await fetch(`${API}/api/universities/me/activity?limit=${limit}`, { headers: authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || "Failed to load activity.");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function patchMeProfile(payload) {
+  const res = await fetch(`${API}/api/universities/me/profile`, {
+    method: "PATCH",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+export async function uploadMeLogo(file) {
+  const fd = new FormData();
+  fd.append("logo", file);
+  const res = await fetch(`${API}/api/universities/me/logo`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: fd,
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+export async function uploadMeBanner(file) {
+  const fd = new FormData();
+  fd.append("banner", file);
+  const res = await fetch(`${API}/api/universities/me/banner`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: fd,
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+export async function searchProgramCatalog({ q, level, page = 1, limit = 20 } = {}) {
+  const params = new URLSearchParams();
+  if (q)     params.set("q",     q);
+  if (level) params.set("level", level);
+  params.set("page",  String(page));
+  params.set("limit", String(limit));
+  const res = await fetch(`${API}/api/programs/catalog?${params}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error?.message || "Failed to search catalog.");
+  return data;
+}

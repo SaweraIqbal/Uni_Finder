@@ -15,32 +15,37 @@ function StatsSection() {
   }, []);
 
   const stats = [
-    { value: "150+", label: "Universities Covered" },
-    { value: "25K+", label: "Students Helped" },
+    { value: "150+", label: "Partner Universities" },
+    { value: "25K+", label: "Active Students" },
     { value: "1M+", label: "Monthly Searches" },
+    { value: "500+", label: "Verified Hostels" },
   ];
 
   return (
-    <section ref={ref} className="bg-white py-20">
-      <div className="max-w-6xl mx-auto px-6 text-center">
-        <h2 className="text-4xl font-bold text-gray-800 mb-16">
-          Our Impact in Numbers
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <section ref={ref} className="bg-gray-50 py-5 border-y border-gray-100">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, idx) => (
             <div
               key={idx}
-              className={`transition-all duration-700 ${idx === 0 ? "delay-0" : idx === 1 ? "delay-200" : "delay-400"} ${
+              className={`text-center p-6 bg-white rounded-2xl shadow-sm transition-all duration-700 ${
+                idx === 0
+                  ? "delay-0"
+                  : idx === 1
+                    ? "delay-150"
+                    : idx === 2
+                      ? "delay-300"
+                      : "delay-450"
+              } ${
                 visible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-10"
-              }`}
+              } hover:shadow-md hover:-translate-y-1 transition-all duration-300`}
             >
-              <h3 className="text-6xl font-bold text-orange-500 mb-3">
+              <h3 className="text-4xl md:text-5xl font-bold text-orange-500 mb-2">
                 {stat.value}
               </h3>
-              <p className="text-gray-600 text-lg">{stat.label}</p>
+              <p className="text-gray-500 text-sm font-medium">{stat.label}</p>
             </div>
           ))}
         </div>

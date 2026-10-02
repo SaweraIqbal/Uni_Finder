@@ -23,7 +23,10 @@ import UniversityDashboard from "./pages/UniversityDashboard.jsx";
 import CampusDashboard from "./pages/CampusDashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UniversityDetailPage from "./pages/UniversityDetailPage.jsx";
-import CampusPage from "./pages/CampusPage.jsx";
+import CampusDetailPage from "./pages/CampusDetailPage.jsx";
+import CompareCampusesPage from "./pages/CompareCampusesPage.jsx";
+
+// import CompareUniversitiesPage from "./pages/compareUniversities.jsx";
 
 function App() {
   return (
@@ -32,7 +35,6 @@ function App() {
         <ToastContainer position="top-right" autoClose={2500} />
         <FlashToaster />
         <Routes>
-
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/signup/:role" element={<Signup />} />
@@ -52,20 +54,39 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute role="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
           <Route element={<Layout />}>
-
             <Route path="/" element={<LandingPage />} />
-
 
             <Route path="/profile" element={<Profile />} />
 
+            {/* <Route
+              path="/compareUniversitiesPage"
+              element={<CompareUniversitiesPage />}
+            /> */}
 
             <Route path="/university" element={<UniversityDetailPage />} />
+            <Route
+              path="/universities/:id"
+              element={<UniversityDetailPage />}
+            />
 
-            {/* Campus Page */}
-            <Route path="/campus" element={<CampusPage />} />
+            {/* Campus Page (static demo) */}
+            {/* <Route path="/campus" element={<CampusPage />} /> */}
+
+            {/* Campus Detail Page (data-driven, accepts ?id=) */}
+            <Route path="/campus-detail" element={<CampusDetailPage />} />
+
+            {/* Compare Campuses Page */}
+            <Route path="/compare-campuses" element={<CompareCampusesPage />} />
 
             {/* University Documents */}
             <Route
@@ -73,18 +94,7 @@ function App() {
               element={<UniversityDocuments />}
             />
 
-
             <Route path="/homepage" element={<HomePage />} />
-
-
-            <Route
-              path="/admin/dashboard"
-              element={
-                <ProtectedRoute role="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
           </Route>
         </Routes>
       </BrowserRouter>

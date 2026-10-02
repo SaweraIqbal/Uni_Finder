@@ -1,136 +1,194 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import logo from "../assets/Logo.png";
 import { getMyVerification } from "../api/verification";
-import UniversityPanel from "../components/university/UniversityPanel";
 import { setFlash } from "../utils/flash";
+import UniversityAdminDashboard from "./UniversityAdminDashboard";
+import UniversityVerificationForm from "../components/universityAdmin/UniversityVerificationForm";
+import VerificationPendingScreen from "../components/universityAdmin/VerificationPendingScreen";
+import VerificationRejectedScreen from "../components/universityAdmin/VerificationRejectedScreen";
+
 export default function UniversityDashboard() {
   const navigate = useNavigate();
   const [verification, setVerification] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
+  const [resubmitting, setResubmitting] = useState(false);
 
   const uid = sessionStorage.getItem("userId");
   const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+
+  const loadVerification = useCallback(
+    async (opts = {}) => {
+      const { silent = false } = opts;
+      if (!uid) return;
+      setChecking(true);
+      try {
+        const data = await getMyVerification(uid);
+        setVerification((prev) => {
+          // Toast when the admin just approved while the user was waiting
+          if (prev?.status === "pending" && data?.status === "approved") {
+            toast.success("🎉 Your university has been approved! Welcome to your dashboard.");
+          }
+          return data;
+        });
+      } catch {
+        if (!silent) toast.error("Could not load your verification status.");
+      } finally {
+        setChecking(false);
+        setLoading(false);
+      }
+    },
+    [uid],
+  );
 
   useEffect(() => {
     if (!uid) {
       navigate("/login");
       return;
     }
-    (async () => {
-      try {
-        const data = await getMyVerification(uid);
-        setVerification(data);
-      } catch {
-        toast.error("Could not load your verification status.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [uid, navigate]);
-
-  const handleLogout = () => {
-    const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
-    sessionStorage.clear();
-    setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
-    navigate("/login");
-  };
+    loadVerification();
+  }, [uid, navigate, loadVerification]);
 
   const status = verification?.status;
 
+  // Poll every 8s while pending so the dashboard appears quickly after approval
+  useEffect(() => {
+    if (status !== "pending") return;
+    const id = setInterval(() => loadVerification({ silent: true }), 8000);
+    return () => clearInterval(id);
+  }, [status, loadVerification]);
+
+  const handleLogout = () => {
+    const name = (user.name || "").split(" ")[0];
+    sessionStorage.clear();
+    setFlash(
+      name
+        ? `👋 Thanks ${name}, see you soon!`
+        : "👋 Thanks for visiting — see you soon!",
+    );
+    navigate("/login");
+  };
+
+  // ── Approved → show full dashboard immediately ──────────────────
   if (status === "approved") {
-    return <UniversityPanel ownerUid={uid} adminEmail={user.email} />;
+    return (
+      <UniversityAdminDashboard
+        onLogout={handleLogout}
+        universityName={
+          verification.university_name ||
+          user.university_name ||
+          user.name ||
+          "My University"
+        }
+        adminName={
+          verification.full_name ||
+          user.name ||
+          "Admin"
+        }
+        adminEmail={
+          verification.official_email ||
+          user.email ||
+          ""
+        }
+      />
+    );
   }
 
+  /* ---------- 2. First load ---------- */
+  if (loading) return <SplashScreen />;
+
+  /* ---------- 3. First-time form OR resubmission ---------- */
+  if (!verification || resubmitting) {
+    return (
+      <PreApprovalShell onLogout={handleLogout}>
+        <UniversityVerificationForm
+          uid={uid}
+          defaultName={user.name || ""}
+          defaultEmail={user.email || ""}
+          existing={verification || null}
+          onSubmitted={() => {
+            setResubmitting(false);
+            // Silent reload — shows pending screen without a full splash
+            loadVerification({ silent: true });
+          }}
+          onCancel={verification ? () => setResubmitting(false) : undefined}
+        />
+      </PreApprovalShell>
+    );
+  }
+
+  /* ---------- 4. Pending ---------- */
+  if (status === "pending") {
+    return (
+      <PreApprovalShell onLogout={handleLogout}>
+        <VerificationPendingScreen
+          verification={verification}
+          checking={checking}
+          onRefresh={() => loadVerification()}
+        />
+      </PreApprovalShell>
+    );
+  }
+
+  /* ---------- 5. Rejected ---------- */
+  if (status === "rejected") {
+    return (
+      <PreApprovalShell onLogout={handleLogout}>
+        <VerificationRejectedScreen
+          verification={verification}
+          onResubmit={() => setResubmitting(true)}
+        />
+      </PreApprovalShell>
+    );
+  }
+
+  /* ---------- fallback: treat unknown as pending ---------- */
   return (
-    <div className="min-h-screen bg-gray-50 font-['Poppins',sans-serif]">
+    <PreApprovalShell onLogout={handleLogout}>
+      <VerificationPendingScreen
+        verification={verification}
+        checking={checking}
+        onRefresh={() => loadVerification()}
+      />
+    </PreApprovalShell>
+  );
+}
 
-
-      <header className="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between">
+/* ---------- shared layout for all pre-approval states ---------- */
+function PreApprovalShell({ onLogout, children }) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-100 px-6 sm:px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src={logo} alt="logo" className="w-8" />
           <span className="text-lg font-semibold">
-            Uni <span className="text-[#c88410]">Finder</span>
+            Uni <span className="text-orange-500">Finder</span>
             <span className="text-gray-400 font-normal text-sm ml-2">
               University Panel
             </span>
           </span>
         </div>
         <button
-          onClick={handleLogout}
-          className="text-sm px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700"
+          onClick={onLogout}
+          className="text-sm px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
         >
           Logout
         </button>
       </header>
-
-      <main className="max-w-3xl mx-auto p-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-1">
-          Welcome{user.email ? `, ${user.email}` : ""}
-        </h1>
-        <p className="text-gray-500 mb-8">University verification status</p>
-
-        {loading ? (
-          <div className="bg-white rounded-2xl p-10 text-center text-gray-400 shadow-sm">
-            Loading…
-          </div>
-        ) : !verification ? (
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-            <p className="text-gray-600 mb-4">
-              You haven't submitted your verification documents yet.
-            </p>
-            <button
-              onClick={() => navigate("/university/documents")}
-              className="bg-[#c88410] hover:bg-[#a66d0d] text-white px-6 py-3 rounded-xl font-medium"
-            >
-              Submit Documents
-            </button>
-          </div>
-        ) : status === "pending" ? (
-          <StatusCard
-            tone="amber"
-            icon="⏳"
-            title="Verification Pending"
-            text={`Your request for "${verification.university_name}" has been submitted and is under review by the SuperAdmin. You'll receive an email once a decision is made.`}
-          />
-        ) : status === "rejected" ? (
-          <div>
-            <StatusCard
-              tone="red"
-              icon="❌"
-              title="Verification Rejected"
-              text={`Unfortunately your request for "${verification.university_name}" was not approved.`}
-            />
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mt-4">
-              <p className="text-sm text-red-500 font-medium mb-1">Reason</p>
-              <p className="text-red-700">{verification.reject_reason}</p>
-            </div>
-            <button
-              onClick={() => navigate("/university/documents")}
-              className="mt-5 bg-[#c88410] hover:bg-[#a66d0d] text-white px-6 py-3 rounded-xl font-medium"
-            >
-              Re-submit Documents
-            </button>
-          </div>
-        ) : null}
-      </main>
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10">{children}</main>
     </div>
   );
 }
 
-const TONES = {
-  amber: "bg-amber-50 border-amber-100 text-amber-800",
-  red: "bg-red-50 border-red-100 text-red-800",
-  green: "bg-green-50 border-green-100 text-green-800",
-};
-
-function StatusCard({ tone, icon, title, text }) {
+function SplashScreen() {
   return (
-    <div className={`rounded-2xl p-6 border ${TONES[tone]}`}>
-      <div className="text-3xl mb-2">{icon}</div>
-      <h2 className="text-xl font-bold mb-1">{title}</h2>
-      <p className="opacity-90">{text}</p>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-orange-500 border-t-transparent mx-auto" />
+        <p className="text-gray-400 mt-4 text-sm">Loading your dashboard…</p>
+      </div>
     </div>
   );
 }

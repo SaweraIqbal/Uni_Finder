@@ -5,7 +5,7 @@ import emailIcon from "../assets/email.png";
 import passwordIcon from "../assets/password.png";
 import logo from "../assets/Logo.png";
 import google from "../assets/google.png";
-import facebook from "../assets/facebook.png";
+// import facebook from "../assets/facebook.png";
 import { useAuth } from "../context/AuthContext";
 import { setFlash } from "../utils/flash";
 
@@ -75,7 +75,6 @@ function Login() {
         }),
       });
 
-
       const data = await res.json();
 
       if (res.ok) {
@@ -89,9 +88,6 @@ function Login() {
 
         sessionStorage.setItem("userId", data.user.id);
         sessionStorage.setItem("token", data.token);
-
-
-
 
         setFlash("Login Successful");
 
@@ -122,26 +118,25 @@ function Login() {
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center p-4 bg-gray-100 font-['Poppins',sans-serif]">
+    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center p-4 bg-gray-100">
       <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
-
-        <div className="relative w-full md:w-1/2 px-[50px] py-[40px] flex flex-col justify-center overflow-y-auto">
-
-          <div className="flex items-center gap-2 mb-8">
+        <div className="relative w-full md:w-1/2 px-5 md:px-[50px] py-8 md:py-[40px] flex flex-col justify-center overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          <div className="flex items-center gap-2 mb-3">
             <img src={logo} alt="Uni Finder Logo" className="w-8" />
             <h2 className="text-xl font-semibold text-gray-700">
               Uni <span className="text-orange-500">Finder</span>
             </h2>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-800 mb-1">Welcome Back</h1>
-          <p className="text-gray-500 mb-7">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
+            Welcome Back
+          </h1>
+          <p className="text-gray-500 mb-5">
             Log in to your account to{" "}
             <span className="text-orange-500 font-semibold">continue</span>
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-
+          <form onSubmit={handleSubmit} className="space-y-2">
             <div>
               <div
                 className={`flex items-center gap-3 border-2 rounded-2xl px-4 py-3 transition-colors ${
@@ -164,7 +159,6 @@ function Login() {
                 <p className="text-red-500 text-xs ml-2 mt-1">{errors.email}</p>
               )}
             </div>
-
 
             <div>
               <div
@@ -192,7 +186,9 @@ function Login() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-500 text-xs ml-2 mt-1">{errors.password}</p>
+                <p className="text-red-500 text-xs ml-2 mt-1">
+                  {errors.password}
+                </p>
               )}
             </div>
 
@@ -237,13 +233,12 @@ function Login() {
               <img src={google} alt="Google" className="w-5 h-5" />
               Google
             </button>
-            <button className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-orange-400 hover:-translate-y-[1px]">
+            {/* <button className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-orange-400 hover:-translate-y-[1px]">
               <img src={facebook} alt="Facebook" className="w-5 h-5" />
               Facebook
-            </button>
+            </button> */}
           </div>
         </div>
-
 
         <div className="relative w-1/2 hidden md:block overflow-hidden">
           <img
@@ -253,7 +248,6 @@ function Login() {
           />
           <div className="absolute inset-0 bg-gradient-to-l from-transparent to-white/30" />
         </div>
-
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ dist-ssr
 *.local
 
 # Editor directories and files
+.cursor/mcp.json
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -25,7 +26,10 @@ node_modules/
 build/
 dist/
 .env
+.env.*
+!.env.example
 src/backend/uploads/
+src/backend/private/
 *.zip
 *.mp4
 *.apk
@@ -36,3 +40,10 @@ src/backend/uploads/
 
 # Original (uncompressed) hero videos — local backup, do not commit
 .video-originals/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/

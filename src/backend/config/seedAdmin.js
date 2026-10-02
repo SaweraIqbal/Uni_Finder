@@ -26,8 +26,17 @@ export const seedSuperAdmin = () =>
         }
 
         if (rows.length > 0) {
-          console.log(`SuperAdmin already exists: ${email}`);
-          return resolve();
+          // Always sync the password hash so a stale hash never causes a 401
+          db.query(
+            "UPDATE Student_signup SET password = ?, name = ?, username = ? WHERE email = ?",
+            [hashed, name, username, email],
+            (updErr) => {
+              if (updErr) console.log("Seed admin update error:", updErr.message);
+              else console.log(`SuperAdmin password synced -> ${email} / ${password}`);
+              resolve();
+            },
+          );
+          return;
         }
 
         db.query(

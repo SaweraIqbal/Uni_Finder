@@ -42,7 +42,7 @@ export default function CampusPanel({ ownerUid, adminEmail }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex font-['Poppins',sans-serif]">
+    <div className="min-h-screen bg-gray-50 flex">
 
       <aside className="w-64 bg-[#1e293b] text-white flex flex-col">
         <div className="flex items-center gap-2 px-6 py-6 border-b border-white/10">

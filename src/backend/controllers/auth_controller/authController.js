@@ -27,11 +27,18 @@ export const signup = (req, res) => {
         return res.status(500).json(err);
       }
 
+      const token = jwt.sign(
+        { id: userId, email, role },
+        process.env.JWT_SECRET || "secretkey",
+        { expiresIn: process.env.JWT_EXPIRY || "1d" },
+      );
       return res.status(201).json({
         message: "Signup successful",
+        token,
         user: {
           id: userId,
           email,
+          role,
           assigned_id: assignedId,
         },
       });
@@ -42,29 +49,51 @@ export const signup = (req, res) => {
 export const login = (req, res) => {
   const { email, password } = req.body;
 
-  const sql = "SELECT * FROM Student_signup WHERE email = ?";
+  // ── Input validation ──────────────────────────────────────────────────────
+  if (!email || typeof email !== "string" || !email.trim()) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+  if (!password || typeof password !== "string") {
+    return res.status(400).json({ message: "Password is required" });
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
 
-  db.query(sql, [email], async (err, result) => {
-    if (err) return res.status(500).json(err);
-
-    if (result.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+  db.query("SELECT * FROM Student_signup WHERE email = ?", [email.trim()], async (err, result) => {
+    if (err) {
+      console.error("[login] DB error:", err.message);
+      return res.status(500).json({ message: "Server error, please try again" });
     }
+    if (result.length === 0) return res.status(404).json({ message: "No account found with this email" });
 
     const user = result[0];
-
     const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ message: "Incorrect password" });
 
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid Password" });
+    // ── Additive: resolve university_id if the account owns one ──────────────
+    let universityId = null;
+    if (user.role === "university") {
+      try {
+        await new Promise((resolve) => {
+          db.query(
+            "SELECT id FROM universities WHERE owner_uid = ? LIMIT 1",
+            [user.id],
+            (e, rows) => {
+              if (!e && rows.length) universityId = rows[0].id;
+              resolve();
+            },
+          );
+        });
+      } catch (_) { /* non-fatal — university_id stays null */ }
     }
 
+    const payload = { id: user.id, email: user.email, role: user.role };
+    if (universityId) payload.university_id = universityId;   // additive only
+
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      payload,
       process.env.JWT_SECRET || "secretkey",
       { expiresIn: "1d" },
     );
@@ -78,6 +107,7 @@ export const login = (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        ...(universityId ? { university_id: universityId } : {}),
       },
     });
   });

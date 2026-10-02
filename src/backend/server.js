@@ -6,9 +6,11 @@ import authRoutes from "./routes/auth_route/authRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import universityRoutes from "./routes/universityRoutes.js";
 import campusRoutes from "./routes/campusRoutes.js";
-import db from "./config/db.js";
+import db, { dbReady } from "./config/db.js";
 import initSchema from "./config/schema.js";
 import seedSuperAdmin from "./config/seedAdmin.js";
+import seedUniversities from "./config/seedUniversities.js";
+import seedPrograms from "./config/seedPrograms.js";
 import backfillAssignedIds from "./config/backfillIds.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -19,29 +21,35 @@ app.use(express.json());
 
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// University logos / banners served with long-lived cache + immutable filenames
+app.use(
+  "/uploads/universities",
+  express.static(path.join(__dirname, "uploads", "universities"), {
+    maxAge: "365d",
+    immutable: true,
+    etag: true,
+  }),
+);
 
-db.connect((err) => {
-  if (err) {
-    console.log("DB Connection Error:", err);
-  } else {
-    console.log("MySQL Connected");
-    db.query(
+dbReady.then(() => {
+  db.query(
       `
       CREATE TABLE IF NOT EXISTS Student_signup (
         id VARCHAR(255) PRIMARY KEY,
         name VARCHAR(100),
-        username VARCHAR(100),
-        email VARCHAR(100) UNIQUE,
+        username VARCHAR(254),
+        email VARCHAR(254) UNIQUE,
         password VARCHAR(255),
         role VARCHAR(20)
       )`,
       (err) => {
         if (err) {
-          console.log("Table create error:", err);
-        } else {
-          console.log("Student table ready");
+          console.error("Table create error:", err);
+          return;
+        }
+        console.log("Student table ready");
 
-          db.query(
+        db.query(
             `
             CREATE TABLE IF NOT EXISTS Student_Profile (
               std_id VARCHAR(255) PRIMARY KEY,
@@ -59,25 +67,24 @@ db.connect((err) => {
           `,
             (err) => {
               if (err) {
-                console.log("Profile table create error:", err);
-              } else {
-                console.log("Student Profile table ready");
+                console.error("Profile table create error:", err);
+                return;
               }
+              console.log("Student Profile table ready");
 
-
-              initSchema(db);
-
-
-              seedSuperAdmin();
-
-
-              setTimeout(backfillAssignedIds, 1500);
+              initSchema(db, () => {
+                seedSuperAdmin()
+                  .then(() => seedUniversities())
+                  .then(() => seedPrograms())
+                  .catch((seedErr) => console.error("Seed failed:", seedErr));
+                setTimeout(backfillAssignedIds, 1500);
+              });
             },
           );
-        }
       },
     );
-  }
+}).catch((error) => {
+  console.error("Database initialization failed:", error.message);
 });
 
 app.use("/api/auth", authRoutes);

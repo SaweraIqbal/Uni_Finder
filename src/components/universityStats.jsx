@@ -1,120 +1,57 @@
 import { useEffect, useRef, useState } from "react";
+import activeUsersIcon from "../assets/activeusers.png";
+import campusIcon from "../assets/campuses.png";
+import programIcon from "../assets/program.png";
+import establishedIcon from "../assets/established.png";
 
-const stats = [
+const STATIC_STATS = [
+  {
+    id: "total_campuses",
+    iconSrc: campusIcon,
+    iconAlt: "Total Campuses",
+    value: "4",
+    label: "Total Campuses",
+  },
+  {
+    id: "total_programs",
+    iconSrc: programIcon,
+    iconAlt: "Total Programs",
+    value: "25",
+    label: "Total Programs",
+  },
   {
     id: "students",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M16 11c1.657 0 3-1.343 3-3s-1.343-3-3-3" />
-        <path d="M8 11c-1.657 0-3-1.343-3-3s1.343-3 3-3" />
-        <path d="M12 13c2.761 0 5 1.567 5 3.5V18H7v-1.5C7 14.567 9.239 13 12 13z" />
-        <path d="M19 14c1.5.5 3 1.5 3 3v1h-3" />
-        <path d="M5 14c-1.5.5-3 1.5-3 3v1h3" />
-        <circle cx="12" cy="7" r="3" />
-      </svg>
-    ),
-    value: "25,000",
+    iconSrc: activeUsersIcon,
+    iconAlt: "Active Students",
+    value: "15,000",
     suffix: "+",
-    label: "Total students",
+    label: "Active Students",
   },
   {
-    id: "campuses",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
-    value: "4",
+    id: "established",
+    iconSrc: establishedIcon,
+    iconAlt: "Established",
+    value: "2002",
     suffix: "",
-    label: "Total campuses",
-  },
-  {
-    id: "transport",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
-        <rect x="9" y="11" width="14" height="10" rx="2" />
-        <circle cx="12" cy="21" r="1" />
-        <circle cx="20" cy="21" r="1" />
-      </svg>
-    ),
-    value: "24/7",
-    suffix: "",
-    label: "Campus transport",
-  },
-  {
-    id: "hostels",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-        <path d="M9 21V12h6v9" />
-      </svg>
-    ),
-    value: "12",
-    suffix: "",
-    label: "Campus hostels",
+    label: "Established",
   },
 ];
 
-
+/**
+ * Stat card — matches screenshot layout exactly:
+ *   [LABEL (small caps, left)]   [ICON chip (right)]
+ *   [LARGE VALUE (left, below)]
+ */
 function StatCard({ stat, isVisible, delay }) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
       className={`
-        flex flex-col items-center gap-2 p-5 bg-white
-        border border-slate-200/70 rounded-2xl
+        flex flex-col justify-between gap-3 p-5 bg-white
+        border border-slate-200 rounded-2xl
         transition-all duration-300 ease-in-out cursor-default
-        focus-within:ring-2 focus-within:ring-orange-400 focus-within:ring-offset-2
-        ${hovered ? "-translate-y-1 border-slate-300 shadow-lg" : ""}
+        ${hovered ? "-translate-y-0.5 shadow-md border-slate-300" : "shadow-sm"}
         ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
       `}
       style={{ transitionDelay: `${delay}ms` }}
@@ -123,55 +60,57 @@ function StatCard({ stat, isVisible, delay }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+      {/* Top row: label left, icon right */}
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest leading-tight">
+          {stat.label}
+        </p>
 
-      <div
-        className={`
-          w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
-          border transition-all duration-200
-          ${
-            hovered
-              ? "bg-orange-50 border-orange-200/60 text-orange-500"
-              : "bg-gray-50 border-slate-200/60 text-slate-400"
-          }
-        `}
-      >
-        {stat.icon}
+        {/* Icon chip — bg/border transitions on hover; PNG won't recolor (raster) */}
+        <div
+          className={`
+            w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+            border transition-all duration-200
+            ${
+              hovered
+                ? "bg-orange-50 border-orange-200/70"
+                : "bg-gray-50 border-slate-200/60"
+            }
+          `}
+        >
+          <img
+            src={stat.iconSrc}
+            alt={stat.iconAlt}
+            className="w-[22px] h-[22px] object-contain"
+          />
+        </div>
       </div>
 
-
-      <div className="text-[22px] font-bold leading-none text-slate-800 mt-0.5 tabular-nums">
+      {/* Large value */}
+      <div className="text-[26px] font-bold leading-none text-slate-800 tabular-nums">
         {stat.value}
         {stat.suffix && (
-          <span className="text-orange-500 text-base font-bold">
-            {stat.suffix}
-          </span>
+          <span className="text-orange-500 font-bold">{stat.suffix}</span>
         )}
       </div>
-
-
-      <div
-        className={`h-0.5 rounded-full bg-orange-500 transition-all duration-200 ${
-          hovered ? "w-5 opacity-100" : "w-0 opacity-0"
-        }`}
-        aria-hidden="true"
-      />
-
-      <p className="text-xs font-semibold text-slate-400 text-center leading-snug uppercase tracking-wide">
-        {stat.label}
-      </p>
     </div>
   );
 }
 
-export default function UniversityStats({ university }) {
+export default function UniversityStats({ university, className = "" }) {
   const sectionRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  const liveStats = stats.map((s) => {
+  // Merge live university data into the static stat definitions
+  const liveStats = STATIC_STATS.map((s) => {
     if (s.id === "students" && university?.students)
-      return { ...s, value: university.students, suffix: "" };
-    if (s.id === "campuses" && university?.total_campuses)
-      return { ...s, value: university.total_campuses, suffix: "" };
+      return { ...s, value: university.students, suffix: "+" };
+    if (s.id === "phd_faculty" && university?.phd_faculty)
+      return { ...s, value: university.phd_faculty, suffix: "+" };
+    if (s.id === "employment_rate" && university?.employment_rate)
+      return { ...s, value: university.employment_rate, suffix: "" };
+    if (s.id === "established" && university?.established_year)
+      return { ...s, value: university.established_year, suffix: "" };
     return s;
   });
 
@@ -188,18 +127,18 @@ export default function UniversityStats({ university }) {
 
   return (
     <section
-      className="py-12 bg-gray-50"
+      className={`py-0 bg-transparent ${className}`}
       ref={sectionRef}
       aria-label="University statistics"
     >
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="max-w-relative z-10 max-w-6xl mx-auto px-6 md:px-5 lg:px-7">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {liveStats.map((stat, i) => (
             <StatCard
               key={stat.id}
               stat={stat}
               isVisible={isVisible}
-              delay={i * 60}
+              delay={i * 70}
             />
           ))}
         </div>

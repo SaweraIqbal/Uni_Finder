@@ -31,13 +31,96 @@ export const getMyUniversity = (req, res) => {
 
 export const listUniversities = (req, res) => {
   db.query(
-    `SELECT u.id, u.name, u.city, u.logo_url, u.banner_url, u.tagline,
+    `SELECT
+       u.id, u.name, u.city, u.domain, u.oric_domain, u.logo_url, u.banner_url, u.tagline,
+       u.hec_rank, u.university_type, u.total_campuses,
+
+       CASE
+         WHEN u.owner_uid IS NOT NULL
+              OR EXISTS (
+                SELECT 1 FROM applications a
+                WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                  AND LOWER(a.status) = 'approved'
+              )
+           THEN 'registered'
+         WHEN EXISTS (
+                SELECT 1 FROM applications a
+                WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                  AND LOWER(a.status) IN
+                      ('awaiting','pending','under_review','info_required',
+                       'under review','info required')
+              )
+           THEN 'in_process'
+         ELSE 'available'
+       END AS state,
+
+       CASE
+         WHEN u.owner_uid IS NOT NULL
+              OR EXISTS (
+                SELECT 1 FROM applications a
+                WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                  AND LOWER(a.status) = 'approved'
+              )
+           THEN 1
+         ELSE 0
+       END AS claimed,
+
+       EXISTS (
+         SELECT 1 FROM applications a
+         WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+           AND LOWER(a.status) = 'rejected'
+       ) AS previously_rejected,
+
        (SELECT image_url FROM university_images
         WHERE university_id = u.id ORDER BY created_at DESC LIMIT 1) AS cover_image
      FROM universities u
+     WHERE u.is_hec_listed = 1
      ORDER BY u.name`,
     (err, rows) => {
-      if (err) return res.status(500).json({ message: "DB error", error: err.message });
+      if (err) {
+        if (err.code === "ER_NO_SUCH_TABLE") {
+          return db.query(
+            `SELECT
+               u.id, u.name, u.city, u.domain, u.oric_domain,
+               u.logo_url, u.banner_url, u.tagline,
+               u.hec_rank, u.university_type, u.total_campuses,
+               CASE
+                 WHEN u.owner_uid IS NOT NULL
+                      OR EXISTS (SELECT 1 FROM applications a
+                                 WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                                   AND LOWER(a.status) = 'approved')
+                   THEN 'registered'
+                 WHEN EXISTS (SELECT 1 FROM applications a
+                              WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                                AND LOWER(a.status) IN
+                                    ('awaiting','pending','under_review','info_required',
+                                     'under review','info required'))
+                   THEN 'in_process'
+                 ELSE 'available'
+               END AS state,
+               CASE
+                 WHEN u.owner_uid IS NOT NULL
+                      OR EXISTS (SELECT 1 FROM applications a
+                                 WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                                   AND LOWER(a.status) = 'approved')
+                   THEN 1 ELSE 0
+               END AS claimed,
+               EXISTS (SELECT 1 FROM applications a
+                       WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                         AND LOWER(a.status) = 'rejected'
+               ) AS previously_rejected,
+               NULL AS cover_image
+             FROM universities u
+             WHERE u.is_hec_listed = 1
+             ORDER BY u.name`,
+            (err2, rows2) => {
+              if (err2) return res.status(500).json({ message: "DB error", error: err2.message });
+              return res.status(200).json(rows2);
+            },
+          );
+        }
+        return res.status(500).json({ message: "DB error", error: err.message });
+      }
       return res.status(200).json(rows);
     }
   );
@@ -99,7 +182,8 @@ export const saveUniversity = (req, res) => {
          ORDER BY reviewed_at DESC LIMIT 1`,
         [owner_uid],
         (err3, vRows) => {
-          const verificationId = vRows && vRows[0] ? vRows[0].id : null;
+          // graceful: table may not exist yet
+          const verificationId = (err3 || !vRows || !vRows[0]) ? null : vRows[0].id;
           const id = uuidv4();
           const allCols = ["id", "owner_uid", "verification_id", ...cols];
           const allVals = [id, owner_uid, verificationId, ...vals];
