@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./context/AuthContext";
 import { showFlashOnce } from "./utils/flash";
+
 function FlashToaster() {
   const location = useLocation();
   useEffect(() => {
@@ -25,6 +26,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import UniversityDetailPage from "./pages/UniversityDetailPage.jsx";
 import CampusDetailPage from "./pages/CampusDetailPage.jsx";
 import CompareCampusesPage from "./pages/CompareCampusesPage.jsx";
+import HostelOwnerDashboard from "./pages/hostel/HostelOwnerDashboard";
 
 // import CompareUniversitiesPage from "./pages/compareUniversities.jsx";
 
@@ -38,6 +40,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/signup/:role" element={<Signup />} />
+          <Route path="/hostel/dashboard" element={<HostelOwnerDashboard />} />
           <Route
             path="/university/dashboard"
             element={
@@ -95,6 +98,14 @@ function App() {
             />
 
             <Route path="/homepage" element={<HomePage />} />
+            <Route
+              path="/hostel/dashboard"
+              element={
+                <ProtectedRoute role="hostel">
+                  <HostelOwnerDashboard />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>
