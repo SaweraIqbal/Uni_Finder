@@ -49,7 +49,7 @@ export async function rejectVerification(id, reason) {
  * Used for the dropdown + email-domain check in the verification form.
  */
 export async function getUniversities() {
-  const res = await fetch(`${API}/api/universities`);
+  const res = await fetch(`${API}/api/universities?all=true`);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || "Failed to load universities");
   return Array.isArray(data) ? data : data.universities || [];
@@ -119,10 +119,12 @@ export async function submitUniversityVerification(formData, onProgress = () => 
 
 /* ── Super-admin: universities, programs, activity (Phase 2) ── */
 
-export async function adminListUniversities({ q = "", type = "", claimed = "", page = 1, limit = 25 } = {}) {
+export async function adminListUniversities({ q = "", type = "", profile_status = "", scope = "approved", claimed = "", page = 1, limit = 25 } = {}) {
   const params = new URLSearchParams();
-  if (q)       params.set("q", q);
-  if (type)    params.set("type", type);
+  if (q)              params.set("q", q);
+  if (type)           params.set("type", type);
+  if (profile_status) params.set("profile_status", profile_status);
+  if (scope)          params.set("scope", scope);
   if (claimed !== "") params.set("claimed", claimed);
   params.set("page", String(page));
   params.set("limit", String(limit));
@@ -169,5 +171,45 @@ export async function adminListActivity({ university_id = "", page = 1, limit = 
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (university_id) params.set("university_id", university_id);
   const res = await fetch(`${API}/api/admin/activity?${params}`, { headers: authHeaders() });
+  return { ok: res.ok, status: res.status, data: await res.json() };
+}
+
+/* ── Super-admin: campus registrations ─────────────────────────────────── */
+
+/**
+ * GET /api/admin/campus-registrations
+ * Returns { total, page, limit, pages, registrations[], stats }
+ * where stats = { pending, approved, rejected, resubmission, total }
+ */
+export async function adminListCampusRegistrations({
+  status = "",
+  q      = "",
+  page   = 1,
+  limit  = 50,
+} = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (status) params.set("status", status);
+  if (q)      params.set("q", q);
+  const res = await fetch(
+    `${API}/api/admin/campus-registrations?${params}`,
+    { headers: authHeaders() }
+  );
+  return { ok: res.ok, status: res.status, data: await res.json() };
+}
+
+/**
+ * PATCH /api/admin/campus-registrations/:id/status
+ * body: { action, reason?, note?, requiredDocs? }
+ * action: "approve" | "reject" | "request_resubmission"
+ */
+export async function adminUpdateCampusRegistrationStatus(id, body) {
+  const res = await fetch(
+    `${API}/api/admin/campus-registrations/${id}/status`,
+    {
+      method:  "PATCH",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body:    JSON.stringify(body),
+    }
+  );
   return { ok: res.ok, status: res.status, data: await res.json() };
 }

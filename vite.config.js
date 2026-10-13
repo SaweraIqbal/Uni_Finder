@@ -1,4 +1,4 @@
-﻿import { defineConfig } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const inDocker = !!process.env.IN_DOCKER;
@@ -10,5 +10,8 @@ export default defineConfig({
     port: 5173,
     watch: inDocker ? { usePolling: true } : undefined,
     hmr: inDocker ? { clientPort: 8080 } : undefined,
+    proxy: {
+      "/api": "http://localhost:5000",
+    },
   },
 });

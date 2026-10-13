@@ -159,3 +159,44 @@ export async function searchProgramCatalog({ q, level, page = 1, limit = 20 } = 
   if (!res.ok) throw new Error(data?.error?.message || "Failed to search catalog.");
   return data;
 }
+
+/* ── University admin: campus registration tier-1 review ─────────────────── */
+
+/**
+ * GET /api/campus-registrations
+ * Returns registrations scoped to the logged-in university admin's university.
+ * Response: { total, page, limit, pages, registrations[], stats }
+ */
+export async function uniAdminListCampusRegistrations({
+  status = "",
+  q      = "",
+  page   = 1,
+  limit  = 50,
+} = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (status) params.set("status", status);
+  if (q)      params.set("q", q);
+  const res = await fetch(
+    `${API}/api/campus-registrations?${params}`,
+    { headers: authHeaders() }
+  );
+  return { ok: res.ok, status: res.status, data: await res.json().catch(() => ({})) };
+}
+
+/**
+ * PATCH /api/campus-registrations/:id/tier1
+ * University admin tier-1 review action.
+ * body.action: "approve" | "reject" | "request_resubmission"
+ * On approve: sets uni_tier1_approved=1 (status stays 'pending' until super admin finalises).
+ */
+export async function uniAdminUpdateCampusStatus(id, body) {
+  const res = await fetch(
+    `${API}/api/campus-registrations/${id}/tier1`,
+    {
+      method:  "PATCH",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body:    JSON.stringify(body),
+    }
+  );
+  return { ok: res.ok, status: res.status, data: await res.json().catch(() => ({})) };
+}

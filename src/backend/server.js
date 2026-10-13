@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth_route/authRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import universityRoutes from "./routes/universityRoutes.js";
 import campusRoutes from "./routes/campusRoutes.js";
+import registrationRoutes from "./routes/registrationRoutes.js";
 import db, { dbReady } from "./config/db.js";
 import initSchema from "./config/schema.js";
 import seedSuperAdmin from "./config/seedAdmin.js";
@@ -89,6 +90,7 @@ dbReady.then(() => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api", dashboardRoutes);
+app.use("/api", registrationRoutes);
 app.use("/api", universityRoutes);
 app.use("/api", campusRoutes);
 

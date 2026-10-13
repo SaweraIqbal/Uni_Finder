@@ -135,3 +135,28 @@
 .animate-slide-in-right { animation: slideInRight 0.28s cubic-bezier(0.16,1,0.3,1) both; }
 .animate-slide-in-left  { animation: slideInLeft  0.28s cubic-bezier(0.16,1,0.3,1) both; }
 .animate-slide-in-down  { animation: slideInDown  0.18s ease-out both; }
+
+.numeric,
+td,
+input {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@keyframes campusExpand {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes campusHighlight {
+  0%, 70% { background: #fffbeb; }
+  100% { background: transparent; }
+}
+
+.animate-expand {
+  animation: campusExpand 180ms ease-out;
+}
+
+.animate-highlight {
+  animation: campusHighlight 4s ease-out forwards;
+}

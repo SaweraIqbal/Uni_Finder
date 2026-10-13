@@ -6,25 +6,16 @@ const SearchIcon = () => (
   </svg>
 );
 
-const PROGRAMS = [
-  { name: "BS Computer Science", level: "Undergraduate", duration: "4 Years", fee: "PKR 45k/sem", eligibility: "85% Min" },
-  { name: "BBA (Hons)", level: "Undergraduate", duration: "4 Years", fee: "PKR 40k/sem", eligibility: "80% Min" },
-  { name: "BS Software Engineering", level: "Undergraduate", duration: "4 Years", fee: "PKR 46k/sem", eligibility: "85% Min" },
-  { name: "BS Artificial Intelligence", level: "Undergraduate", duration: "4 Years", fee: "PKR 47k/sem", eligibility: "85% Min" },
-  { name: "BS Data Science", level: "Undergraduate", duration: "4 Years", fee: "PKR 46k/sem", eligibility: "80% Min" },
-  { name: "MBA", level: "Postgraduate", duration: "2 Years", fee: "PKR 55k/sem", eligibility: "3.0 GPA Min" },
-  { name: "MS Computer Science", level: "Postgraduate", duration: "2 Years", fee: "PKR 50k/sem", eligibility: "3.2 GPA Min" },
-  { name: "MS Data Science", level: "Postgraduate", duration: "2 Years", fee: "PKR 52k/sem", eligibility: "3.0 GPA Min" },
-  { name: "PhD Computer Science", level: "PhD", duration: "3-5 Years", fee: "Funded", eligibility: "MS Required" },
-  { name: "PhD Management Sciences", level: "PhD", duration: "3-5 Years", fee: "Funded", eligibility: "MS Required" },
-];
+const levelGroup = (level) => {
+  if (["MS", "MPhil"].includes(level)) return "Postgraduate";
+  return level || "Other";
+};
 
-const FILTERS = ["All", "Undergraduate", "Postgraduate", "PhD"];
-const GROUPS = [
-  { key: "Undergraduate", label: "Undergraduate Programs" },
-  { key: "Postgraduate", label: "Postgraduate Programs" },
-  { key: "PhD", label: "PhD Programs" },
-];
+const levelLabel = (level) => ({
+  UG: "Undergraduate",
+  MS: "Postgraduate",
+  MPhil: "Postgraduate",
+})[level] || level || "Not specified";
 
 function levelBadge(level) {
   if (level === "Undergraduate") return "bg-sky-50 text-sky-600 border-sky-200";
@@ -32,21 +23,62 @@ function levelBadge(level) {
   return "bg-orange-50 text-orange-600 border-orange-200";
 }
 
-export default function ProgramsOffered() {
+export default function ProgramsOffered({ programs = [] }) {
   const [filter, setFilter] = useState("All");
   const [query, setQuery] = useState("");
 
+  const rows = useMemo(() => programs.map((program) => {
+    const details = program.details || {};
+    const degree = program.degree_type || "";
+    const name = program.name || "Program";
+    const displayName = degree && !name.toLowerCase().startsWith(degree.toLowerCase())
+      ? `${degree} ${name}`
+      : name;
+    const feeRows = Array.isArray(details.fees) ? details.fees : [];
+    const fee = feeRows.length
+      ? feeRows.map((item) => `${item.head}: PKR ${item.amount}${item.frequency ? ` / ${item.frequency}` : ""}`).join(" · ")
+      : program.fee ? `PKR ${program.fee}` : "";
+    const eligibility = Array.isArray(details.eligibility)
+      ? details.eligibility.map((item) => [item.qualification, item.minPct && `${item.minPct}% minimum`, item.subjects].filter(Boolean).join(" · ")).filter(Boolean).join("; ")
+      : "";
+    const merit = Array.isArray(details.merit)
+      ? details.merit.map((item) => item.component && item.weight ? `${item.component} ${item.weight}%` : "").filter(Boolean).join(" · ")
+      : "";
+    return {
+      ...program,
+      details,
+      name: displayName,
+      level: levelLabel(program.level),
+      group: levelGroup(program.level),
+      duration: program.duration || "",
+      fee,
+      eligibility,
+      extras: [
+        eligibility,
+        details.entryTest && details.entryTest !== "None" && `Entry test: ${details.entryTest}${details.testBody ? ` (${details.testBody})` : ""}`,
+        details.interviewOn && `Interview required${details.interviewNote ? `: ${details.interviewNote}` : ""}`,
+        merit && `Merit: ${merit}`,
+      ].filter(Boolean),
+    };
+  }), [programs]);
+
+  const filters = ["All", ...new Set(rows.map((program) => program.group))];
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return PROGRAMS.filter((p) => {
-      const matchesLevel = filter === "All" || p.level === filter;
-      const matchesQuery = !q || p.name.toLowerCase().includes(q) || p.level.toLowerCase().includes(q) ||
-        p.fee.toLowerCase().includes(q) || p.eligibility.toLowerCase().includes(q);
+    return rows.filter((p) => {
+      const matchesLevel = filter === "All" || p.group === filter;
+      const searchable = [p.name, p.level, p.fee, p.eligibility, ...p.extras].join(" ").toLowerCase();
+      const matchesQuery = !q || searchable.includes(q);
       return matchesLevel && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, query, rows]);
 
-  const grouped = GROUPS.map((g) => ({ ...g, rows: filtered.filter((p) => p.level === g.key) })).filter((g) => g.rows.length > 0);
+  const grouped = [...new Set(filtered.map((program) => program.group))].map((key) => ({
+    key,
+    label: key === "Other" ? "Other Programs" : `${key} Programs`,
+    rows: filtered.filter((program) => program.group === key),
+  }));
 
   return (
     <div className="max-w-6xl mx-auto px-5 md:px-6 lg:px-8 py-10">
@@ -57,7 +89,7 @@ export default function ProgramsOffered() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => {
+            {filters.map((f) => {
             const active = filter === f;
             return (
               <button key={f} type="button" onClick={() => setFilter(f)}
@@ -80,13 +112,16 @@ export default function ProgramsOffered() {
       </div>
 
       <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm">
-        <div className="hidden md:grid grid-cols-[1.4fr_0.9fr_0.8fr_0.8fr_0.9fr_0.8fr] px-5 py-3 bg-slate-50/80 border-b border-gray-100">
-          {["Program", "Level", "Duration", "Fee", "Eligibility", ""].map((h) => (
+        <div className="hidden md:grid grid-cols-[1.4fr_0.8fr_0.7fr_1.4fr] px-5 py-3 bg-slate-50/80 border-b border-gray-100">
+          {["Program", "Level", "Duration", "Fees"].map((h) => (
             <span key={h || "apply"} className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{h}</span>
           ))}
         </div>
 
-        {grouped.length === 0 && (
+        {rows.length === 0 && (
+          <div className="px-6 py-14 text-center text-sm text-gray-500">No published programs have been added to this campus.</div>
+        )}
+        {rows.length > 0 && grouped.length === 0 && (
           <div className="px-6 py-14 text-center text-sm text-gray-400">No programs match your filters.</div>
         )}
 
@@ -96,23 +131,15 @@ export default function ProgramsOffered() {
               <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{group.label}</span>
             </div>
             {group.rows.map((p, idx) => (
-              <div key={p.name}
-                className={`grid grid-cols-1 md:grid-cols-[1.4fr_0.9fr_0.8fr_0.8fr_0.9fr_0.8fr] items-center gap-y-1.5 px-5 py-3.5 hover:bg-orange-50/30 transition-colors duration-150 ${
+              <div key={p.id || p.name}
+                className={`grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr_0.7fr_1.4fr] items-center gap-y-1.5 px-5 py-3.5 hover:bg-orange-50/30 transition-colors duration-150 ${
                   idx !== group.rows.length - 1 ? "border-b border-gray-100" : ""
                 }`}>
                 <span className="text-sm font-semibold text-gray-800">{p.name}</span>
                 <span><span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${levelBadge(p.level)}`}>{p.level}</span></span>
-                <span className="text-sm text-gray-500">{p.duration}</span>
-                <span className="text-sm font-medium text-gray-700">{p.fee}</span>
-                <span className="text-sm text-gray-500">{p.eligibility}</span>
-                <div className="md:justify-self-end">
-                  <button type="button" className="inline-flex items-center gap-1 text-sm font-semibold text-orange-500 hover:text-orange-600 hover:gap-2 transition-all duration-200">
-                    Apply Now
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                    </svg>
-                  </button>
-                </div>
+                <span className="text-sm text-gray-500">{p.duration || "Not provided"}</span>
+                <span className="text-sm font-medium text-gray-700">{p.fee || "Not provided"}</span>
+                {p.extras.length > 0 && <p className="md:col-span-4 text-xs leading-relaxed text-gray-500">{p.extras.join(" · ")}</p>}
               </div>
             ))}
           </div>

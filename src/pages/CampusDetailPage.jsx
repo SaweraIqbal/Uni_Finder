@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CAMPUS_DEFAULT_IMAGE } from "../api/campus";
+import { CAMPUS_DEFAULT_IMAGE, getCampusDetail } from "../api/campus";
 import { fileUrl } from "../api/client";
 import { getCampusById } from "../data/campuses";
 import { findUniversity } from "../data/universities";
@@ -13,7 +13,7 @@ import NearbyHostels from "../components/campus/NearbyHostels";
 
 import programIcon from "../assets/program.png";
 import activeUsersIcon from "../assets/activeusers.png";
-import phdFacultyIcon from "../assets/phdfaculty.png";
+import establishedIcon from "../assets/established.png";
 import employmentIcon from "../assets/employmentrate.png";
 
 // --- helpers ---
@@ -52,15 +52,15 @@ function toPageCampus(raw) {
     name: raw.campusName || raw.name,
     university_name: raw.universityName,
     programs,
-    images:
-      raw.cover_image || raw.coverImage
+    images: Array.isArray(raw.images) && raw.images.length
+      ? raw.images
+      : raw.cover_image || raw.coverImage
         ? [{ image_url: raw.cover_image || raw.coverImage }]
         : [],
     hec_rank: raw.hec_rank ?? raw.hecRank ?? uni?.hec_rank,
     sector: raw.sector ?? uni?.sector ?? raw.universityType,
-    phd_faculty: raw.phd_faculty ?? uni?.phd_faculty,
-    employment_rate: raw.employment_rate ?? uni?.employment_rate,
-    established: raw.established ?? uni?.established_year,
+    university_employment_rate: raw.university_employment_rate ?? uni?.employment_rate,
+    established: raw.established ?? raw.university_established_year ?? uni?.established_year,
   };
 }
 function mediaUrl(url) {
@@ -249,7 +249,7 @@ function HeroSection({ campus, heroImage, onBack }) {
     campus._mainFlag ||
     campus.is_main;
   const sector = sectorLabel(campus.sector || campus.universityType || "");
-  const hecRank = campus.hec_rank ?? campus.hecRank ?? campus.ranking ?? "34";
+  const hecRank = campus.hec_rank ?? campus.hecRank ?? campus.ranking;
   const title = campus.university_name
     ? `${campus.university_name} - ${campus.name}`
     : campus.name;
@@ -308,7 +308,8 @@ function HeroSection({ campus, heroImage, onBack }) {
       <div className="relative z-10 h-full flex flex-col justify-end">
         <div className="max-w-6xl mx-auto w-full px-6 md:px-5 lg:px-7 pb-20">
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="inline-flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold tracking-widest uppercase rounded-full px-3 py-1 shadow-sm">
+            {hecRank != null && (
+              <span className="inline-flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold tracking-widest uppercase rounded-full px-3 py-1 shadow-sm">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="10"
@@ -323,11 +324,14 @@ function HeroSection({ campus, heroImage, onBack }) {
               >
                 <path d="M8 21h8M12 17V3M5 8l7-5 7 5" />
               </svg>
-              HEC #{hecRank}
-            </span>
-            <span className="inline-flex items-center bg-slate-800/80 backdrop-blur-sm text-white text-[10px] font-bold tracking-widest uppercase rounded-full px-3 py-1 shadow-sm">
-              {sector}
-            </span>
+                HEC #{hecRank}
+              </span>
+            )}
+            {(campus.sector || campus.universityType) && (
+              <span className="inline-flex items-center bg-slate-800/80 backdrop-blur-sm text-white text-[10px] font-bold tracking-widest uppercase rounded-full px-3 py-1 shadow-sm">
+                {sector}
+              </span>
+            )}
           </div>
           <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl text-white leading-tight drop-shadow-md">
             {title}
@@ -400,40 +404,35 @@ function CampusStats({ campus, className = "" }) {
     {
       id: "programs",
       iconSrc: programIcon,
-      iconAlt: "Offered Programs",
-      value: programCount || "25",
-      suffix: "+",
-      label: "Offered Programs",
+      iconAlt: "Published programs",
+      value: String(programCount),
+      label: "Published Programs",
+    },
+    {
+      id: "established",
+      iconSrc: establishedIcon,
+      iconAlt: "Established year",
+      value: campus.established ? String(campus.established) : "Unknown",
+      label: "Established Year",
     },
     {
       id: "students",
       iconSrc: activeUsersIcon,
-      iconAlt: "Active Students",
-      value: campus.students?.replace(/[^0-9,]/g, "") || "15,000",
-      suffix: "+",
+      iconAlt: "Active students",
+      value: campus.students ? String(campus.students) : "Unknown",
       label: "Active Students",
     },
-    {
-      id: "phd_faculty",
-      iconSrc: phdFacultyIcon,
-      iconAlt: "PhD Faculty",
-      value: campus.phd_faculty
-        ? String(campus.phd_faculty).replace(/[^0-9]/g, "")
-        : "85",
-      suffix: "%",
-      label: "PhD Faculty",
-    },
-    {
+  ];
+  if (campus.university_employment_rate) {
+    stats.push({
       id: "employment_rate",
       iconSrc: employmentIcon,
-      iconAlt: "Employment Rate",
-      value: campus.employment_rate
-        ? String(campus.employment_rate).replace(/[^0-9]/g, "")
-        : "92",
+      iconAlt: "University employment rate",
+      value: String(campus.university_employment_rate).replace(/[^0-9]/g, ""),
       suffix: "%",
-      label: "Employment Rate",
-    },
-  ];
+      label: "University Employment Rate",
+    });
+  }
   return (
     <section
       ref={sectionRef}
@@ -441,7 +440,7 @@ function CampusStats({ campus, className = "" }) {
       aria-label="Campus statistics"
     >
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-5 lg:px-7">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-2 ${stats.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4"} gap-4`}>
           {stats.map((s, i) => (
             <StatCard
               key={s.id}
@@ -459,10 +458,13 @@ function CampusStats({ campus, className = "" }) {
 const TAB_IDS = [
   "overview",
   "programs",
-  "admissions",
+  "admission-procedure",
+  "admissions-info",
   "scholarships",
   "facilities",
   "transport",
+  "gallery",
+  "societies",
   "hostels",
   // "reviews",
 ];
@@ -480,9 +482,10 @@ function Tabs({ active, setActive }) {
                 : "text-gray-500 border-transparent hover:text-orange-400 hover:border-orange-200"
             }`}
           >
-            {id === "admissions"
-              ? "Admissions & Fees"
-              : id.charAt(0).toUpperCase() + id.slice(1)}
+            {({
+              "admission-procedure": "Admission Procedure",
+              "admissions-info": "Admissions Information",
+            })[id] || id.charAt(0).toUpperCase() + id.slice(1)}
           </button>
         ))}
       </div>
@@ -491,14 +494,6 @@ function Tabs({ active, setActive }) {
 }
 
 // --- Gallery ---
-const GALLERY_IMAGES = [
-  "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1562774053-701939374585?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=800&auto=format&fit=crop",
-];
 
 function GalleryModal({ images, onClose }) {
   const [lightboxIndex, setLightboxIndex] = useState(null);
@@ -753,24 +748,65 @@ function GalleryModal({ images, onClose }) {
 }
 
 // --- Overview Tab ---
+function ExpandableText({ text }) {
+  const paragraphRef = useRef(null);
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+
+  useEffect(() => {
+    const paragraph = paragraphRef.current;
+    if (!paragraph || expanded) return;
+
+    const measure = () => setCanExpand(paragraph.scrollHeight > paragraph.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(paragraph);
+    return () => observer.disconnect();
+  }, [text, expanded]);
+
+  return (
+    <>
+      <p
+        ref={paragraphRef}
+        className="text-sm leading-relaxed text-gray-600 whitespace-pre-line"
+        style={expanded ? undefined : {
+          display: "-webkit-box",
+          WebkitBoxOrient: "vertical",
+          WebkitLineClamp: 4,
+          overflow: "hidden",
+        }}
+      >
+        {text}
+      </p>
+      {canExpand && (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
+        >
+          {expanded ? "Read less" : "Read more"}
+        </button>
+      )}
+    </>
+  );
+}
+
 function OverviewTab({ campus, heroImage }) {
   const [ref, v] = useReveal();
   const [showGallery, setShowGallery] = useState(false);
-  const email = campus.email || "info@ucp.edu.pk";
-  const phone = campus.phone || "+92 42 111 000 827";
+  const email = campus.email;
+  const phone = campus.phone;
+  const transportRoutes = campus.facilities?.transport_routes || [];
+  const transportFeeAvailable = Boolean(String(campus.facilities?.transport_fee || "").trim());
   const mapUrl =
     campus.lat && campus.lng
       ? `https://www.google.com/maps?q=${campus.lat},${campus.lng}`
       : `https://www.google.com/maps/search/${encodeURIComponent(campus.name)}`;
-  const hostel = campus.hostelAvailable ? "Available" : "Not Available";
-  const transport = campus.transportRoutes || "3 Routes";
-  const affiliation = campus.affiliation || "HEC";
-  const established = campus.established || "2009";
-  const educationType = campus.genderType || "Co-Ed";
-  const galleryImages = [
-    heroImage,
-    ...GALLERY_IMAGES.filter((img) => img !== heroImage),
-  ].slice(0, 6);
+  const established = campus.established;
+  const galleryImages = (campus.images || [])
+    .map((image) => mediaUrl(image.image_url))
+    .filter(Boolean);
 
   return (
     <div
@@ -787,41 +823,19 @@ function OverviewTab({ campus, heroImage }) {
                   About this Campus
                 </h2>
               </div>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Located in the heart of {campus.city || "Lahore"}, the{" "}
-                {campus.name} of {campus.university_name} offers a dynamic
-                environment for higher education. Boasting state-of-the-art
-                facilities and a commitment to academic excellence, the campus
-                serves as a hub for innovation and scholarly pursuit in the
-                region.
-              </p>
-              <p className="text-sm leading-relaxed text-gray-600 mt-3">
-                With a strong emphasis on industry linkages and hands-on
-                learning, {campus.university_name} provides students with
-                unparalleled opportunities for personal and professional growth,
-                preparing them for leadership roles in a rapidly evolving global
-                landscape.
-              </p>
+              <ExpandableText text={campus.description?.trim() || "Campus information has not been added yet."} />
             </div>
 
-            <div className="group p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-100 transition-all duration-300">
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Why Choose This Campus
-                </h2>
+            {campus.why_choose?.trim() && (
+              <div className="group p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-100 transition-all duration-300">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Why Choose This Campus
+                  </h2>
+                </div>
+                <ExpandableText text={campus.why_choose} />
               </div>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Beyond academics, the {campus.name} is built around a genuinely
-                connected student experience. Modern lecture halls and research
-                labs sit alongside dedicated career services, active student
-                societies, and a campus-wide focus on mentorship so students are
-                not just attending classes, they are building a network that
-                carries into their careers. With regular industry visits,
-                on-campus recruitment drives, and a faculty that stays closely
-                involved in student progress, this campus is designed to feel
-                less like a degree factory and more like a launchpad.
-              </p>
-            </div>
+            )}
           </div>
 
           {/* RIGHT SIDEBAR */}
@@ -832,29 +846,16 @@ function OverviewTab({ campus, heroImage }) {
               </h3>
               <div className="space-y-3.5">
                 {[
-                  {
+                  ...(phone ? [{
                     icon: <IconPhone />,
                     label: "Phone",
-                    content: (
-                      <span className="text-sm font-semibold text-gray-700">
-                        {phone}
-                      </span>
-                    ),
-                  },
-                  {
+                    content: <a href={`tel:${phone}`} className="text-sm font-semibold text-gray-700">{phone}</a>,
+                  }] : []),
+                  ...(email ? [{
                     icon: <IconMail />,
                     label: "Email",
-                    content: (
-                      <a
-                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${email}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-semibold text-orange-500 hover:text-orange-600 hover:underline transition-colors"
-                      >
-                        {email}
-                      </a>
-                    ),
-                  },
+                    content: <a href={`mailto:${email}`} className="text-sm font-semibold text-orange-500 hover:text-orange-600 hover:underline transition-colors">{email}</a>,
+                  }] : []),
                   {
                     icon: <IconLocation />,
                     label: "Location",
@@ -889,36 +890,23 @@ function OverviewTab({ campus, heroImage }) {
               </h3>
               <div className="space-y-2.5">
                 {[
-                  {
-                    label: "Education Type",
-                    value: educationType,
-                    highlight: false,
+                  campus.campus_type && { label: "Campus Type", value: campus.campus_type },
+                  campus.gender_policy && { label: "Gender Policy", value: campus.gender_policy },
+                  campus.class_arrangement && { label: "Class Arrangement", value: campus.class_arrangement },
+                  campus.office_hours && { label: "Office Hours", value: campus.office_hours },
+                  campus.established && { label: "University Established", value: campus.established },
+                  campus.hostel_available != null && { label: "Hostel", value: campus.hostel_available ? "Available" : "Not Available" },
+                  (transportRoutes.length > 0 || transportFeeAvailable) && {
+                    label: "Transport",
+                    value: transportRoutes.length > 0 ? `${transportRoutes.length} Routes` : "Available",
                   },
-                  {
-                    label: "Hostel",
-                    value: hostel,
-                    highlight: campus.hostelAvailable,
-                  },
-                  { label: "Transport", value: transport, highlight: false },
-                  {
-                    label: "Affiliation",
-                    value: affiliation,
-                    highlight: false,
-                  },
-                  {
-                    label: "Established",
-                    value: established,
-                    highlight: false,
-                  },
-                ].map(({ label, value, highlight }) => (
+                ].filter(Boolean).map(({ label, value }) => (
                   <div
                     key={label}
                     className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0"
                   >
                     <span className="text-xs text-gray-500">{label}</span>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${highlight ? "bg-green-50 text-green-600" : "text-gray-800"}`}
-                    >
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-gray-800">
                       {value}
                     </span>
                   </div>
@@ -929,7 +917,7 @@ function OverviewTab({ campus, heroImage }) {
         </div>
 
         {/* Gallery */}
-        <div className="mt-10">
+        {galleryImages.length > 0 && <div className="mt-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-800">Campus Gallery</h2>
             <button
@@ -939,32 +927,14 @@ function OverviewTab({ campus, heroImage }) {
               View All <IconArrowRight />
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 grid-rows-2 gap-3 h-[200px] sm:h-[280px]">
-            <div
-              className="sm:col-span-2 sm:row-span-2 rounded-xl overflow-hidden bg-gray-100 cursor-pointer group"
-              onClick={() => setShowGallery(true)}
-            >
-              <img
-                src={galleryImages[0]}
-                alt="Campus photo 1"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-            {[1, 2].map((idx) => (
-              <div
-                key={idx}
-                className="rounded-xl overflow-hidden bg-gray-100 cursor-pointer group"
-                onClick={() => setShowGallery(true)}
-              >
-                <img
-                  src={galleryImages[idx]}
-                  alt={`Campus photo ${idx + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {galleryImages.slice(0, 3).map((image, idx) => (
+              <button key={image} type="button" className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 group" onClick={() => setShowGallery(true)} aria-label={`Open campus gallery, image ${idx + 1}`}>
+                <img src={image} alt={campus.images[idx]?.caption || `${campus.name} campus`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              </button>
             ))}
           </div>
-        </div>
+        </div>}
       </div>
       {showGallery && (
         <GalleryModal
@@ -976,108 +946,161 @@ function OverviewTab({ campus, heroImage }) {
   );
 }
 
-// --- Admissions & Fees Tab ---
+// --- Admission Procedure Tab ---
 function AdmissionsTab() {
-  const [ref, v] = useReveal();
-  const steps = [
-    {
-      num: "01",
-      title: "Check Eligibility",
-      desc: "Review the minimum marks and entry test requirements for your desired program.",
-    },
-    {
-      num: "02",
-      title: "Submit Application",
-      desc: "Complete the online application form and upload required documents.",
-    },
-    {
-      num: "03",
-      title: "Entry Test",
-      desc: "Appear in the scheduled entry test or submit SAT/NTS scores if applicable.",
-    },
-    {
-      num: "04",
-      title: "Merit List",
-      desc: "Wait for the official merit list announcement and confirm your seat.",
-    },
-    {
-      num: "05",
-      title: "Fee Submission",
-      desc: "Pay the semester fee within the deadline to secure your admission.",
-    },
-  ];
-  const feeItems = [
-    { label: "Registration Fee", value: "Rs 5,000", note: "One-time" },
-    { label: "Security Deposit", value: "Rs 10,000", note: "Refundable" },
-    { label: "Tuition Fee (CS)", value: "Rs 45,000", note: "Per semester" },
-    { label: "Tuition Fee (BBA)", value: "Rs 40,000", note: "Per semester" },
-    { label: "Lab & Facility", value: "Rs 5,000", note: "Per semester" },
-    { label: "Exam Fee", value: "Rs 2,500", note: "Per semester" },
-  ];
   return (
-    <div
-      ref={ref}
-      className={`transition-all duration-700 ease-out ${v ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-    >
-      <div className="max-w-6xl mx-auto px-5 md:px-6 lg:px-8 py-10 space-y-10">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 mb-1">
-            Admissions &amp; Fees
-          </h2>
-          <p className="text-sm text-gray-500">
-            Step-by-step admission process and fee structure for this campus.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {steps.map((s) => (
-            <div
-              key={s.num}
-              className="group p-5 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-orange-200 hover:-translate-y-1 transition-all duration-300 cursor-default"
-            >
-              <span className="text-3xl font-black text-orange-100 group-hover:text-orange-200 transition-colors duration-300">
-                {s.num}
-              </span>
-              <h3 className="text-sm font-bold text-gray-800 mt-2">
-                {s.title}
-              </h3>
-              <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                {s.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-gray-800 mb-4">
-            Fee Structure
-          </h3>
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="hidden sm:grid grid-cols-3 px-5 py-3 bg-slate-50 border-b border-gray-100">
-              {["Item", "Amount", "Note"].map((h) => (
-                <span
-                  key={h}
-                  className="text-[11px] font-bold uppercase tracking-widest text-slate-400"
-                >
-                  {h}
-                </span>
-              ))}
-            </div>
-            {feeItems.map((item, i) => (
-              <div
-                key={item.label}
-                className={`grid grid-cols-1 sm:grid-cols-3 items-center gap-y-1 px-5 py-3.5 hover:bg-orange-50/40 transition-colors duration-150 ${i !== feeItems.length - 1 ? "border-b border-gray-100" : ""}`}
-              >
-                <span className="text-sm font-semibold text-gray-800">
-                  {item.label}
-                </span>
-                <span className="text-sm font-bold text-orange-600">
-                  {item.value}
-                </span>
-                <span className="text-xs text-gray-400">{item.note}</span>
+    <div className="max-w-6xl mx-auto px-5 md:px-6 lg:px-8 py-10">
+      <div className="border-y border-gray-200 py-10 text-center">
+        <h2 className="text-xl font-bold text-gray-800">Admission Procedure</h2>
+        <p className="text-sm text-gray-500 mt-2">Coming soon</p>
+      </div>
+    </div>
+  );
+}
+
+function formatCampusDate(value) {
+  if (!value) return "";
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function AdmissionsInformationTab({ campus }) {
+  const documents = Array.isArray(campus.required_documents) ? campus.required_documents : [];
+  const announcements = Array.isArray(campus.announcements) ? campus.announcements : [];
+  const levels = { ADP: "ADP", UG: "Undergraduate", MS_MPhil: "MS / MPhil", PhD: "PhD" };
+  const dates = [
+    campus.intake_name && { label: "Intake", value: campus.intake_name },
+    campus.admission_open && { label: "Forms Open", value: formatCampusDate(campus.admission_open) },
+    campus.admission_close && { label: "Forms Close", value: formatCampusDate(campus.admission_close) },
+    campus.classes_start && { label: "Classes Start", value: formatCampusDate(campus.classes_start) },
+    campus.admission_status_override && { label: "Admission Status", value: campus.admission_status_override },
+  ].filter(Boolean);
+
+  return (
+    <div className="max-w-6xl mx-auto px-5 md:px-6 lg:px-8 py-10 space-y-10">
+      <div>
+        <h2 className="text-xl font-bold text-gray-800">Admissions Information</h2>
+        <p className="text-sm text-gray-500 mt-1">Dates, requirements, and announcements published by this campus.</p>
+      </div>
+
+      <section>
+        <h3 className="text-base font-bold text-gray-800 mb-3">Admissions Calendar</h3>
+        {dates.length ? (
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 border-y border-gray-200">
+            {dates.map(({ label, value }) => (
+              <div key={label} className="flex justify-between gap-4 py-3 border-b border-gray-100 last:border-0">
+                <dt className="text-sm text-gray-500">{label}</dt>
+                <dd className="text-sm font-semibold text-gray-800 text-right">{value}</dd>
               </div>
             ))}
-          </div>
+          </dl>
+        ) : <p className="text-sm text-gray-500">No admissions dates have been published.</p>}
+      </section>
+
+      <section>
+        <h3 className="text-base font-bold text-gray-800 mb-3">Required Documents</h3>
+        {documents.length ? (
+          <ul className="divide-y divide-gray-100 border-y border-gray-200">
+            {documents.map((doc, index) => {
+              const applicableLevels = doc.all ? ["All levels"] : (doc.levels || []).map((level) => levels[level] || level);
+              return (
+                <li key={`${doc.name}-${index}`} className="py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{doc.custom || doc.name}</p>
+                    {doc.note && <p className="text-xs text-gray-500 mt-1">{doc.note}</p>}
+                  </div>
+                  <span className="text-xs text-gray-500">{applicableLevels.length ? applicableLevels.join(", ") : "Level not specified"}</span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : <p className="text-sm text-gray-500">No document requirements have been published.</p>}
+      </section>
+
+      {campus.quota_policy?.trim() && (
+        <section>
+          <h3 className="text-base font-bold text-gray-800 mb-3">Quota & Reservation Policy</h3>
+          <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-line">{campus.quota_policy}</p>
+        </section>
+      )}
+
+      <section>
+        <h3 className="text-base font-bold text-gray-800 mb-3">Announcements & Key Dates</h3>
+        {announcements.length ? (
+          <ul className="divide-y divide-gray-100 border-y border-gray-200">
+            {announcements.map((item, index) => (
+              <li key={`${item.label}-${index}`} className="py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+                <span className="text-sm font-semibold text-gray-800">{item.label}</span>
+                <span className="text-sm text-gray-500">{formatCampusDate(item.date) || "To be announced"}</span>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-gray-500">No announcements have been published.</p>}
+      </section>
+    </div>
+  );
+}
+
+function CampusGalleryTab({ images }) {
+  const [showGallery, setShowGallery] = useState(false);
+  const galleryImages = images
+    .map((image) => ({ ...image, url: mediaUrl(image.image_url) }))
+    .filter((image) => image.url);
+  return (
+    <div className="max-w-6xl mx-auto px-5 md:px-6 lg:px-8 py-10">
+      <h2 className="text-xl font-bold text-gray-800">Campus Gallery</h2>
+      {galleryImages.length ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 sm:auto-rows-[140px] gap-3 mt-5">
+          {galleryImages.map((image, index) => {
+            const tileSize = index === 0 && galleryImages.length >= 3
+              ? "sm:col-span-2 sm:row-span-2"
+              : index === 4 && galleryImages.length >= 5
+                ? "sm:col-span-2"
+                : "";
+            return (
+              <button
+                key={image.id || image.url}
+                type="button"
+                onClick={() => setShowGallery(true)}
+                className={`relative min-h-[180px] sm:min-h-0 overflow-hidden rounded-xl bg-gray-100 text-left group ${tileSize}`}
+                aria-label={`Open campus gallery image ${index + 1}${image.caption ? `: ${image.caption}` : ""}`}
+              >
+                <img src={image.url} alt={image.caption || `Campus image ${index + 1}`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                {(image.caption || image.category) && (
+                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-4 pb-3 pt-10 text-white">
+                    {image.caption && <span className="block text-sm font-semibold">{image.caption}</span>}
+                    {image.category && <span className="block text-xs text-white/80 mt-0.5">{image.category}</span>}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      ) : <p className="text-sm text-gray-500 mt-3">No campus photos have been uploaded.</p>}
+      {showGallery && <GalleryModal images={galleryImages.map((image) => image.url)} onClose={() => setShowGallery(false)} />}
+    </div>
+  );
+}
+
+function CampusSocietiesTab({ societies }) {
+  return (
+    <div className="max-w-6xl mx-auto px-5 md:px-6 lg:px-8 py-10">
+      <h2 className="text-xl font-bold text-gray-800">Campus Societies</h2>
+      {societies.length ? (
+        <div className="divide-y divide-gray-100 border-y border-gray-200 mt-5">
+          {societies.map((society) => (
+            <article key={society.id} className="py-4">
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-sm font-semibold text-gray-800">{society.name}</h3>
+                {society.category && <span className="text-xs text-gray-500">{society.category}</span>}
+              </div>
+              {society.description && <p className="text-sm text-gray-600 mt-2">{society.description}</p>}
+            </article>
+          ))}
+        </div>
+      ) : <p className="text-sm text-gray-500 mt-3">No societies have been added.</p>}
     </div>
   );
 }
@@ -1203,10 +1226,58 @@ export default function CampusDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
-    setLoading(true);
-    const raw = id ? getCampusById(id) : null;
-    setCampus(toPageCampus(raw));
-    setLoading(false);
+    if (!id) {
+      setCampus(null);
+      setLoading(false);
+      return;
+    }
+
+    const staticRaw = getCampusById(id);
+    let active = true;
+    let latestRequest = 0;
+    const loadCampus = (showLoading = false) => {
+      const requestId = ++latestRequest;
+      if (showLoading) setLoading(true);
+      getCampusDetail(id)
+        .then((liveRaw) => {
+          if (!active || requestId !== latestRequest) return;
+          if (!liveRaw) {
+            setCampus(staticRaw ? toPageCampus(staticRaw) : null);
+            return;
+          }
+          const normalised = {
+            ...liveRaw,
+            campusName:     liveRaw.name || liveRaw.campusName,
+            universityName: liveRaw.university_name,
+            universityId:   liveRaw.university_id,
+            programs:       Array.isArray(liveRaw.programs)
+              ? liveRaw.programs
+              : [],
+            coverImage:     liveRaw.cover_image || liveRaw.university_banner || null,
+          };
+          setCampus(toPageCampus(normalised));
+        })
+        .catch(() => {
+          if (active && requestId === latestRequest) {
+            setCampus(staticRaw ? toPageCampus(staticRaw) : null);
+          }
+        })
+        .finally(() => {
+          if (active && requestId === latestRequest) setLoading(false);
+        });
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadCampus();
+    };
+    loadCampus(true);
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [id]);
 
   if (loading) {
@@ -1263,13 +1334,21 @@ export default function CampusDetailPage() {
       case "overview":
         return <OverviewTab campus={campus} heroImage={heroImage} />;
       case "programs":
-        return <ProgramsOffered />;
+        return <ProgramsOffered programs={campus.programs || []} />;
+      case "admission-procedure":
+        return <AdmissionsTab />;
+      case "admissions-info":
+        return <AdmissionsInformationTab campus={campus} />;
       case "scholarships":
-        return <Scholarships />;
+        return <Scholarships scholarships={campus.scholarships || []} />;
       case "facilities":
-        return <CampusFacilities />;
+        return <CampusFacilities facilities={campus.facilities} />;
       case "transport":
-        return <CampusTransport />;
+        return <CampusTransport facilities={campus.facilities} />;
+      case "gallery":
+        return <CampusGalleryTab images={campus.images || []} />;
+      case "societies":
+        return <CampusSocietiesTab societies={campus.societies || []} />;
       case "hostels":
         return <NearbyHostels />;
       case "admissions":

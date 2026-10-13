@@ -1,0 +1,3080 @@
+{
+  "scraped_at": "2026-10-10T04:40:10.471Z",
+  "source": "COMSATS University Islamabad official web + UG Prospectus 2025-26",
+  "sources": {
+    "homepage": "https://www.comsats.edu.pk/",
+    "campusesPage": "https://www.comsats.edu.pk/comsats-campuses.aspx",
+    "contactUs": "https://www.comsats.edu.pk/contactus.aspx",
+    "admissionsContacts": "https://admissions.comsats.edu.pk/Home/ContactUs",
+    "ugProspectus2025": "https://ww2.comsats.edu.pk/ro/Prospectus/UG_Prospectus/Undergraduate-Guide-2025-26.pdf",
+    "scholarships": "https://ww2.comsats.edu.pk/scholarships/",
+    "admissionsPortal": "https://admissions.comsats.edu.pk"
+  },
+  "notes": [
+    "Mapped to uni-finder: universities / university_profiles / campuses / programs / campus_programs.details / scholarships / facilities.",
+    "Undergraduate program campus offerings from UG Prospectus 2025-26. Graduate/MS/PhD not fully enumerated here.",
+    "Some campus subdomain pages blocked/timed out (VPN/proxy, 500); addresses/contacts filled from principal-seat campus + admissions pages.",
+    "Facility ids use campus_facilities selected_ids vocabulary from the app.",
+    "Software Engineering campus list was ambiguous in PDF extract — marked needs_verification."
+  ],
+  "university": {
+    "name": "COMSATS University Islamabad",
+    "normalized_name": "comsats university islamabad",
+    "university_type": "Public",
+    "oric_domain": "@comsats.edu.pk",
+    "website_url": "https://www.comsats.edu.pk",
+    "admissions_email": "admission@comsats.edu.pk",
+    "admissions_phone": "+92-51-9247000",
+    "established_year": 1998,
+    "campus_count": 8,
+    "campuses_text": "Islamabad; Abbottabad; Wah; Lahore; Attock; Sahiwal; Vehari; Virtual",
+    "active_students": 36438,
+    "students_display": "39K+",
+    "faculty": "1,935+",
+    "research_publications": "28,324+",
+    "patents": 118,
+    "programs_count_claimed": "116+",
+    "alumni": "114,417+",
+    "about_text": "COMSATS University Islamabad (CUI) was established in 1998 as COMSATS Institute of Information Technology (CIIT), a project of the Commission on Science and Technology for Sustainable Development in the South (COMSATS). It received a federal charter in August 2000 and was upgraded to a Federally Chartered University in April 2018 under the COMSATS University Islamabad Act, 2018. CUI is a multi-campus public research university offering programs from basic sciences to emerging technologies across Engineering, Information Science & Technology, Business Administration, Science, Health Sciences, and Architecture & Design.",
+    "mission_statement": "To develop human capital through knowledge-based education and research in science, engineering, technology and management.",
+    "vision": "To become a world-class university through excellence in teaching, research, innovation and public service.",
+    "tagline": "Forging Research. Inspiring Innovation.",
+    "hero_subtitle": "Empowering future leaders through world-class education, cutting-edge research and global collaborations.",
+    "ranking_notes": [
+      "QS World University Rankings 2025: among 711-620 band (as stated in UG guide)",
+      "QS Asian University Ranking 2025: 129",
+      "THE Asia University Rankings 2024: 157",
+      "1st in Pakistan in Computer Science and IT (UG guide claim)"
+    ],
+    "rector": "Prof. Dr. Raheel Qamar, T.I.",
+    "founder_rector": "Dr. Syed Muhammad Junaid Zaidi, H.I., S.I.",
+    "international_students_note": "Over 210 international students from 22+ countries (UG Prospectus 2025-26).",
+    "address_principal_seat": "Park Road, Tarlai Kalan, Islamabad 45550, Pakistan",
+    "phone_principal": "+92-51-9049-5032-5",
+    "email_general": "info@comsats.edu.pk"
+  },
+  "scholarships": [
+    {
+      "name": "Financial Support Programs (FSPs)",
+      "type": "Need",
+      "coverage": "Need-based scholarships, stipends, financial support, Qarz-e-Hasna",
+      "criteria": "Genuine financial need; available regardless of race, religion, color, national origin, age, or gender. Contact campus scholarship office.",
+      "source": "https://ww2.comsats.edu.pk/ro/Prospectus/UG_Prospectus/Undergraduate-Guide-2025-26.pdf"
+    },
+    {
+      "name": "CUI Scholarship Program for OIC Member Countries",
+      "type": "Merit",
+      "coverage": "International — with COMSTECH travel support for selected AI & STEM applicants",
+      "criteria": "Applicants from OIC member countries; see scholarships portal.",
+      "source": "https://www.comsats.edu.pk/"
+    },
+    {
+      "name": "Google Career Certificate Scholarships",
+      "type": "Merit",
+      "coverage": "1,000 free Google Career Certificate scholarships (announced on site)",
+      "criteria": "As per current CUI announcement.",
+      "source": "https://www.comsats.edu.pk/"
+    }
+  ],
+  "required_documents_typical": [
+    {
+      "name": "Matriculation / O-Level certificates & DMCs",
+      "levels": [
+        "UG"
+      ],
+      "all": true,
+      "note": "Original + two attested photocopies"
+    },
+    {
+      "name": "Intermediate / A-Level certificates & DMCs",
+      "levels": [
+        "UG"
+      ],
+      "all": true,
+      "note": "Original + two attested photocopies"
+    },
+    {
+      "name": "Equivalence Certificate (if applicable)",
+      "levels": [
+        "UG"
+      ],
+      "all": false,
+      "note": "IBCC equivalence for foreign/A-Level qualifications"
+    },
+    {
+      "name": "Migration Certificate (if applicable)",
+      "levels": [
+        "UG"
+      ],
+      "all": false
+    },
+    {
+      "name": "Hope Certificate / Affidavit (if result awaited)",
+      "levels": [
+        "UG"
+      ],
+      "all": false
+    },
+    {
+      "name": "CNIC or B-Form",
+      "levels": [
+        "UG"
+      ],
+      "all": true
+    },
+    {
+      "name": "Passport-size photographs (2)",
+      "levels": [
+        "UG"
+      ],
+      "all": true
+    },
+    {
+      "name": "Undertaking on stamp paper",
+      "levels": [
+        "UG"
+      ],
+      "all": true,
+      "note": "Student and guardian undertaking to abide by university rules"
+    },
+    {
+      "name": "Valid NTS NAT-I score",
+      "levels": [
+        "UG"
+      ],
+      "all": true,
+      "note": "Engineering: min 33% as per PEC; other programs per CUI policy"
+    }
+  ],
+  "merit_formula_ug": {
+    "non_engineering": {
+      "matric": "10%",
+      "intermediate": "40%",
+      "nts": "50%"
+    },
+    "engineering": {
+      "matric": "10%",
+      "intermediate": "40%",
+      "nts": "50%",
+      "note": "Valid NTS min 33% as per PEC"
+    },
+    "architecture_design_note": "B.Arch / Design / Fine Arts use Creative Aptitude Test weightage — see prospectus."
+  },
+  "campuses": [
+    {
+      "name": "COMSATS University Islamabad — Islamabad Campus",
+      "campus_type": "Main Campus",
+      "city": "Islamabad",
+      "province": "Islamabad Capital Territory",
+      "address": "Park Road, Tarlai Kalan, Islamabad 45550, Pakistan",
+      "phone": "+92-51-90495032-5",
+      "email": "rizwan_ahmed@comsats.edu.pk",
+      "website": "https://islamabad.comsats.edu.pk",
+      "is_main": true,
+      "established_year": 1998,
+      "students": "11616",
+      "faculty": 579,
+      "graduates": 31376,
+      "description": "Principal / flagship campus of COMSATS University Islamabad — teaching, research and innovation hub.",
+      "gender_policy": "co-education",
+      "hostel_available": true,
+      "shift_morning": true,
+      "shift_evening": false,
+      "shift_weekend": false,
+      "facilities_selected_ids": [
+        "wifi",
+        "library",
+        "comp_labs",
+        "sci_labs",
+        "cafeteria",
+        "prayer",
+        "sports",
+        "gym",
+        "transport",
+        "medical",
+        "parking",
+        "auditorium"
+      ],
+      "admissions_contact": {
+        "name": "Mr. Rizwan Ahmed",
+        "designation": "In-Charge Admissions",
+        "phone": "+92-51-90495032-5",
+        "email": "rizwan_ahmed@comsats.edu.pk"
+      }
+    },
+    {
+      "name": "COMSATS University Islamabad — Lahore Campus",
+      "campus_type": "Sub Campus",
+      "city": "Lahore",
+      "province": "Punjab",
+      "address": "1.5 KM Defence Road, Off Raiwind Road, Lahore, Pakistan",
+      "phone": "+92-42-111-001-007",
+      "email": "admissions@cuilahore.edu.pk",
+      "website": "https://lahore.comsats.edu.pk",
+      "is_main": false,
+      "established_year": 2002,
+      "students": "8067",
+      "faculty": 417,
+      "graduates": 22288,
+      "description": "Established January 2002. Premier CUI campus in Lahore offering engineering, computing, management, sciences, pharmacy, architecture and design.",
+      "gender_policy": "co-education",
+      "hostel_available": true,
+      "shift_morning": true,
+      "departments": [
+        "Architecture",
+        "Art & Design",
+        "Economics",
+        "Humanities",
+        "Management Sciences",
+        "Computer Science",
+        "Chemical Engineering",
+        "Computer Engineering",
+        "Electrical Engineering",
+        "Chemistry",
+        "Mathematics",
+        "Physics",
+        "Pharmacy"
+      ],
+      "facilities_selected_ids": [
+        "wifi",
+        "library",
+        "comp_labs",
+        "sci_labs",
+        "cafeteria",
+        "sports",
+        "medical",
+        "transport",
+        "auditorium"
+      ],
+      "admissions_contact": {
+        "name": "Mr. Safdar Ali",
+        "designation": "Incharge Student Affairs / Student Service Centre",
+        "phone": "+92-42-111-001-007",
+        "email": "admissions@cuilahore.edu.pk"
+      }
+    },
+    {
+      "name": "COMSATS University Islamabad — Abbottabad Campus",
+      "campus_type": "Sub Campus",
+      "city": "Abbottabad",
+      "province": "Khyber Pakhtunkhwa",
+      "address": "University Road, Tobe Camp, Postal Code 22060, Abbottabad",
+      "phone": "+92-992-383591-6",
+      "email": "admissions@cuiatd.edu.pk",
+      "website": "https://abbottabad.comsats.edu.pk",
+      "is_main": false,
+      "established_year": 2001,
+      "students": "5654",
+      "faculty": 383,
+      "graduates": 20640,
+      "description": "CUI Abbottabad campus (est. 2001) offering engineering, computing, management, earth sciences, pharmacy, biotechnology and related programs.",
+      "gender_policy": "co-education",
+      "hostel_available": true,
+      "shift_morning": true,
+      "facilities_selected_ids": [
+        "wifi",
+        "library",
+        "comp_labs",
+        "sci_labs",
+        "cafeteria",
+        "sports",
+        "medical",
+        "hostel"
+      ],
+      "admissions_contact": {
+        "name": "Dr. Faisal Rehman / Yasir Mohayaddin",
+        "designation": "Student Affairs / Admissions",
+        "phone": "+92-992-383591-6",
+        "email": "admissions@cuiatd.edu.pk"
+      }
+    },
+    {
+      "name": "COMSATS University Islamabad — Wah Campus",
+      "campus_type": "Sub Campus",
+      "city": "Wah Cantt",
+      "province": "Punjab",
+      "address": "GT Road, Quaid Avenue, Wah Cantt, Punjab",
+      "phone": "+92-51-9314382-3",
+      "email": "akmal@ciitwah.edu.pk",
+      "website": "https://wah.comsats.edu.pk",
+      "is_main": false,
+      "established_year": 2001,
+      "students": "3013",
+      "faculty": 157,
+      "graduates": 11857,
+      "description": "CUI Wah Campus (est. 2001) offering engineering, computing, management and related undergraduate programs.",
+      "gender_policy": "co-education",
+      "hostel_available": true,
+      "shift_morning": true,
+      "facilities_selected_ids": [
+        "wifi",
+        "library",
+        "comp_labs",
+        "cafeteria",
+        "sports",
+        "transport"
+      ],
+      "admissions_contact": {
+        "name": "Dr. Akmal Javaid",
+        "designation": "Senior Manager (Student Affairs) / OIC Admissions",
+        "phone": "+92-51-9314484",
+        "email": "akmal@ciitwah.edu.pk"
+      }
+    },
+    {
+      "name": "COMSATS University Islamabad — Attock Campus",
+      "campus_type": "Sub Campus",
+      "city": "Attock",
+      "province": "Punjab",
+      "address": "Near Officers Colony, Kamra Road, Attock",
+      "phone": "+92-57-9049159",
+      "email": "admissions@cuiatk.edu.pk",
+      "website": "https://attock.comsats.edu.pk",
+      "is_main": false,
+      "established_year": 2004,
+      "students": "1805",
+      "faculty": 102,
+      "graduates": 6192,
+      "description": "CUI Attock Campus started in 2004; offers undergraduate and graduate programs in Computer Sciences, Management Sciences, Electrical Engineering and Mathematics.",
+      "gender_policy": "co-education",
+      "hostel_available": true,
+      "shift_morning": true,
+      "facilities_selected_ids": [
+        "wifi",
+        "library",
+        "comp_labs",
+        "cafeteria",
+        "sports"
+      ],
+      "admissions_contact": {
+        "name": "Mr. Muhammad Javed",
+        "designation": "Incharge Admissions & Student Affairs",
+        "phone": "+92-57-9049159 / +92-315-5504184",
+        "email": "admissions@cuiatk.edu.pk"
+      }
+    },
+    {
+      "name": "COMSATS University Islamabad — Sahiwal Campus",
+      "campus_type": "Sub Campus",
+      "city": "Sahiwal",
+      "province": "Punjab",
+      "address": "COMSATS Road, Off GT Road, Sahiwal, Pakistan",
+      "phone": "+92-40-4305001",
+      "email": "admissions@cuisahiwal.edu.pk",
+      "website": "https://sahiwal.comsats.edu.pk",
+      "is_main": false,
+      "established_year": 2006,
+      "students": "3665",
+      "faculty": 174,
+      "graduates": 8270,
+      "description": "Established 2006. Offers engineering, computing, management, biosciences, biotechnology, mathematics and related programs. Transport: 13 buses (64 seats). Lecture theatres IT-enabled and air-conditioned.",
+      "gender_policy": "co-education",
+      "hostel_available": true,
+      "shift_morning": true,
+      "departments": [
+        "Biosciences",
+        "Civil Engineering",
+        "Computer Science",
+        "Electrical Engineering",
+        "Management Sciences",
+        "Mathematics",
+        "Mechanical Engineering",
+        "Biotechnology"
+      ],
+      "facilities_selected_ids": [
+        "wifi",
+        "library",
+        "comp_labs",
+        "sci_labs",
+        "cafeteria",
+        "sports",
+        "transport",
+        "medical"
+      ],
+      "transport_note": "13 buses of 64 seats on specified routes",
+      "admissions_contact": {
+        "name": "Ms. Zara Abid",
+        "designation": "Coordination Officer / Incharge Admissions",
+        "phone": "+92-40-4305001-3",
+        "email": "admissions@cuisahiwal.edu.pk"
+      }
+    },
+    {
+      "name": "COMSATS University Islamabad — Vehari Campus",
+      "campus_type": "Sub Campus",
+      "city": "Vehari",
+      "province": "Punjab",
+      "address": "Peer Murad, Off Mailsi Road, Vehari, Pakistan",
+      "phone": "+92-67-3602805",
+      "email": "admissions@cuivehari.edu.pk",
+      "website": "https://vehari.comsats.edu.pk",
+      "is_main": false,
+      "established_year": 2008,
+      "students": "2618",
+      "faculty": 122,
+      "graduates": 6119,
+      "description": "CUI Vehari Campus (est. 2008). Departments include Computer Sciences, Environmental Sciences, Management Sciences, Humanities, Mathematics, Economics, Biotechnology. Transport: 37 buses (64 seats).",
+      "gender_policy": "co-education",
+      "hostel_available": true,
+      "shift_morning": true,
+      "departments": [
+        "Computer Sciences",
+        "Environmental Sciences",
+        "Management Sciences",
+        "Humanities",
+        "Mathematics",
+        "Economics",
+        "Biotechnology"
+      ],
+      "facilities_selected_ids": [
+        "wifi",
+        "library",
+        "comp_labs",
+        "sci_labs",
+        "cafeteria",
+        "sports",
+        "transport",
+        "medical"
+      ],
+      "transport_note": "37 buses of 64 seats on specified routes",
+      "admissions_contact": {
+        "name": "Mr. Fakhar Hussain",
+        "designation": "Assistant Program Officer / Incharge Admissions",
+        "phone": "+92-67-3001606 / +92-300-7518090",
+        "email": "admissions@cuivehari.edu.pk"
+      }
+    },
+    {
+      "name": "COMSATS University Islamabad — Virtual Campus",
+      "campus_type": "Regional Campus",
+      "city": "Islamabad",
+      "province": "Islamabad Capital Territory",
+      "address": "Plot 96, Street 4, 3rd Floor, NTS Building, H-8/1, Islamabad, Pakistan",
+      "phone": null,
+      "email": null,
+      "website": "https://www.comsats.edu.pk/comsats-campuses.aspx",
+      "is_main": false,
+      "established_year": 2012,
+      "students": null,
+      "faculty": null,
+      "graduates": 3594,
+      "description": "Technology-enabled Virtual Campus offering flexible/online learning beyond traditional physical campus boundaries.",
+      "gender_policy": "co-education",
+      "hostel_available": false,
+      "shift_morning": true,
+      "shift_evening": true,
+      "shift_weekend": true,
+      "facilities_selected_ids": [
+        "wifi"
+      ],
+      "admissions_contact": null
+    }
+  ],
+  "programs": [
+    {
+      "name": "Bachelor of Science in Electrical Engineering",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "specialization": null,
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Wah",
+        "Lahore",
+        "Attock",
+        "Sahiwal"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "134",
+      "eligibility": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC).",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Science in Electrical Engineering",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "134",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Electrical (Electronics) Engineering",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate with Chemistry min 60% or DAE/ICS relevant; Valid NTS (min 33% PEC).",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Science in Electrical (Electronics) Engineering",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate with Chemistry min 60% or DAE/ICS relevant; Valid NTS (min 33% PEC)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Computer Engineering",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Wah",
+        "Attock",
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "133",
+      "eligibility": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC).",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Science in Computer Engineering",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "133",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Mechanical Engineering",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Sahiwal",
+        "Wah"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "134",
+      "eligibility": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC).",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Science in Mechanical Engineering",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "134",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Chemical Engineering",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "136",
+      "eligibility": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC).",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Science in Chemical Engineering",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "136",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Civil Engineering",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad",
+        "Wah",
+        "Sahiwal"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "135",
+      "eligibility": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC).",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Science in Civil Engineering",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Engineering / ICS / DAE relevant with min 60%; Valid NTS (min 33% PEC)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "135",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Computer Science",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Wah",
+        "Lahore",
+        "Attock",
+        "Sahiwal",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "133",
+      "eligibility": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math).",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Computer Science",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "133",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Software Engineering",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Wah",
+        "Lahore",
+        "Attock",
+        "Sahiwal",
+        "Vehari"
+      ],
+      "campuses_needs_verification": true,
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "133",
+      "eligibility": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math).",
+      "offering_semesters": "Fall and Spring",
+      "note": "Campus list ambiguous in PDF table extract; assumed same as CS — verify on admissions portal.",
+      "original_name": "Bachelor of Science in Software Engineering",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "133",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Data Science",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "133",
+      "eligibility": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math).",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Data Science",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "133",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Artificial Intelligence",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Wah",
+        "Lahore",
+        "Attock"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "133",
+      "eligibility": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math).",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Artificial Intelligence",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "133",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Cyber Security",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "133",
+      "eligibility": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math).",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Cyber Security",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "At least 50% in Intermediate with Mathematics, or Pre-Medical (with remedial Math)."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "133",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Business Administration",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Wah",
+        "Lahore",
+        "Attock",
+        "Sahiwal",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Business Administration",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Accounting and Finance",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore",
+        "Wah",
+        "Attock",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Accounting and Finance",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Business Data Analytics",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Attock",
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "135",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Business Data Analytics",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "135",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Auditing and Taxation",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Auditing and Taxation",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Economics",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Lahore",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Economics",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Economics with Data Science",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Economics with Data Science",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Development Studies",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "135",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Development Studies",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "135",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Psychology",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Lahore",
+        "Wah"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Twelve years of education or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Psychology",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Twelve years of education or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Media and Communication Studies",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Media and Communication Studies",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in English",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Lahore",
+        "Attock",
+        "Sahiwal",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in English",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in International Relations",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in International Relations",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Chemistry",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "135",
+      "eligibility": "Intermediate (Pre-Engineering/Pre-Medical)/A-levels with Chemistry, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Chemistry",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate (Pre-Engineering/Pre-Medical)/A-levels with Chemistry, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "135",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Statistics",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "133",
+      "eligibility": "At least 12 years education with minimum 50% marks.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Statistics",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "At least 12 years education with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "133",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Mathematics",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Lahore",
+        "Attock",
+        "Sahiwal",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "131",
+      "eligibility": "FA/FSc/ICS/A-Level with Mathematics, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Mathematics",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "FA/FSc/ICS/A-Level with Mathematics, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "131",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Mathematics with Data Science",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Abbottabad",
+        "Lahore",
+        "Attock",
+        "Sahiwal",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "131",
+      "eligibility": "Intermediate/A-Levels min 50%; Pre-Medical may need remedial Math.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Mathematics with Data Science",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate/A-Levels min 50%; Pre-Medical may need remedial Math."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "131",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Geology",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "FSc Pre-Engineering/Pre-Medical or relevant DAE, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Geology",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "FSc Pre-Engineering/Pre-Medical or relevant DAE, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Geophysics",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "FSc Pre-Engineering or relevant DAE, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Geophysics",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "FSc Pre-Engineering or relevant DAE, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Remote Sensing & GIS",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "134",
+      "eligibility": "At least 50% Intermediate with Mathematics, or Pre-Medical with remedial Math.",
+      "offering_semesters": "Fall",
+      "original_name": "Bachelor of Science in Remote Sensing & GIS",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "At least 50% Intermediate with Mathematics, or Pre-Medical with remedial Math."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "134",
+        "offering_semesters": "Fall"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Electronics and Computing",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "139",
+      "eligibility": "ICS/Intermediate with Physics or Mathematics, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Electronics and Computing",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "ICS/Intermediate with Physics or Mathematics, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "139",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Physics",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "138",
+      "eligibility": "Intermediate with Physics, min 50%; Pre-Medical may need remedial Math.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Physics",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate with Physics, min 50%; Pre-Medical may need remedial Math."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "138",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Bioinformatics",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Sahiwal"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "130",
+      "eligibility": "Intermediate Pre-Medical/Pre-Engineering/ICS, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Bioinformatics",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical/Pre-Engineering/ICS, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "130",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Biosciences",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "130",
+      "eligibility": "Intermediate Pre-Medical or equivalent, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Biosciences",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical or equivalent, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "130",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Food Sciences and Nutrition",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "campuses_needs_verification": true,
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "130",
+      "eligibility": "FSc Pre-Medical or 3-year DAE in Food Science & Technology, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "note": "Campus cell empty in PDF extract — verify on admissions portal.",
+      "original_name": "Bachelor of Science in Food Sciences and Nutrition",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "FSc Pre-Medical or 3-year DAE in Food Science & Technology, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "130",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Biochemistry",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Sahiwal"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "130",
+      "eligibility": "Intermediate Pre-Medical / A-Level with Biology, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Biochemistry",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical / A-Level with Biology, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "130",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Environmental Sciences",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate (or equivalent) with science, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Environmental Sciences",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate (or equivalent) with science, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Agriculture",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Sahiwal",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate Pre-Medical/Pre-Engineering/Pre-Agriculture or equivalent, min 50%.",
+      "offering_semesters": "Fall",
+      "original_name": "Bachelor of Science in Agriculture",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical/Pre-Engineering/Pre-Agriculture or equivalent, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall"
+      }
+    },
+    {
+      "name": "Doctor of Pharmacy (Pharm-D)",
+      "degree_type": "Pharm-D",
+      "level": "Undergraduate",
+      "campuses": [
+        "Lahore",
+        "Abbottabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "5 years (10–15 semesters)",
+      "credit_hours": "199",
+      "eligibility": "Intermediate Pre-Medical or equivalent, min 60%.",
+      "offering_semesters": "Fall Only",
+      "original_name": "Doctor of Pharmacy (Pharm-D)",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical or equivalent, min 60%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "5 years (10–15 semesters)",
+        "credit_hours": "199",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Biotechnology",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad",
+        "Sahiwal",
+        "Vehari"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate Pre-Medical or equivalent, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "original_name": "Bachelor of Science in Biotechnology",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical or equivalent, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Microbiology",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad"
+      ],
+      "campuses_needs_verification": true,
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "135",
+      "eligibility": "Intermediate Pre-Medical or equivalent, min 50%.",
+      "offering_semesters": "Fall and Spring",
+      "note": "Campus cell empty in PDF extract — Abbottabad assumed; verify.",
+      "original_name": "Bachelor of Science in Microbiology",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical or equivalent, min 50%."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "135",
+        "offering_semesters": "Fall and Spring"
+      }
+    },
+    {
+      "name": "Bachelor of Science in Medical Lab Technology",
+      "degree_type": "BS",
+      "level": "Undergraduate",
+      "campuses": [
+        "Abbottabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "132",
+      "eligibility": "Intermediate Pre-Medical/A-Level min 50%; no 3rd division/grade D in career.",
+      "offering_semesters": "Fall",
+      "original_name": "Bachelor of Science in Medical Lab Technology",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate Pre-Medical/A-Level min 50%; no 3rd division/grade D in career."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "132",
+        "offering_semesters": "Fall"
+      }
+    },
+    {
+      "name": "Bachelor of Architecture",
+      "degree_type": "B.Arch",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore"
+      ],
+      "entry_test": "Creative Aptitude Test",
+      "duration": "5 years (10–15 semesters)",
+      "credit_hours": "169",
+      "eligibility": "Intermediate or equivalent min 60%; departmental Creative Aptitude Test required.",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Architecture",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent min 60%; departmental Creative Aptitude Test required."
+          }
+        ],
+        "entryTest": "Creative Aptitude Test",
+        "testBody": "Creative Aptitude Test",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "5 years (10–15 semesters)",
+        "credit_hours": "169",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Interior Design",
+      "degree_type": "BID",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "138",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Interior Design",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "138",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Design",
+      "degree_type": "B.Des",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad",
+        "Lahore"
+      ],
+      "entry_test": "Creative Aptitude Test",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "137",
+      "eligibility": "Intermediate or equivalent min 50%; departmental Creative Aptitude Test.",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Design",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent min 50%; departmental Creative Aptitude Test."
+          }
+        ],
+        "entryTest": "Creative Aptitude Test",
+        "testBody": "Creative Aptitude Test",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "137",
+        "offering_semesters": "Fall Only"
+      }
+    },
+    {
+      "name": "Bachelor of Fine Arts",
+      "degree_type": "BFA",
+      "level": "Undergraduate",
+      "campuses": [
+        "Islamabad"
+      ],
+      "entry_test": "NTS",
+      "duration": "4 years (8–12 semesters)",
+      "credit_hours": "134",
+      "eligibility": "Intermediate or equivalent with minimum 50% marks.",
+      "offering_semesters": "Fall Only",
+      "original_name": "Bachelor of Fine Arts",
+      "status": "approved",
+      "created_via": "scrape_comsats",
+      "details_template": {
+        "shifts": {
+          "morning": true,
+          "evening": false,
+          "weekend": false
+        },
+        "seats": "",
+        "contact": "",
+        "eligibility": [
+          {
+            "qualification": "Intermediate / equivalent",
+            "minPct": "",
+            "subjects": "",
+            "note": "Intermediate or equivalent with minimum 50% marks."
+          }
+        ],
+        "entryTest": "NTS",
+        "testBody": "NTS",
+        "testNote": "",
+        "interviewOn": false,
+        "interviewNote": "",
+        "merit": [
+          {
+            "component": "Matriculation",
+            "weight": "10%"
+          },
+          {
+            "component": "Intermediate",
+            "weight": "40%"
+          },
+          {
+            "component": "NTS / Entry Test",
+            "weight": "50%"
+          }
+        ],
+        "fees": [],
+        "duration": "4 years (8–12 semesters)",
+        "credit_hours": "134",
+        "offering_semesters": "Fall Only"
+      }
+    }
+  ]
+}

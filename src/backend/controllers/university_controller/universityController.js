@@ -17,6 +17,17 @@ const fileUrl = (files, field) =>
     ? `/uploads/${files[field][0].filename}`
     : null;
 
+const fileToUrl = (filepath) => {
+  if (!filepath) return null;
+  if (filepath.startsWith("http://") || filepath.startsWith("https://")) return filepath;
+  const normalized = filepath.replace(/\\/g, "/");
+  const idx = normalized.indexOf("/uploads/");
+  if (idx !== -1) {
+    return normalized.substring(idx);
+  }
+  return filepath.startsWith("/") ? filepath : `/${filepath}`;
+};
+
 export const getMyUniversity = (req, res) => {
   const { uid } = req.params;
   db.query(
@@ -30,109 +41,115 @@ export const getMyUniversity = (req, res) => {
 };
 
 export const listUniversities = (req, res) => {
+  const showAll = req.query.all === "true";
+  const whereClause = showAll
+    ? "WHERE u.is_hec_listed = 1"
+    : `WHERE (
+        u.status = 'approved'
+        OR u.owner_uid IS NOT NULL
+        OR EXISTS (
+          SELECT 1 FROM applications a
+          WHERE a.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci
+            AND LOWER(a.status) = 'approved'
+        )
+      )`;
+
   db.query(
     `SELECT
-       u.id, u.name, u.city, u.domain, u.oric_domain, u.logo_url, u.banner_url, u.tagline,
-       u.hec_rank, u.university_type, u.total_campuses,
-
+       u.id, u.name, u.domain, u.oric_domain, u.tagline, u.hec_rank,
+       COALESCE(up.logo_path, u.logo_url) AS logo_url,
+       COALESCE(up.banner_path, u.banner_url) AS banner_url,
+       COALESCE(u.university_type, 'Private') AS university_type,
+       COALESCE(
+         u.province,
+         (SELECT c.province FROM campuses c WHERE c.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci AND c.province IS NOT NULL LIMIT 1),
+         'Punjab'
+       ) AS province,
+       COALESCE(
+         u.city,
+         (SELECT c.city FROM campuses c WHERE c.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci AND c.city IS NOT NULL LIMIT 1),
+         'Pakistan'
+       ) AS city,
+       COALESCE(
+         (SELECT COUNT(*) FROM campuses c WHERE c.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci),
+         CAST(u.total_campuses AS UNSIGNED),
+         1
+       ) AS total_campuses,
+       (SELECT image_url FROM university_images WHERE university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci ORDER BY created_at DESC LIMIT 1) AS cover_image,
        CASE
          WHEN u.owner_uid IS NOT NULL
-              OR EXISTS (
-                SELECT 1 FROM applications a
-                WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-                  AND LOWER(a.status) = 'approved'
-              )
+              OR EXISTS (SELECT 1 FROM applications a WHERE a.university_id COLLATE utf8mb4_general_ci = u.id AND LOWER(a.status) = 'approved')
            THEN 'registered'
-         WHEN EXISTS (
-                SELECT 1 FROM applications a
-                WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-                  AND LOWER(a.status) IN
-                      ('awaiting','pending','under_review','info_required',
-                       'under review','info required')
-              )
+         WHEN EXISTS (SELECT 1 FROM applications a WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
+                      AND LOWER(a.status) IN ('awaiting','pending','under_review','info_required','under review','info required'))
            THEN 'in_process'
          ELSE 'available'
        END AS state,
-
-       CASE
-         WHEN u.owner_uid IS NOT NULL
-              OR EXISTS (
-                SELECT 1 FROM applications a
-                WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-                  AND LOWER(a.status) = 'approved'
-              )
-           THEN 1
-         ELSE 0
-       END AS claimed,
-
+       (u.owner_uid IS NOT NULL OR EXISTS (SELECT 1 FROM applications a WHERE a.university_id COLLATE utf8mb4_general_ci = u.id AND LOWER(a.status) = 'approved')) AS claimed,
        EXISTS (
-         SELECT 1 FROM applications a
-         WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-           AND LOWER(a.status) = 'rejected'
-       ) AS previously_rejected,
-
-       (SELECT image_url FROM university_images
-        WHERE university_id = u.id ORDER BY created_at DESC LIMIT 1) AS cover_image
+         SELECT 1 FROM applications a WHERE a.university_id COLLATE utf8mb4_general_ci = u.id AND LOWER(a.status) = 'rejected'
+       ) AS previously_rejected
      FROM universities u
-     WHERE u.is_hec_listed = 1
+     LEFT JOIN university_profiles up ON up.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci
+     ${whereClause}
      ORDER BY u.name`,
     (err, rows) => {
       if (err) {
-        if (err.code === "ER_NO_SUCH_TABLE") {
-          return db.query(
-            `SELECT
-               u.id, u.name, u.city, u.domain, u.oric_domain,
-               u.logo_url, u.banner_url, u.tagline,
-               u.hec_rank, u.university_type, u.total_campuses,
-               CASE
-                 WHEN u.owner_uid IS NOT NULL
-                      OR EXISTS (SELECT 1 FROM applications a
-                                 WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-                                   AND LOWER(a.status) = 'approved')
-                   THEN 'registered'
-                 WHEN EXISTS (SELECT 1 FROM applications a
-                              WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-                                AND LOWER(a.status) IN
-                                    ('awaiting','pending','under_review','info_required',
-                                     'under review','info required'))
-                   THEN 'in_process'
-                 ELSE 'available'
-               END AS state,
-               CASE
-                 WHEN u.owner_uid IS NOT NULL
-                      OR EXISTS (SELECT 1 FROM applications a
-                                 WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-                                   AND LOWER(a.status) = 'approved')
-                   THEN 1 ELSE 0
-               END AS claimed,
-               EXISTS (SELECT 1 FROM applications a
-                       WHERE a.university_id COLLATE utf8mb4_general_ci = u.id
-                         AND LOWER(a.status) = 'rejected'
-               ) AS previously_rejected,
-               NULL AS cover_image
-             FROM universities u
-             WHERE u.is_hec_listed = 1
-             ORDER BY u.name`,
-            (err2, rows2) => {
-              if (err2) return res.status(500).json({ message: "DB error", error: err2.message });
-              return res.status(200).json(rows2);
-            },
-          );
-        }
+        console.error("listUniversities error:", err);
         return res.status(500).json({ message: "DB error", error: err.message });
       }
-      return res.status(200).json(rows);
+      const formatted = (rows || []).map((r) => ({
+        ...r,
+        logo_url: fileToUrl(r.logo_url),
+        banner_url: fileToUrl(r.banner_url || r.cover_image),
+      }));
+      return res.status(200).json(formatted);
     }
   );
 };
 
 export const getUniversityById = (req, res) => {
   const { id } = req.params;
-  db.query("SELECT * FROM universities WHERE id = ? LIMIT 1", [id], (err, rows) => {
-    if (err) return res.status(500).json({ message: "DB error", error: err.message });
-    if (!rows.length) return res.status(404).json({ message: "University not found" });
-    return res.status(200).json(rows[0]);
-  });
+  db.query(
+    `SELECT
+       u.*,
+       -- prefer profile table values where they exist
+       COALESCE(up.logo_path,        u.logo_url)          AS logo_url,
+       COALESCE(up.banner_path,      u.banner_url)        AS banner_url,
+       COALESCE(up.about_text,       u.about_text)        AS about_text,
+       COALESCE(up.mission_statement, u.mission)          AS mission,
+       COALESCE(up.established_year, u.established_year)  AS established_year,
+       up.active_students,
+       -- contact / admissions (profile table is authoritative)
+       COALESCE(up.website_url,      u.website)           AS website_url,
+       COALESCE(up.admissions_email, u.email)             AS admissions_email,
+       COALESCE(up.admissions_phone, u.phone)             AS admissions_phone,
+       -- live campus count
+       (SELECT COUNT(*) FROM campuses c
+          WHERE c.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci
+       ) AS live_campus_count,
+       -- approved program count
+       (SELECT COUNT(*) FROM programs p
+          WHERE p.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci
+            AND p.status = 'approved'
+       ) AS live_program_count
+     FROM universities u
+     LEFT JOIN university_profiles up
+       ON up.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci
+     WHERE u.id = ?
+     LIMIT 1`,
+    [id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ message: "DB error", error: err.message });
+      if (!rows.length) return res.status(404).json({ message: "University not found" });
+      const row = rows[0];
+      return res.status(200).json({
+        ...row,
+        logo_url:   fileToUrl(row.logo_url),
+        banner_url: fileToUrl(row.banner_url),
+      });
+    }
+  );
 };
 
 export const saveUniversity = (req, res) => {

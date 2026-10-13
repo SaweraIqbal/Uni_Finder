@@ -54,7 +54,7 @@ const tables = [
      created_at        DATETIME    DEFAULT CURRENT_TIMESTAMP,
      updated_at        DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
      UNIQUE KEY uq_uni_normalized (normalized_name(191))
-   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
   // ② UNIVERSITY_PROFILES — admin-editable 1:1 profile
   `CREATE TABLE IF NOT EXISTS university_profiles (
@@ -65,6 +65,9 @@ const tables = [
      logo_path        VARCHAR(500),
      banner_path      VARCHAR(500),
      active_students  INT         NOT NULL DEFAULT 0,
+     website_url      VARCHAR(500) NULL,
+     admissions_email VARCHAR(254) NULL,
+     admissions_phone VARCHAR(50)  NULL,
      updated_at       DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
@@ -116,7 +119,7 @@ const tables = [
      level            ENUM('Undergraduate','MS','MPhil','PhD','ADP','Diploma') NULL,
      university_count INT UNSIGNED NOT NULL DEFAULT 1,
      updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-     UNIQUE KEY uq_catalog (normalized_name(191), level),
+     UNIQUE KEY uq_catalog_name (normalized_name(191)),
      INDEX idx_catalog_name (normalized_name(191))
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
@@ -153,7 +156,7 @@ const tables = [
      verification_id          VARCHAR(255),
      created_at               DATETIME DEFAULT CURRENT_TIMESTAMP,
      updated_at               DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
   // ⑦ APPLICATIONS — primary verification table
   `CREATE TABLE IF NOT EXISTS applications (
@@ -195,13 +198,13 @@ const tables = [
      image_url     VARCHAR(500) NOT NULL,
      caption       VARCHAR(255),
      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
-   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
   // ⑨ IMPORT BOOKKEEPING
   `CREATE TABLE IF NOT EXISTS university_master_imports (
      source_file VARCHAR(255) PRIMARY KEY,
      imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 ];
 
 // ── 2. Column migrations (ADD IF MISSING) ────────────────────────────────────
@@ -279,6 +282,10 @@ const columnMigrations = [
   ["programs", "reviewed_at",      "DATETIME NULL"],
   // activity_log — change action from ENUM to VARCHAR(60) for extensibility
   ["activity_log", "action", "VARCHAR(60) NOT NULL DEFAULT ''"],
+  // university_profiles — contact & web presence fields
+  ["university_profiles", "website_url",      "VARCHAR(500) NULL"],
+  ["university_profiles", "admissions_email", "VARCHAR(254) NULL"],
+  ["university_profiles", "admissions_phone", "VARCHAR(50)  NULL"],
 ];
 
 // ── 3. ensureColumns ─────────────────────────────────────────────────────────
@@ -452,15 +459,260 @@ const ensureColumns = (db, done) => {
   runNext();
 };
 
-// ── 4. Drop dead campus tables (Phase 2 deferred) ────────────────────────────
+// ── 4. Campus table creation (Phase 2 tables — created during initSchema) ────
+// These were previously dropped as "deferred". They are now active.
+// campus_verification is legacy — still used by the old campusRoutes.js flow.
+// campus_societies, campus_facilities, campus_hostels are new.
 
-const ensureDrops = async (db) => {
-  const dead = ["campus_programs", "campus_images", "campus_verification", "campuses"];
-  for (const tbl of dead) {
+const ensureCampusTables = async (db) => {
+  const campusTables = [
+    // campuses — base table (may not exist on fresh installs that skipped the SQL dump)
+    `CREATE TABLE IF NOT EXISTS campuses (
+       id                VARCHAR(255) NOT NULL PRIMARY KEY,
+       university_id     VARCHAR(255) NOT NULL,
+       campus_admin_uid  VARCHAR(255) NULL,
+       verification_id   VARCHAR(255) NULL,
+       name              VARCHAR(200) NOT NULL,
+       campus_type       VARCHAR(50)  NULL,
+       city              VARCHAR(100) NULL,
+       province          VARCHAR(100) NULL,
+       address           TEXT         NULL,
+       description       TEXT         NULL,
+      why_choose        TEXT         NULL,
+       phone             VARCHAR(50)  NULL,
+       whatsapp          VARCHAR(50)  NULL,
+       email             VARCHAR(150) NULL,
+       office_hours      VARCHAR(150) NULL,
+       shift_morning     TINYINT(1)   NOT NULL DEFAULT 1,
+       shift_evening     TINYINT(1)   NOT NULL DEFAULT 0,
+       shift_weekend     TINYINT(1)   NOT NULL DEFAULT 0,
+       gender_policy     VARCHAR(50)  NULL,
+       lat               DECIMAL(10,8) NULL,
+       lng               DECIMAL(11,8) NULL,
+       hostel_available  TINYINT(1)   NOT NULL DEFAULT 1,
+       is_main           TINYINT(1)   NOT NULL DEFAULT 0,
+       admission_open    DATE         NULL,
+       admission_close   DATE         NULL,
+       intake_name       VARCHAR(100) NULL,
+       classes_start     DATE         NULL,
+       class_arrangement VARCHAR(80)  NULL,
+       admission_status_override VARCHAR(20) NULL,
+       students          VARCHAR(50)  NULL,
+       status            VARCHAR(20)  NOT NULL DEFAULT 'active',
+       cover_image       VARCHAR(500) NULL,
+       created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       updated_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       INDEX idx_campus_uni (university_id),
+       INDEX idx_campus_uid (campus_admin_uid)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+    // campus_societies
+    `CREATE TABLE IF NOT EXISTS campus_societies (
+       id          VARCHAR(255) NOT NULL PRIMARY KEY,
+       campus_id   VARCHAR(255) NOT NULL,
+       name        VARCHAR(255) NOT NULL,
+       category    VARCHAR(100) NULL,
+       description TEXT         NULL,
+       initials    VARCHAR(4)   NULL,
+       created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       INDEX idx_cs_campus (campus_id)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+    // campus_facilities
+    `CREATE TABLE IF NOT EXISTS campus_facilities (
+       campus_id          VARCHAR(255) NOT NULL PRIMARY KEY,
+       selected_ids       TEXT         NULL,
+       transport_routes   JSON         NULL,
+       transport_fee      VARCHAR(50)  NULL,
+       dress_code         VARCHAR(255) NULL,
+       class_timings      VARCHAR(255) NULL,
+       attendance_policy  VARCHAR(255) NULL,
+       discipline_policy  TEXT         NULL,
+       updated_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+    // campus_hostels
+    `CREATE TABLE IF NOT EXISTS campus_hostels (
+       id           VARCHAR(255)  NOT NULL PRIMARY KEY,
+       campus_id    VARCHAR(255)  NOT NULL,
+       name         VARCHAR(255)  NOT NULL,
+       vendor_name  VARCHAR(255)  NULL,
+       hostel_type  VARCHAR(30)   NOT NULL DEFAULT 'Campus Hostel',
+       gender       VARCHAR(20)   NOT NULL DEFAULT 'Boys',
+       rooms        INT           NULL,
+       rent_min     VARCHAR(50)   NULL,
+       walk_dist    VARCHAR(50)   NULL,
+       status       VARCHAR(30)   NOT NULL DEFAULT 'pending',
+       amenities    JSON          NULL,
+       rooms_detail JSON          NULL,
+       contact      VARCHAR(100)  NULL,
+       rejection_reason TEXT      NULL,
+       hostel_available TINYINT(1) NOT NULL DEFAULT 1,
+       created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       updated_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       INDEX idx_ch_campus (campus_id)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+    // campus_program_requests  (campus admin → university admin flow)
+    `CREATE TABLE IF NOT EXISTS campus_program_requests (
+       id              VARCHAR(255) NOT NULL PRIMARY KEY,
+       campus_id       VARCHAR(255) NOT NULL,
+       university_id   VARCHAR(255) NOT NULL,
+       program_name    VARCHAR(255) NOT NULL,
+       level           VARCHAR(50)  NOT NULL,
+       justification   TEXT         NULL,
+       status          VARCHAR(30)  NOT NULL DEFAULT 'pending',
+       rejection_note  TEXT         NULL,
+       reviewed_by     VARCHAR(255) NULL,
+       reviewed_at     DATETIME     NULL,
+       submitted_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       INDEX idx_cpr_campus  (campus_id),
+       INDEX idx_cpr_uni     (university_id),
+       INDEX idx_cpr_status  (status)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+    // campus_programs (campus admin links university programs to their campus)
+    `CREATE TABLE IF NOT EXISTS campus_programs (
+       id          VARCHAR(255) NOT NULL PRIMARY KEY,
+       campus_id   VARCHAR(255) NOT NULL,
+       program_id  VARCHAR(255) NOT NULL,
+       fee         VARCHAR(100) NULL,
+       duration    VARCHAR(100) NULL,
+       details     JSON         NULL,
+       status      VARCHAR(20)  NOT NULL DEFAULT 'draft',
+       shifts      VARCHAR(100) NULL,
+       created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       UNIQUE KEY uq_cp (campus_id, program_id),
+       INDEX idx_cp_campus  (campus_id),
+       INDEX idx_cp_program (program_id)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+    // campus_images
+    `CREATE TABLE IF NOT EXISTS campus_images (
+       id          VARCHAR(255) NOT NULL PRIMARY KEY,
+       campus_id   VARCHAR(255) NOT NULL,
+       image_url   VARCHAR(500) NOT NULL,
+       caption     VARCHAR(255) NULL,
+       category    VARCHAR(100) NULL DEFAULT 'Campus Building',
+       featured    TINYINT(1)   NOT NULL DEFAULT 0,
+       created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       INDEX idx_ci_campus (campus_id)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+  ];
+
+  for (const sql of campusTables) {
     try {
-      await query(db, `DROP TABLE IF EXISTS \`${tbl}\``);
+      await query(db, sql);
     } catch (e) {
-      console.log(`DROP ${tbl}:`, e.message);
+      console.log("Campus table create:", e.message);
+    }
+  }
+
+  // Add details/status/shifts to campus_programs if missing (idempotent guard)
+  // These are already in the CREATE TABLE above, so this only runs on existing installs
+  const cpCols = [
+    ["details", "JSON NULL"],
+    ["status",  "VARCHAR(20) NOT NULL DEFAULT 'draft'"],
+    ["shifts",  "VARCHAR(100) NULL"],
+  ];
+  for (const [col, def] of cpCols) {
+    try {
+      const rows = await query(
+        db,
+        `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+         WHERE table_schema = DATABASE()
+           AND table_name = 'campus_programs'
+           AND column_name = ?`,
+        [col]
+      );
+      if (rows[0].c === 0) {
+        await query(db, `ALTER TABLE campus_programs ADD COLUMN \`${col}\` ${def}`);
+        console.log(`Added campus_programs.${col}`);
+      }
+    } catch (e) {
+      console.log(`campus_programs.${col}:`, e.message);
+    }
+  }
+
+  // Fix program_catalog unique key: change from (normalized_name, level) → (normalized_name)
+  // so deduplication works on display name alone (ignoring level).
+  try {
+    const keyRows = await query(
+      db,
+      `SELECT COUNT(*) AS c FROM information_schema.STATISTICS
+       WHERE table_schema = DATABASE()
+         AND table_name   = 'program_catalog'
+         AND index_name   = 'uq_catalog_name'`
+    );
+    if (keyRows[0].c === 0) {
+      // Drop old composite key and add new single-column key
+      await query(db, `ALTER TABLE program_catalog DROP KEY uq_catalog`).catch(() => {});
+      await query(db, `ALTER TABLE program_catalog ADD UNIQUE KEY uq_catalog_name (normalized_name(191))`);
+      console.log("program_catalog unique key updated to normalized_name only.");
+    }
+  } catch (e) {
+    console.log("program_catalog key migration:", e.message);
+  }
+  try {
+    const cols = await query(
+      db,
+      `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+       WHERE table_schema = DATABASE()
+         AND table_name = 'campuses'
+         AND column_name = 'hostel_available'`
+    );
+    if (cols[0].c === 0) {
+      await query(db, `ALTER TABLE campuses ADD COLUMN hostel_available TINYINT(1) NOT NULL DEFAULT 1`);
+    }
+  } catch (e) {
+    console.log("campuses.hostel_available:", e.message);
+  }
+
+  // ALTER guards for campus columns that older dumps may be missing
+  const campusColGuards = [
+    ["campus_type",    "VARCHAR(50)  NULL"],
+    ["province",       "VARCHAR(100) NULL"],
+    ["description",    "TEXT         NULL"],
+    ["why_choose",     "TEXT         NULL"],
+    ["whatsapp",       "VARCHAR(50)  NULL"],
+    ["office_hours",   "VARCHAR(150) NULL"],
+    ["shift_morning",  "TINYINT(1)   NOT NULL DEFAULT 1"],
+    ["shift_evening",  "TINYINT(1)   NOT NULL DEFAULT 0"],
+    ["shift_weekend",  "TINYINT(1)   NOT NULL DEFAULT 0"],
+    ["gender_policy",  "VARCHAR(50)  NULL"],
+    ["lat",            "DECIMAL(10,8) NULL"],
+    ["lng",            "DECIMAL(11,8) NULL"],
+    ["is_main",        "TINYINT(1)   NOT NULL DEFAULT 0"],
+    ["admission_open",     "DATE         NULL"],
+    ["admission_close",    "DATE         NULL"],
+    ["intake_name",               "VARCHAR(100) NULL"],
+    ["classes_start",             "DATE         NULL"],
+    ["class_arrangement",         "VARCHAR(80)  NULL"],
+    ["admission_status_override", "VARCHAR(20)  NULL"],
+    ["students",       "VARCHAR(50)  NULL"],
+    ["cover_image",    "VARCHAR(500) NULL"],
+    ["required_documents", "JSON NULL"],
+    ["scholarships",       "JSON NULL"],
+    ["quota_policy",       "TEXT NULL"],
+    ["announcements",      "JSON NULL"],
+  ];
+  for (const [col, def] of campusColGuards) {
+    try {
+      const rows = await query(
+        db,
+        `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+         WHERE table_schema = DATABASE() AND table_name = 'campuses' AND column_name = ?`,
+        [col]
+      );
+      if (rows[0].c === 0) {
+        await query(db, `ALTER TABLE campuses ADD COLUMN \`${col}\` ${def}`);
+        console.log(`Added campuses.${col}`);
+      }
+    } catch (e) {
+      console.log(`campuses.${col}:`, e.message);
     }
   }
 };
@@ -476,6 +728,54 @@ const ensureProfileRows = async (db) => {
     );
   } catch (e) {
     console.log("ensureProfileRows:", e.message);
+  }
+};
+
+// ── 5b. Sync program_catalog from approved programs ───────────────────────────
+// Builds display names as "degree_type + name" (e.g. "BS Computer Science"),
+// deduplicates purely on the display name (ignoring level) so each distinct
+// human-readable program name appears exactly once.
+
+const syncProgramCatalog = async (db) => {
+  try {
+    // Step 1 — clear stale catalog entries that came from old syncs
+    // (We rebuild from scratch each time so display names stay correct)
+    await query(db, `DELETE FROM program_catalog WHERE 1=1`);
+
+    // Step 2 — insert deduplicated display names from approved programs
+    // TRIM handles cases where degree_type is empty/null
+    await query(
+      db,
+      `INSERT INTO program_catalog (name, normalized_name, level, university_count)
+       SELECT
+         display_name,
+         LOWER(TRIM(display_name)) AS normalized_name,
+         MIN(level)                AS level,
+         COUNT(DISTINCT university_id) AS university_count
+       FROM (
+         SELECT
+           university_id,
+           level,
+           TRIM(
+             CONCAT_WS(' ',
+               NULLIF(TRIM(degree_type), ''),
+               NULLIF(TRIM(name), '')
+             )
+           ) AS display_name
+         FROM programs
+         WHERE status = 'approved'
+           AND name IS NOT NULL
+           AND TRIM(name) != ''
+       ) AS combined
+       WHERE display_name IS NOT NULL AND TRIM(display_name) != ''
+       GROUP BY display_name
+       ON DUPLICATE KEY UPDATE
+         university_count = VALUES(university_count),
+         updated_at       = NOW()`,
+    );
+    console.log("program_catalog synced with display names.");
+  } catch (e) {
+    console.log("syncProgramCatalog:", e.message);
   }
 };
 
@@ -497,14 +797,21 @@ export const initSchema = (db, done) => {
     ["programs",     "rejection_reason", "TEXT NULL"],
     ["programs",     "reviewed_by",      "VARCHAR(255) NULL"],
     ["programs",     "reviewed_at",      "DATETIME NULL"],
+    ["universities", "province",         "VARCHAR(100) NULL"],
+    ["universities", "status",           "VARCHAR(50) NOT NULL DEFAULT 'pending'"],
+    // campus_registrations — two-tier approval columns
+    ["campus_registrations", "uni_tier1_approved",    "TINYINT(1) NOT NULL DEFAULT 0"],
+    ["campus_registrations", "uni_tier1_approved_at", "DATETIME NULL"],
+    ["campus_registrations", "uni_tier1_approved_by", "VARCHAR(255) NULL"],
   ];
   let ci = 0;
   const addCritical = () => {
     if (ci >= criticalCols.length) {
       // All critical columns added — now run ensureColumns for remaining migrations
       return ensureColumns(db, async () => {
-        await ensureDrops(db);
+        await ensureCampusTables(db);
         await ensureProfileRows(db);
+        await syncProgramCatalog(db);
         if (done) done();
       });
     }
@@ -546,7 +853,17 @@ export const initSchema = (db, done) => {
           // Only fix applications and activity_log — they have no FKs in our schema.
           // university_profiles and programs have FKs pointing to universities;
           // instead of dropping/recreating FKs we just use COLLATE casts in queries.
-          const toFix = ["applications", "activity_log", "program_catalog"];
+          const toFix = [
+            "universities",
+            "university_profiles",
+            "programs",
+            "applications",
+            "activity_log",
+            "program_catalog",
+            "university_verification",
+            "university_images",
+            "university_master_imports",
+          ];
           let fi = 0;
           const next = () => {
             if (fi >= toFix.length) return runTables();
@@ -591,8 +908,86 @@ export const initSchema = (db, done) => {
     });
   };
 
-  // Start by fixing collations on pre-existing tables, then create tables, then add columns
-  fixCollations();
+  // ── campus_registrations — created BEFORE fixCollations/runTables ──────────
+  // No FK on universityId: university existence + approved status is validated
+  // server-side in registrationController.js (avoids creation-order deadlock and
+  // collation-mismatch FK errors across differently-collated tables).
+  // lat/lng reserved for future map feature — nullable, never required.
+  db.query(`
+    CREATE TABLE IF NOT EXISTS campus_registrations (
+      id                       VARCHAR(255)  NOT NULL PRIMARY KEY,
+      publicId                 VARCHAR(20)   NOT NULL UNIQUE,
+      registrantUserId         VARCHAR(255)  NOT NULL,
+      registrantEmail          VARCHAR(255)  NOT NULL,
+      universityId             VARCHAR(255)  NOT NULL,
+      campusType               VARCHAR(50)   NOT NULL,
+      officialName             VARCHAR(255)  NOT NULL,
+      province                 VARCHAR(100)  NOT NULL,
+      city                     VARCHAR(100)  NOT NULL,
+      address                  TEXT          NOT NULL,
+      lat                      DECIMAL(10,8) NULL COMMENT 'reserved — map feature',
+      lng                      DECIMAL(11,8) NULL COMMENT 'reserved — map feature',
+      registrantName           VARCHAR(255)  NOT NULL,
+      designation              VARCHAR(100)  NOT NULL,
+      phone                    VARCHAR(20)   NOT NULL,
+      officialEmail            VARCHAR(255)  NULL,
+      document_originalName    VARCHAR(255)  NULL,
+      document_storedPath      VARCHAR(500)  NULL,
+      document_size            INT           NULL,
+      declarationAccepted      TINYINT(1)    NOT NULL DEFAULT 1,
+      status                   VARCHAR(50)   NOT NULL DEFAULT 'pending',
+      rejection_reason         VARCHAR(255)  NULL,
+      rejection_note           TEXT          NULL,
+      rejection_decidedAt      DATETIME      NULL,
+      resubmission_requiredDocs JSON         NULL,
+      resubmission_note        TEXT          NULL,
+      resubmission_requestedAt DATETIME      NULL,
+      history                  JSON          NULL,
+      submittedAt              DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt                DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_cr_user   (registrantUserId),
+      INDEX idx_cr_uni    (universityId),
+      INDEX idx_cr_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+  `, (err) => {
+    if (err) console.error("campus_registrations create:", err.message);
+    // HEC-seeded universities stay status='pending' by default.
+    // Only universities explicitly approved by the Super Admin
+    // (via the verification flow) get status='approved'.
+    // Fix: reset unclaimed universities that were wrongly backfilled to 'approved'.
+    db.query(
+      `UPDATE universities SET status = 'pending'
+       WHERE owner_uid IS NULL AND status = 'approved'`,
+      (e2) => {
+        if (e2) console.log("University status correction:", e2.message);
+
+        // Sync any approved campus_registrations into campuses table if not yet present.
+        // verification_id is set to NULL because cr.id is a campus_registrations ID —
+        // passing it as verification_id violates the fk_camp_verify FK on older installs.
+        // The FK was dropped by fix_campus_fk.mjs but we keep NULL here for safety.
+        db.query(
+          `INSERT INTO campuses
+             (id, university_id, campus_admin_uid, verification_id,
+              name, campus_type, city, province, address, phone, email)
+           SELECT
+             UUID(), cr.universityId, cr.registrantUserId, NULL,
+             cr.officialName, cr.campusType, cr.city, cr.province, cr.address,
+             cr.phone, COALESCE(cr.officialEmail, cr.registrantEmail)
+           FROM campus_registrations cr
+           WHERE cr.status = 'approved'
+             AND NOT EXISTS (
+               SELECT 1 FROM campuses c
+               WHERE c.campus_admin_uid COLLATE utf8mb4_general_ci
+                   = cr.registrantUserId COLLATE utf8mb4_general_ci
+             )`,
+          (e3) => {
+            if (e3) console.log("Campuses sync from registrations:", e3.message);
+            fixCollations();
+          }
+        );
+      }
+    );
+  });
 };
 
 export default initSchema;

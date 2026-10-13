@@ -18,17 +18,13 @@ export default function UniversityInfo({ university }) {
 
   // Live data with sensible static fallbacks matching the reference design
   const aboutText =
-    university?.about_text ||
-    "The University of Central Punjab is a premier institution dedicated to academic excellence and holistic student development. We foster an environment of innovation, critical thinking, and ethical leadership, preparing our graduates to meet global challenges head-on.";
+    university?.about_text ;
 
   const moreText =
-    university?.description ||
-    "Our world-class faculty and state-of-the-art facilities provide an unparalleled learning environment that bridges theory with real-world application, empowering students to lead in their respective fields.";
+    university?.description ;
 
   const mission =
-    university?.mission ||
-    "To provide quality education, fostering research, innovation, and ethical values, enabling students to become responsible global citizens and leaders in their respective fields.";
-
+    university?.mission ;
   const fadeBase = "transition-all duration-500 ease-out";
   const fadeIn = isVisible
     ? "opacity-100 translate-y-0"
@@ -51,7 +47,7 @@ export default function UniversityInfo({ university }) {
               About the University
             </h2>
 
-            <p className="text-[14.5px] leading-relaxed text-slate-500">
+            <p className="text-[14.5px] leading-relaxed text-slate-500 text-justify">
               {aboutText}
             </p>
 
@@ -61,7 +57,7 @@ export default function UniversityInfo({ university }) {
               style={{ maxHeight: expanded ? "200px" : "0px" }}
               aria-hidden={!expanded}
             >
-              <p className="text-[14.5px] leading-relaxed text-slate-500 mt-3">
+              <p className="text-[14.5px] leading-relaxed text-slate-500 mt-3 text-justify">
                 {moreText}
               </p>
             </div>
@@ -130,7 +126,7 @@ export default function UniversityInfo({ university }) {
               </p>
 
               {/* Mission statement in italic quote style */}
-              <p className="text-[15px] leading-relaxed text-slate-600 italic">
+              <p className="text-[15px] leading-relaxed text-slate-600 italic text-justify">
                 &ldquo;{mission}&rdquo;
               </p>
             </div>

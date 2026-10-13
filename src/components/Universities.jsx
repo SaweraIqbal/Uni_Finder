@@ -1,10 +1,7 @@
-// C:\Users\Track Computers\Downloads\testfolder\uni-finder\src\components\Universities.jsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   FiMapPin,
-  FiStar,
   FiHeart,
-  FiCheckCircle,
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
@@ -16,107 +13,71 @@ import { toast } from "react-toastify";
 const FALLBACK_IMAGE =
   "https://picsum.photos/seed/unifinder-uni-default/600/400.jpg";
 
-const initialMockUniversities = [
-  {
-    id: 1,
-    name: "LUMS (Lahore University of Management Sciences)",
-    img: "https://picsum.photos/seed/lums/600/400.jpg",
-    city: "Lahore",
-    programs: ["BS CS", "BBA", "BS Economics", "LLB"],
-    minFee: "200k",
-    maxFee: "300k",
-    verified: true,
-    type: "Private",
-    admissionsOpen: true,
-  },
-  {
-    id: 2,
-    name: "FAST-NUCES",
-    img: "https://picsum.photos/seed/fast/600/400.jpg",
-    city: "Lahore",
-    programs: ["BS CS", "BS Software Eng", "BS AI", "BS Cyber Security"],
-    minFee: "100k",
-    maxFee: "160k",
-    verified: true,
-    type: "Public",
-    admissionsOpen: true,
-  },
-  {
-    id: 3,
-    name: "NUST Islamabad",
-    img: "https://picsum.photos/seed/nust/600/400.jpg",
-    city: "Islamabad",
-    programs: ["BS CS", "Mechanical Eng", "BBA", "Biotechnology"],
-    minFee: "150k",
-    maxFee: "220k",
-    verified: true,
-    type: "Public",
-    admissionsOpen: true,
-  },
-  {
-    id: 4,
-    name: "Riphah International University",
-    img: "https://picsum.photos/seed/riphah/600/400.jpg",
-    city: "Islamabad",
-    programs: ["MBBS", "Pharm-D", "BS CS", "DPT"],
-    minFee: "90k",
-    maxFee: "150k",
-    verified: true,
-    type: "Private",
-    admissionsOpen: false,
-  },
-  {
-    id: 5,
-    name: "COMSATS University",
-    img: "https://picsum.photos/seed/comsats/600/400.jpg",
-    city: "Islamabad",
-    programs: ["BS Software Eng", "BS Telecom", "BBA"],
-    minFee: "80k",
-    maxFee: "130k",
-    verified: true,
-    type: "Public",
-    admissionsOpen: true,
-  },
-  {
-    id: 6,
-    name: "Institute of Business Administration (IBA)",
-    img: "https://picsum.photos/seed/iba/600/400.jpg",
-    city: "Karachi",
-    programs: ["BBA", "BS Accounting", "BS CS"],
-    minFee: "180k",
-    maxFee: "260k",
-    verified: true,
-    type: "Private",
-    admissionsOpen: true,
-  },
-];
+const resolveUrl = (p) => {
+  if (!p) return null;
+  if (p.startsWith("http://") || p.startsWith("https://")) return p;
+  return `http://localhost:5000${p.startsWith("/") ? p : `/${p}`}`;
+};
 
 function UniversityCard({ uni, isFav, onToggleFav, onExplore }) {
-  const visiblePrograms = uni.programs.slice(0, 2);
-  const extraCount = uni.programs.length - 2;
+  const logoSrc = resolveUrl(uni.logoUrl);
+  const bannerSrc = resolveUrl(uni.bannerUrl) || FALLBACK_IMAGE;
+  const totalCampuses = uni.totalCampuses ?? uni.total_campuses ?? 1;
 
   return (
-    <article className="min-w-[280px] max-w-[280px] bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:-translate-y-1 transition-all duration-200 scroll-snap-align-start flex flex-col">
-      <div className="relative h-44 overflow-hidden bg-slate-100">
+    <article className="min-w-[280px] max-w-[280px] sm:min-w-[300px] sm:max-w-[300px] bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-orange-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 scroll-snap-align-start flex flex-col group">
+      {/* ── Top Image Container ── */}
+      <div className="relative h-44 overflow-hidden bg-slate-100 shrink-0">
         <img
-          src={uni.img}
+          src={bannerSrc}
           alt={uni.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src = FALLBACK_IMAGE;
+          }}
         />
 
-        {/* Top Right — Admissions Open */}
-        {uni.admissionsOpen && (
-          <span className="absolute top-2.5 right-2.5 bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
-            <FiCheckCircle style={{ width: "10px", height: "10px" }} />{" "}
-            Admissions Open
-          </span>
-        )}
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
 
-        {/* Heart — moved to bottom right */}
+        {/* 1. University Logo (Top Left Corner) */}
+        <div className="absolute top-3 left-3 z-10">
+          {logoSrc ? (
+            <div className="w-11 h-11 rounded-xl bg-white p-1 shadow-md border border-white/80 overflow-hidden flex items-center justify-center">
+              <img
+                src={logoSrc}
+                alt="Logo"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+          ) : (
+            <div className="w-11 h-11 rounded-xl bg-white/95 backdrop-blur-sm shadow-md border border-white/80 flex items-center justify-center text-orange-600 font-bold text-xs">
+              {(uni.name || "").slice(0, 2).toUpperCase()}
+            </div>
+          )}
+        </div>
+
+        {/* 2. University Type (Top Right Corner — Private/Public) */}
+        <div className="absolute top-3 right-3 z-10">
+          <span
+            className={`text-[11px] font-bold px-3 py-1 rounded-full shadow-md backdrop-blur-sm ${
+              (uni.type || "").toLowerCase() === "public"
+                ? "bg-blue-600/90 text-white"
+                : "bg-orange-500 text-white"
+            }`}
+          >
+            {uni.type || "Private"}
+          </span>
+        </div>
+
+        {/* Favorite Heart Button (Bottom Right) */}
         <button
           onClick={(e) => onToggleFav(uni.id, e)}
-          className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:scale-110 transition-all duration-150 active:scale-95"
+          className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:scale-110 transition-all duration-150 active:scale-95 z-10"
           aria-label="Toggle favorite"
         >
           <FiHeart
@@ -125,39 +86,45 @@ function UniversityCard({ uni, isFav, onToggleFav, onExplore }) {
             }`}
           />
         </button>
-
-        <span className="absolute bottom-2.5 left-2.5 bg-orange-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md">
-          {uni.type}
-        </span>
       </div>
 
-      <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-semibold text-gray-800 text-[15px] leading-snug line-clamp-2 mb-1.5">
-          {uni.name}
-        </h3>
+      {/* ── Card Body ── */}
+      <div className="p-4 flex flex-col flex-1 justify-between gap-3 bg-white">
+        <div>
+          {/* University HEC Name (handled for long names) */}
+          <h3
+            title={uni.name}
+            className="font-bold text-slate-800 text-[15px] leading-snug line-clamp-2 min-h-[42px] mb-2 group-hover:text-orange-600 transition-colors"
+          >
+            {uni.name}
+          </h3>
 
-        <div className="flex flex-wrap gap-1 mb-3">
-          {visiblePrograms.map((p, idx) => (
-            <span
-              key={idx}
-              className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md"
-            >
-              {p}
-            </span>
-          ))}
-          {extraCount > 0 && (
-            <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-md">
-              +{extraCount} more
-            </span>
-          )}
+          {/* Details Row: Province + Total Campuses */}
+          <div className="flex items-center justify-between gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100">
+            {/* Province */}
+            <div className="flex items-center gap-1.5 truncate">
+              <FiMapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+              <span className="truncate font-medium text-slate-700">
+                {uni.province || uni.city || "Punjab"}
+              </span>
+            </div>
+
+            {/* Total Campuses */}
+            <div className="flex items-center gap-1.5 shrink-0 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+              <span className="font-semibold text-slate-700">
+                {totalCampuses} {totalCampuses === 1 ? "Campus" : "Campuses"}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-auto pt-2">
+        {/* Button: "View Details" */}
+        <div className="pt-2">
           <button
             onClick={() => onExplore(uni.id)}
-            className="w-full py-2 border border-orange-500 text-orange-500 text-sm font-medium rounded-lg hover:bg-orange-500 hover:text-white transition-all duration-150 active:scale-95"
+            className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-orange-500/25 transition-all duration-150 active:scale-[0.98]"
           >
-            Explore University
+            View Details
           </button>
         </div>
       </div>
@@ -167,17 +134,16 @@ function UniversityCard({ uni, isFav, onToggleFav, onExplore }) {
 
 function SkeletonCard() {
   return (
-    <article className="min-w-[280px] max-w-[280px] bg-white rounded-xl overflow-hidden border border-gray-100 scroll-snap-align-start animate-pulse">
+    <article className="min-w-[280px] max-w-[280px] sm:min-w-[300px] sm:max-w-[300px] bg-white rounded-2xl overflow-hidden border border-gray-100 scroll-snap-align-start animate-pulse">
       <div className="h-44 bg-gray-200" />
       <div className="p-4 space-y-3">
         <div className="h-4 bg-gray-200 rounded w-3/4" />
         <div className="h-3 bg-gray-100 rounded w-1/2" />
-        <div className="h-3 bg-gray-100 rounded w-1/4" />
-        <div className="flex gap-1">
-          <div className="h-5 bg-gray-100 rounded w-14" />
-          <div className="h-5 bg-gray-100 rounded w-14" />
+        <div className="flex justify-between items-center pt-2">
+          <div className="h-3 bg-gray-100 rounded w-1/3" />
+          <div className="h-4 bg-gray-100 rounded w-1/4" />
         </div>
-        <div className="h-8 bg-gray-100 rounded-lg w-full mt-2" />
+        <div className="h-10 bg-gray-100 rounded-xl w-full mt-2" />
       </div>
     </article>
   );
@@ -200,18 +166,20 @@ export default function Universities() {
             data.map((u) => ({
               id: u.id,
               name: u.name,
-              img: u.logo_url ? fileUrl(u.logo_url) : FALLBACK_IMAGE,
+              logoUrl: u.logo_url,
+              bannerUrl: u.banner_url || u.cover_image,
+              province: u.province || "Punjab",
               city: u.city || "Pakistan",
-              programs: u.programs || ["BS CS", "BBA", "Engineering"],
-              type: u.type || "Private",
-              admissionsOpen: u.admissions_open !== false,
+              type: u.university_type || u.type || "Private",
+              totalCampuses: u.total_campuses || 1,
             })),
           );
         } else {
-          setUniversities(initialMockUniversities);
+          setUniversities([]);
         }
       } catch (error) {
-        setUniversities(initialMockUniversities);
+        console.error("fetchUniversities error:", error);
+        setUniversities([]);
       } finally {
         setLoading(false);
       }
@@ -222,15 +190,16 @@ export default function Universities() {
 
   const toggleFavorite = (id, e) => {
     e.stopPropagation();
-    setFavorites((prev) => {
-      const isFav = !prev[id];
-      toast.success(
-        isFav
-          ? "Added to saved universities!"
-          : "Removed from saved universities",
-      );
-      return { ...prev, [id]: isFav };
-    });
+    // Compute the new value before touching state so the toast fires exactly once,
+    // not inside the updater (which React Strict Mode calls twice in development).
+    const willBeFav = !favorites[id];
+    setFavorites((prev) => ({ ...prev, [id]: willBeFav }));
+    toast.success(
+      willBeFav
+        ? "Added to saved universities!"
+        : "Removed from saved universities",
+      { toastId: `fav-${id}` }   // prevents any duplicate if called twice somehow
+    );
   };
 
   const handleExplore = (id) => {
@@ -240,7 +209,7 @@ export default function Universities() {
   const scroll = (direction) => {
     if (trackRef.current) {
       trackRef.current.scrollBy({
-        left: direction * 294,
+        left: direction * 314,
         behavior: "smooth",
       });
     }
@@ -254,20 +223,19 @@ export default function Universities() {
             <p className="text-xs font-extrabold text-orange-500 uppercase tracking-widest mb-1">
               All Institutions
             </p>
-            {/* <h2 className="text-2xl font-bold text-gray-800">Universities</h2> */}
           </div>
 
           <div className="flex gap-2">
             <button
               onClick={() => scroll(-1)}
-              className="w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition active:scale-95"
+              className="w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition active:scale-95 shadow-sm"
               aria-label="Scroll left"
             >
               <FiChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scroll(1)}
-              className="w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition active:scale-95"
+              className="w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition active:scale-95 shadow-sm"
               aria-label="Scroll right"
             >
               <FiChevronRight className="w-4 h-4" />
@@ -276,15 +244,19 @@ export default function Universities() {
         </div>
 
         {loading ? (
-          <div className="flex gap-3.5 overflow-hidden pb-4">
+          <div className="flex gap-4 overflow-hidden pb-4">
             {[1, 2, 3, 4].map((n) => (
               <SkeletonCard key={n} />
             ))}
           </div>
+        ) : universities.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 text-sm bg-white rounded-2xl border border-gray-100">
+            No approved universities found.
+          </div>
         ) : (
           <div
             ref={trackRef}
-            className="flex gap-3.5 overflow-x-auto pb-4 [scroll-snap-type:x_mandatory] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="flex gap-4 overflow-x-auto pb-4 [scroll-snap-type:x_mandatory] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
             {universities.map((uni) => (
               <UniversityCard

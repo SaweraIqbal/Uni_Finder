@@ -3,8 +3,11 @@ import {
   BookOpen,
   Building2,
   CheckCircle2,
+  Globe,
   Image as ImageIcon,
+  Mail,
   MapPin,
+  Phone,
   Users,
 } from "lucide-react";
 import { useUniversityAdmin } from "./UniversityAdminContext";
@@ -126,6 +129,9 @@ export default function UniversityProfileSection() {
     about_text:        "",
     mission_statement: "",
     active_students:   "",
+    website_url:       "",
+    admissions_email:  "",
+    admissions_phone:  "",
   });
   const [formDirty,    setFormDirty]    = useState(false);
   const [saving,       setSaving]       = useState(false);
@@ -150,6 +156,9 @@ export default function UniversityProfileSection() {
       about_text:        university.about_text        ?? "",
       mission_statement: university.mission_statement ?? "",
       active_students:   university.active_students   ?? 0,
+      website_url:       university.website_url       ?? "",
+      admissions_email:  university.admissions_email  ?? "",
+      admissions_phone:  university.admissions_phone  ?? "",
     });
     setLogoUrl(university.logo_url   || null);
     setBannerUrl(university.banner_url || null);
@@ -178,6 +187,10 @@ export default function UniversityProfileSection() {
     if (form.about_text        !== undefined) payload.about_text        = form.about_text;
     if (form.mission_statement !== undefined) payload.mission_statement = form.mission_statement;
     if (form.active_students   !== "")       payload.active_students    = Number(form.active_students);
+    // contact & web presence — always include so the user can clear them
+    payload.website_url      = form.website_url      ?? "";
+    payload.admissions_email = form.admissions_email ?? "";
+    payload.admissions_phone = form.admissions_phone ?? "";
 
     try {
       const { ok, data } = await patchMeProfile(payload);
@@ -422,6 +435,68 @@ export default function UniversityProfileSection() {
               )}
               {saving ? "Saving…" : formDirty ? "Save Changes" : "Saved ✓"}
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Contact & Web Presence ── */}
+      <section className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-50 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-orange-50 shrink-0">
+            <Globe className="w-5 h-5 text-orange-500" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-slate-800">Contact &amp; Web Presence</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Shown to students on your public profile.</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-5">
+          {/* Website URL */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <span className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-slate-400" />
+                Website URL
+              </span>
+            </label>
+            <Input
+              type="url"
+              value={form.website_url}
+              onChange={handleFormChange("website_url")}
+              placeholder="https://www.university.edu.pk"
+            />
+          </div>
+
+          {/* Admissions email + phone — side by side on wider screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  Admissions Email
+                </span>
+              </label>
+              <Input
+                type="email"
+                value={form.admissions_email}
+                onChange={handleFormChange("admissions_email")}
+                placeholder="admissions@university.edu.pk"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  Admissions Phone
+                </span>
+              </label>
+              <Input
+                type="tel"
+                value={form.admissions_phone}
+                onChange={handleFormChange("admissions_phone")}
+                placeholder="+92 51 123 4567"
+              />
+            </div>
           </div>
         </div>
       </section>

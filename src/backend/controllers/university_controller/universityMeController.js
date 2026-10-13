@@ -52,7 +52,8 @@ const resolveUniversity = async (req, res) => {
   }
   const rows = await q(
     `SELECT u.*, up.established_year, up.about_text, up.mission_statement,
-            up.logo_path, up.banner_path, up.active_students
+            up.logo_path, up.banner_path, up.active_students,
+            up.website_url, up.admissions_email, up.admissions_phone
      FROM universities u
      LEFT JOIN university_profiles up ON up.university_id COLLATE utf8mb4_general_ci = u.id COLLATE utf8mb4_general_ci
      WHERE u.id = ? AND u.owner_uid = ?
@@ -206,6 +207,10 @@ export const getMe = async (req, res) => {
       logo_url:           fileToUrl(uni.logo_path),
       banner_url:         fileToUrl(uni.banner_path),
       active_students:    uni.active_students ?? 0,
+      // contact & web presence (admin-editable)
+      website_url:        uni.website_url        ?? null,
+      admissions_email:   uni.admissions_email   ?? null,
+      admissions_phone:   uni.admissions_phone   ?? null,
       // verification — FIX 2 & FIX 5 applied
       verification: {
         status:          app?.status || null,
@@ -369,7 +374,10 @@ export const patchMyProfile = async (req, res) => {
     const uni = await resolveUniversity(req, res);
     if (!uni) return;
 
-    const { established_year, about_text, mission_statement, active_students } = req.body;
+    const {
+      established_year, about_text, mission_statement, active_students,
+      website_url, admissions_email, admissions_phone,
+    } = req.body;
     const updates = {};
     const errors  = {};
 
@@ -395,6 +403,26 @@ export const patchMyProfile = async (req, res) => {
         updates.active_students = n;
       }
     }
+    if (website_url !== undefined) {
+      const url = String(website_url).trim();
+      if (url !== "" && !/^https?:\/\/.+\..+/.test(url)) {
+        errors.website_url = "website_url must be a valid URL starting with http:// or https://.";
+      } else {
+        updates.website_url = url === "" ? null : url.slice(0, 500);
+      }
+    }
+    if (admissions_email !== undefined) {
+      const email = String(admissions_email).trim();
+      if (email !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errors.admissions_email = "admissions_email must be a valid email address.";
+      } else {
+        updates.admissions_email = email === "" ? null : email.slice(0, 254);
+      }
+    }
+    if (admissions_phone !== undefined) {
+      const phone = String(admissions_phone).trim();
+      updates.admissions_phone = phone === "" ? null : phone.slice(0, 50);
+    }
 
     if (Object.keys(errors).length) {
       return res.status(400).json({ error: { code: "VALIDATION_ERROR", fields: errors } });
@@ -416,7 +444,6 @@ export const patchMyProfile = async (req, res) => {
     // Determine action for activity log
     const hasStudents = updates.active_students !== undefined;
     const hasOther    = Object.keys(updates).some((k) => k !== "active_students");
-
     if (hasStudents) {
       logActivity(uni.id, req.user.id, req.user.email,
         "active_students_updated",
@@ -491,6 +518,7 @@ export const uploadBanner = async (req, res) => {
 
 // ── GET /api/programs/catalog ─────────────────────────────────────────────────
 // Public — student search. Prefix/LIKE search, paginated.
+// When q is empty, returns the most-common programs (by university_count).
 
 export const getProgramCatalog = async (req, res) => {
   try {
@@ -500,24 +528,26 @@ export const getProgramCatalog = async (req, res) => {
     const limit  = Math.min(100, parseInt(req.query.limit, 10) || 20);
     const offset = (page - 1) * limit;
 
-    if (q_text.length < 2) {
-      return res.json({ total: 0, page, limit, pages: 0, results: [] });
-    }
+    const where  = [];
+    const values = [];
 
-    const where  = ["(normalized_name LIKE ? OR name LIKE ?)"];
-    const values = [`${q_text.toLowerCase()}%`, `%${q_text}%`];
+    // Only filter by text if at least 1 character provided
+    if (q_text.length >= 1) {
+      where.push("(LOWER(name) LIKE ? OR LOWER(name) LIKE ?)");
+      values.push(`${q_text.toLowerCase()}%`, `%${q_text.toLowerCase()}%`);
+    }
 
     if (level) { where.push("level = ?"); values.push(level); }
 
-    const whereClause = `WHERE ${where.join(" AND ")}`;
+    const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
     const [countRows, rows] = await Promise.all([
       q(`SELECT COUNT(*) AS total FROM program_catalog ${whereClause}`, values),
       q(
-        `SELECT name, normalized_name, level, university_count
+        `SELECT name, level, university_count
          FROM program_catalog
          ${whereClause}
-         ORDER BY university_count DESC, name
+         ORDER BY university_count DESC, name ASC
          LIMIT ? OFFSET ?`,
         [...values, limit, offset],
       ),

@@ -35,8 +35,14 @@ src/backend/private/
 *.apk
 *.h5
 *.pkl
-.DS_Store
-
+*.DS_Store
+*.xlsx
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
 
 # Original (uncompressed) hero videos — local backup, do not commit
 .video-originals/
@@ -47,3 +53,10 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+
+# Agent tooling
+.kilo/
+
+# Scratch docs (list specific files — do NOT use *.md, that would ignore README.md too)
+TODO.md
+universities_data_requirement.md

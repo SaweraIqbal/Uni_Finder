@@ -12,7 +12,7 @@ import {
   useState,
 } from "react";
 import { toast } from "react-toastify";
-import { getMe, getMeStats, getMeActivity } from "../../api/university";
+import { getMe, getMeStats, getMeActivity, uniAdminListCampusRegistrations } from "../../api/university";
 
 const UniversityAdminContext = createContext(null);
 
@@ -42,15 +42,17 @@ export function UniversityAdminProvider({
   const [sidebarOpen,      setSidebarOpen]      = useState(false);
 
   // ── API data ─────────────────────────────────────────────────────────────
-  const [university,  setUniversity]  = useState(null);   // /me response
-  const [stats,       setStats]       = useState(null);   // /me/stats response
-  const [activityLog, setActivityLog] = useState([]);     // /me/activity response
+  const [university,     setUniversity]     = useState(null);
+  const [stats,          setStats]          = useState(null);
+  const [activityLog,    setActivityLog]    = useState([]);
+  const [campusRequests, setCampusRequests] = useState([]);   // real campus registrations
 
   // ── Loading / error states ───────────────────────────────────────────────
-  const [loadingMe,       setLoadingMe]       = useState(true);
-  const [loadingStats,    setLoadingStats]    = useState(true);
-  const [loadingActivity, setLoadingActivity] = useState(true);
-  const [meError,         setMeError]         = useState(null);
+  const [loadingMe,            setLoadingMe]            = useState(true);
+  const [loadingStats,         setLoadingStats]         = useState(true);
+  const [loadingActivity,      setLoadingActivity]      = useState(true);
+  const [loadingCampusRequests,setLoadingCampusRequests]= useState(false);
+  const [meError,              setMeError]              = useState(null);
 
   // Prevent double-fetch in React StrictMode
   const fetchedRef = useRef(false);
@@ -107,6 +109,22 @@ export function UniversityAdminProvider({
     }
   }, []);
 
+  // ── Fetch campus registrations for this university ────────────────────────
+  const fetchCampusRequests = useCallback(async () => {
+    if (!sessionStorage.getItem("token")) return;
+    setLoadingCampusRequests(true);
+    try {
+      const { ok, status, data } = await uniAdminListCampusRegistrations();
+      if (status === 401 || status === 403) return; // not a university account
+      if (!ok) return;
+      setCampusRequests(Array.isArray(data.registrations) ? data.registrations : []);
+    } catch {
+      // non-fatal — sidebar badge just stays 0
+    } finally {
+      setLoadingCampusRequests(false);
+    }
+  }, []);
+
   // ── Boot fetch ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (fetchedRef.current) return;
@@ -114,14 +132,16 @@ export function UniversityAdminProvider({
     fetchMe();
     fetchStats();
     fetchActivity();
-  }, [fetchMe, fetchStats, fetchActivity]);
+    fetchCampusRequests();
+  }, [fetchMe, fetchStats, fetchActivity, fetchCampusRequests]);
 
   // ── Refetch everything after any mutation ─────────────────────────────────
   const refetch = useCallback(() => {
     fetchMe();
     fetchStats();
     fetchActivity();
-  }, [fetchMe, fetchStats, fetchActivity]);
+    fetchCampusRequests();
+  }, [fetchMe, fetchStats, fetchActivity, fetchCampusRequests]);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const navigateTo = useCallback((page) => {
@@ -161,7 +181,10 @@ export function UniversityAdminProvider({
         university,
         stats,
         activityLog,
+        campusRequests,
         refetch,
+        fetchCampusRequests,
+        loadingCampusRequests,
 
         // loading states
         loadingMe,
@@ -177,9 +200,7 @@ export function UniversityAdminProvider({
         adminEmail,
         adminInitials: initialsFrom(adminName),
 
-        // campus/program request counts — all zero until campus module lands
-        // The sidebar/header badge still reads these; keep them to avoid crashes.
-        campusRequests:  [],
+        // campus/program request counts — driven by real API now
         programRequests: [],
 
         // toast

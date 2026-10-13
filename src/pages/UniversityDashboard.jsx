@@ -161,13 +161,15 @@ function PreApprovalShell({ onLogout, children }) {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-100 px-6 sm:px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src={logo} alt="logo" className="w-8" />
-          <span className="text-lg font-semibold">
-            Uni <span className="text-orange-500">Finder</span>
-            <span className="text-gray-400 font-normal text-sm ml-2">
-              University Panel
-            </span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={logo} alt="Uni Finder logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="font-bold text-gray-800 text-xl leading-none">
+            Uni<span className="text-orange-500">Finder</span>
+          </span>
+          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full ml-1 font-medium">
+            University Panel
           </span>
         </div>
         <button

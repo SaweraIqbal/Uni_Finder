@@ -48,20 +48,27 @@ function SidebarNav() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="px-5 py-6 border-b border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="UniFinder" className="w-9 h-9 object-contain" />
-          <div>
-            <p className="text-white text-sm font-semibold leading-tight">
-              Uni<span className="text-orange-500">Finder</span>
-            </p>
-            <p className="text-slate-400 text-xs">Admin Portal</p>
+      {/* Logo Area */}
+      <div className="px-6 pt-4 pb-3 border-b border-slate-700 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+            <img
+              src={logo}
+              alt="Uni Finder logo"
+              className="w-full h-full object-contain"
+            />
           </div>
+          <span className="text-white font-bold text-xl leading-none">
+            Uni<span className="text-orange-500">Finder</span>
+          </span>
         </div>
+
+        {/* Close Button (Mobile Only) */}
         <button
           type="button"
-          className="lg:hidden text-slate-400 hover:text-white"
           onClick={() => setSidebarOpen(false)}
+          className="lg:hidden text-slate-400 hover:text-white p-1 rounded-md focus:outline-none"
+          aria-label="Close navigation"
         >
           <X className="w-5 h-5" />
         </button>
@@ -239,13 +246,27 @@ export function Header() {
         <Menu className="w-5 h-5" />
       </button>
 
-      <div className="flex-1 min-w-0">
-        <h1 className="text-base font-semibold text-slate-800 truncate">
-          {universityName}
-        </h1>
-        <p className="text-xs text-slate-400 truncate">
-          {city} · {established}
-        </p>
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        {university?.logo_url ? (
+          <img
+            src={university.logo_url.startsWith("http") ? university.logo_url : `http://localhost:5000${university.logo_url}`}
+            alt=""
+            className="w-9 h-9 rounded-lg object-contain bg-slate-50 border border-slate-100 shrink-0"
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-bold shrink-0">
+            {(universityName || "").slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0">
+          <h1 className="text-base font-semibold text-slate-800 truncate">
+            {universityName}
+          </h1>
+          <p className="text-xs text-slate-400 truncate">
+            {city} · {established}
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">

@@ -45,10 +45,12 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
     <div className="min-h-screen bg-gray-50 flex">
 
       <aside className="w-64 bg-[#1e293b] text-white flex flex-col">
-        <div className="flex items-center gap-2 px-6 py-6 border-b border-white/10">
-          <img src={logo} alt="logo" className="w-8" />
-          <span className="text-lg font-semibold">
-            Uni <span className="text-[#c88410]">Finder</span>
+        <div className="flex items-center gap-2.5 px-6 pt-4 pb-3 border-b border-slate-700">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={logo} alt="Uni Finder logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="text-white font-bold text-xl leading-none">
+            Uni<span className="text-orange-500">Finder</span>
           </span>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-1">

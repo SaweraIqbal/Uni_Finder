@@ -370,9 +370,9 @@ export const approveRequest = (req, res) => {
             return res.status(409).json({ message: "Application was modified concurrently. Please refresh and try again." });
           }
 
-          // Step 2: claim the university — handle duplicate owner_uid gracefully
+          // Step 2: claim the university + mark approved
           db.query(
-            "UPDATE universities SET owner_uid=? WHERE id=?",
+            "UPDATE universities SET owner_uid=?, status='approved' WHERE id=?",
             [app.user_uid, app.university_id],
             (err3) => {
               if (err3) {

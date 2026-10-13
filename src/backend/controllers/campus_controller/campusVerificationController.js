@@ -29,15 +29,31 @@ export const submitCampusRequest = (req, res) => {
 };
 
 export const getMyCampusRequest = (req, res) => {
+  const uid = req.params.uid;
   db.query(
     `SELECT cv.*, u.name AS university_name
      FROM campus_verification cv
      LEFT JOIN universities u ON u.id = cv.university_id
      WHERE cv.campus_admin_uid = ? ORDER BY cv.created_at DESC LIMIT 1`,
-    [req.params.uid],
+    [uid],
     (err, rows) => {
       if (err) return res.status(500).json({ message: "DB error", error: err.message });
-      return res.status(200).json(rows[0] || null);
+      if (rows && rows.length > 0) return res.status(200).json(rows[0]);
+
+      db.query(
+        `SELECT cr.id, cr.status, cr.officialName AS campus_name, cr.universityId AS university_id,
+                cr.city, cr.address, cr.phone AS contact_no, cr.submittedAt AS created_at,
+                u.name AS university_name
+         FROM campus_registrations cr
+         LEFT JOIN universities u ON u.id = cr.universityId
+         WHERE cr.registrantUserId = ?
+         ORDER BY cr.submittedAt DESC LIMIT 1`,
+        [uid],
+        (err2, crRows) => {
+          if (err2) return res.status(500).json({ message: "DB error", error: err2.message });
+          return res.status(200).json(crRows[0] || null);
+        }
+      );
     }
   );
 };

@@ -1,8 +1,70 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import heroVideo from "../assets/video1.mp4";
 import SearchBar from "../components/SearchBar";
-import { campuses, formatPKR } from "../data/campuses";
+import { formatPKR } from "../data/campuses";
+import { API } from "../api/client";
+
+// Normalise a live API campus row to the shape CampusCard / filters expect
+function normalizeLiveCampus(c) {
+  const type = (c.campus_type || "").toLowerCase();
+  const isMain =
+    c.is_main === 1 || c.is_main === true ||
+    type === "main" || type === "main campus";
+
+  // Resolve cover image — prefix API base for relative paths
+  let coverImg = c.cover_image || c.university_banner || null;
+  if (coverImg && !/^https?:\/\//i.test(coverImg)) {
+    coverImg = `${API}${coverImg}`;
+  }
+
+  // Admission status
+  let admissionStatus = "unknown";
+  if (c.admission_status_override) {
+    admissionStatus = c.admission_status_override;
+  } else if (c.admission_open && c.admission_close) {
+    const now = new Date();
+    const open  = new Date(c.admission_open);
+    const close = new Date(c.admission_close);
+    if (now >= open && now <= close) {
+      const daysLeft = (close - now) / (1000 * 60 * 60 * 24);
+      admissionStatus = daysLeft <= 14 ? "closing_soon" : "open";
+    } else if (now > close) {
+      admissionStatus = "closed";
+    } else {
+      admissionStatus = "open";
+    }
+  }
+
+  return {
+    ...c,
+    id:              c.id,
+    campusName:      c.name || c.campusName || "Campus",
+    universityName:  c.university_name || c.universityName || "",
+    universityId:    c.university_id   || c.universityId   || "",
+    city:            c.city            || "",
+    province:        c.province        || "",
+    area:            c.area            || "",
+    coverImage:      coverImg,
+    cover_image:     coverImg,
+    universityType:  c.sector          || c.university_type || c.universityType || "",
+    campusCategory:  isMain ? "Main Campus" : (c.campus_type || "City Campus"),
+    admissionStatus,
+    genderType:      c.gender_policy   || c.genderType      || "",
+    programs:        Array.isArray(c.programs)
+      ? c.programs.map((p) => (typeof p === "string" ? p : p.name || ""))
+      : [],
+    feePerSemester:  c.fee             || c.feePerSemester  || 0,
+    fee_min:         c.fee_min         || 0,
+    fee_max:         c.fee_max         || c.fee             || 0,
+    hostelAvailable: !!c.hostel_available,
+    scholarshipAvailable: !!c.scholarship_available,
+    entryTests:      c.entry_tests     || c.entryTests      || [],
+    minMarksRequired: c.min_marks      || c.minMarksRequired || 40,
+    students:        c.students        || null,
+    is_main:         isMain,
+  };
+}
 
 // ----------- Design tokens / lookup maps -----------
 const ADMISSION_STYLE = {
@@ -570,276 +632,498 @@ function ProgramChip({ label, onRemove }) {
   );
 }
 
-// ----------- FeeRangeFilter -----------
-function FeeRangeFilter({ minFee, maxFee, onChange }) {
-  const minOptions = FEE_PRESETS.filter((p) => p <= maxFee - FEE_GAP);
-  const maxOptions = FEE_PRESETS.filter((p) => p >= minFee + FEE_GAP);
-
-  return (
-    <div>
-      {/* Summary label */}
-      <p className="text-xs font-medium text-orange-500 mb-2">
-        {formatFee(minFee)} &ndash; {formatFee(maxFee)}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="text-[11px] text-gray-400 block mb-1">
-            Min fee
-          </label>
-          <select
-            value={minFee}
-            onChange={(e) =>
-              onChange({ minFee: Number(e.target.value), maxFee })
-            }
-            className="w-full text-sm border border-gray-300 rounded-lg px-2.5 py-2 text-gray-700 focus:outline-none focus:border-orange-400"
-          >
-            {minOptions.map((p) => (
-              <option key={p} value={p}>
-                {formatFee(p)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-[11px] text-gray-400 block mb-1">
-            Max fee
-          </label>
-          <select
-            value={maxFee}
-            onChange={(e) =>
-              onChange({ minFee, maxFee: Number(e.target.value) })
-            }
-            className="w-full text-sm border border-gray-300 rounded-lg px-2.5 py-2 text-gray-700 focus:outline-none focus:border-orange-400"
-          >
-            {maxOptions.map((p) => (
-              <option key={p} value={p}>
-                {formatFee(p)}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ----------- AdvancedFilters (sidebar) -----------
-function AdvancedFilters({ filters, setFilters, onResetAll }) {
-  const toggle = (key, val) =>
+const ALL_CITIES_LIST = [
+  { name: "Lahore", count: 8, province: "Punjab" },
+  { name: "Karachi", count: 4, province: "Sindh" },
+  { name: "Islamabad", count: 3, province: "Islamabad Capital Territory" },
+  { name: "Faisalabad", count: 2, province: "Punjab" },
+  { name: "Multan", count: 1, province: "Punjab" },
+  { name: "Gujranwala", count: 1, province: "Punjab" },
+];
+
+function AdvancedFilters({ filters, setFilters, onResetAll, matchCount = 19 }) {
+  const toggleFilterArray = (key, val) =>
     setFilters((prev) => ({
       ...prev,
-      [key]: prev[key].includes(val)
+      [key]: prev[key]?.includes(val)
         ? prev[key].filter((x) => x !== val)
-        : [...prev[key], val],
+        : [...(prev[key] || []), val],
     }));
 
+  const visibleCities =
+    filters.provinces && filters.provinces.length > 0
+      ? ALL_CITIES_LIST.filter((c) => filters.provinces.includes(c.province))
+      : ALL_CITIES_LIST;
+
+  const minMarksValue = filters.minMarks !== undefined ? filters.minMarks : 40;
+  const sliderPercentage = ((minMarksValue - 40) / (100 - 40)) * 100;
+
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 sticky top-24">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-gray-800">Filters</h3>
+    <div className="w-[300px] bg-white rounded-2xl border border-gray-200 p-5 shadow-sm font-sans select-none text-slate-700">
+      {/* Sidebar Header */}
+      <div className="flex items-center justify-between pb-3.5 mb-5 border-b border-gray-100">
+        <h3 className="text-base font-semibold text-slate-800">Filters</h3>
         <button
+          type="button"
           onClick={onResetAll}
-          className="text-sm text-orange-500 hover:underline"
+          className="text-xs font-semibold text-[#f97316] hover:text-orange-600 transition-colors cursor-pointer"
         >
           Reset All
         </button>
       </div>
 
-      {/* University Type */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-gray-700 mb-3">University Type</h4>
-        <div className="flex gap-1 flex-wrap">
-          {["Govt.", "Pvt."].map((t) => (
-            <button
-              key={t}
-              onClick={() => toggle("universityType", t)}
-              className={`px-2 py-1 text-[11px] font-medium rounded-full whitespace-nowrap transition ${
-                filters.universityType.includes(t)
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+      {/* Filter Groups - 20px spacing */}
+      <div className="space-y-5 text-sm">
+        {/* 1. LOCATION */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Location
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              "Punjab",
+              "Sindh",
+              "Khyber Pakhtunkhwa",
+              "Balochistan",
+              "Islamabad Capital Territory",
+              "Azad Jammu & Kashmir",
+            ].map((prov) => {
+              const isSelected = filters.provinces?.includes(prov);
+              return (
+                <button
+                  key={prov}
+                  type="button"
+                  onClick={() => toggleFilterArray("provinces", prov)}
+                  className={`text-xs px-2.5 py-1 rounded-lg border transition-all text-left leading-tight ${
+                    isSelected
+                      ? "bg-[#f97316] border-[#f97316] text-white font-medium shadow-xs"
+                      : "bg-slate-50 border-gray-200 text-slate-600 hover:bg-slate-100 hover:border-gray-300 font-normal"
+                  }`}
+                >
+                  {prov}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Campus Category */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-gray-700 mb-3">Campus Category</h4>
-        <div className="flex gap-1 flex-wrap">
-          {[
-            { label: "Main Campus", value: "Main Campus" },
-            { label: "City Campus", value: "City Campus" },
-          ].map((t) => (
-            <button
-              key={t.value}
-              onClick={() => toggle("campusType", t.value)}
-              className={`px-2 py-1 text-[11px] font-medium rounded-full whitespace-nowrap transition ${
-                filters.campusType.includes(t.value)
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* LEVEL */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Level
+          </span>
+          <div
+            role="radiogroup"
+            aria-label="Level"
+            className="flex flex-wrap gap-1.5"
+          >
+            {[
+              "Undergraduate",
+              "MS / MPhil",
+              "PhD",
+              "Associate Degree",
+              "Diploma",
+            ].map((lvl) => {
+              const isSelected = filters.level === lvl;
+              return (
+                <button
+                  key={lvl}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      level: prev.level === lvl ? "" : lvl,
+                    }))
+                  }
+                  className={`text-xs px-2.5 py-1 rounded-lg border transition-all text-left leading-tight ${
+                    isSelected
+                      ? "bg-[#f97316] border-[#f97316] text-white font-medium shadow-xs"
+                      : "bg-slate-50 border-gray-200 text-slate-600 hover:bg-slate-100 hover:border-gray-300 font-normal"
+                  }`}
+                >
+                  {lvl}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Admission Status */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-gray-700 mb-3">Admission Status</h4>
-        <div className="flex gap-1 flex-wrap">
-          {[
-            { label: "Open", value: "open", dot: "bg-green-500" },
-            { label: "Closed", value: "closed", dot: "bg-gray-400" },
-            { label: "Unknown", value: "unknown", dot: "bg-blue-400" },
-          ].map((s) => (
-            <button
-              key={s.value}
-              onClick={() =>
-                setFilters((prev) => ({
-                  ...prev,
-                  admissionStatus:
-                    prev.admissionStatus === s.value ? "" : s.value,
+        {/* 2. UNIVERSITY TYPE */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            University Type
+          </span>
+          <div className="flex gap-2">
+            {["Public", "Private"].map((type) => {
+              const isSelected = filters.universityType?.includes(type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => toggleFilterArray("universityType", type)}
+                  className={`px-3.5 py-1 text-xs rounded-lg border transition-all ${
+                    isSelected
+                      ? "bg-[#f97316] border-[#f97316] text-white font-medium shadow-xs"
+                      : "bg-slate-50 border-gray-200 text-slate-600 hover:bg-slate-100 hover:border-gray-300 font-normal"
+                  }`}
+                >
+                  {type}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. CAMPUS CATEGORY */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Campus Category
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {["Main Campus", "Sub Campus", "Regional Campus", "City Campus"].map((cat) => {
+              const isSelected = filters.campusType?.includes(cat);
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => toggleFilterArray("campusType", cat)}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition-all ${
+                    isSelected
+                      ? "bg-[#f97316] border-[#f97316] text-white font-medium shadow-xs"
+                      : "bg-slate-50 border-gray-200 text-slate-600 hover:bg-slate-100 hover:border-gray-300 font-normal"
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 4. ADMISSION STATUS */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Admission Status
+          </span>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="radio"
+                name="admissionStatus"
+                value="any"
+                checked={filters.admissionStatus === "any" || !filters.admissionStatus}
+                onChange={() => setFilters((p) => ({ ...p, admissionStatus: "any" }))}
+                className="w-4 h-4 text-orange-500 accent-orange-500 focus:ring-orange-400 cursor-pointer"
+              />
+              <span>Any</span>
+            </label>
+
+            <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="radio"
+                name="admissionStatus"
+                value="open"
+                checked={filters.admissionStatus === "open"}
+                onChange={() => setFilters((p) => ({ ...p, admissionStatus: "open" }))}
+                className="w-4 h-4 text-orange-500 accent-[#f97316] focus:ring-orange-400 cursor-pointer"
+              />
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span>Open</span>
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="radio"
+                name="admissionStatus"
+                value="closing_soon"
+                checked={filters.admissionStatus === "closing_soon"}
+                onChange={() => setFilters((p) => ({ ...p, admissionStatus: "closing_soon" }))}
+                className="w-4 h-4 text-orange-500 accent-[#f97316] focus:ring-orange-400 cursor-pointer"
+              />
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                <span>Closing Soon</span>
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="radio"
+                name="admissionStatus"
+                value="closed"
+                checked={filters.admissionStatus === "closed"}
+                onChange={() => setFilters((p) => ({ ...p, admissionStatus: "closed" }))}
+                className="w-4 h-4 text-orange-500 accent-[#f97316] focus:ring-orange-400 cursor-pointer"
+              />
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                <span>Closed</span>
+              </span>
+            </label>
+
+            <div>
+              <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="admissionStatus"
+                  value="unknown"
+                  checked={filters.admissionStatus === "unknown"}
+                  onChange={() => setFilters((p) => ({ ...p, admissionStatus: "unknown" }))}
+                  className="w-4 h-4 text-orange-500 accent-[#f97316] focus:ring-orange-400 cursor-pointer"
+                />
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full border border-slate-300 bg-transparent shrink-0" />
+                  <span className="text-slate-400">Unknown</span>
+                </span>
+              </label>
+              <span className="text-[10px] text-slate-400 pl-[26px] block mt-0.5">
+                status not yet published
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. GENDER POLICY */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Gender Policy
+          </span>
+          <div className="space-y-2">
+            {["Any", "Co-Education", "Women Only", "Men Only"].map((g) => {
+              const isChecked =
+                g === "Any"
+                  ? filters.genderPolicy === "any" || !filters.genderPolicy
+                  : filters.genderPolicy === g;
+              return (
+                <label key={g} className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="genderPolicy"
+                    value={g}
+                    checked={isChecked}
+                    onChange={() =>
+                      setFilters((p) => ({
+                        ...p,
+                        genderPolicy: g === "Any" ? "any" : g,
+                      }))
+                    }
+                    className="w-4 h-4 text-orange-500 accent-[#f97316] focus:ring-orange-400 cursor-pointer"
+                  />
+                  <span>{g}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 6. SHIFT */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Shift
+          </span>
+          <div className="flex gap-1.5 flex-wrap">
+            {["Morning", "Evening", "Weekend"].map((s) => {
+              const isSelected = filters.shifts?.includes(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleFilterArray("shifts", s)}
+                  className={`px-3 py-1 text-xs rounded-lg border transition-all ${
+                    isSelected
+                      ? "bg-[#f97316] border-[#f97316] text-white font-medium shadow-xs"
+                      : "bg-slate-50 border-gray-200 text-slate-600 hover:bg-slate-100 hover:border-gray-300 font-normal"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 7. MY MARKS */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            My Marks
+          </span>
+          <div className="flex justify-between items-center text-xs font-medium text-slate-700 mb-1.5">
+            <span>My Intermediate %</span>
+            <span className="text-[#f97316] font-semibold">{minMarksValue}%</span>
+          </div>
+          <input
+            type="range"
+            min="40"
+            max="100"
+            value={minMarksValue}
+            onChange={(e) =>
+              setFilters((p) => ({ ...p, minMarks: Number(e.target.value) }))
+            }
+            style={{
+              background: `linear-gradient(to right, #f97316 0%, #f97316 ${sliderPercentage}%, #e2e8f0 ${sliderPercentage}%, #e2e8f0 100%)`,
+              accentColor: "#f97316",
+            }}
+            className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+            <span>40%</span>
+            <span>100%</span>
+          </div>
+          <p className="text-xs text-green-700 font-medium mt-1.5 flex items-center gap-1">
+            <span>🎓</span>
+            <span>{minMarksValue === 40 ? "All 19 campuses match" : `${matchCount} campuses match`}</span>
+          </p>
+        </div>
+
+        {/* 8. TUITION FEE / SEMESTER (PKR) */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+            Tuition Fee / Semester (PKR)
+          </span>
+          <p className="text-xs text-slate-400 mb-2">Any fee</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <select
+                value={filters.minFee || ""}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, minFee: e.target.value }))
+                }
+                className={`w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 pr-6 text-xs transition cursor-pointer focus:outline-none focus:border-orange-500 ${
+                  !filters.minFee ? "text-slate-400" : "text-slate-700 font-medium"
+                }`}
+              >
+                <option value="">Min fee</option>
+                <option value="50000">50k</option>
+                <option value="100000">1 Lakh</option>
+                <option value="150000">1.5 Lakh</option>
+              </select>
+              <svg
+                className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            <div className="relative">
+              <select
+                value={filters.maxFee || ""}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, maxFee: e.target.value }))
+                }
+                className={`w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 pr-6 text-xs transition cursor-pointer focus:outline-none focus:border-orange-500 ${
+                  !filters.maxFee ? "text-slate-400" : "text-slate-700 font-medium"
+                }`}
+              >
+                <option value="">Max fee</option>
+                <option value="50000">50k</option>
+                <option value="100000">1 Lakh</option>
+                <option value="150000">1.5 Lakh</option>
+                <option value="200000">2 Lakh+</option>
+              </select>
+              <svg
+                className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* 9. ENTRY TEST */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Entry Test
+          </span>
+          <div className="grid grid-cols-2 gap-y-2 gap-x-2">
+            {[
+              "No Test Required",
+              "ECAT",
+              "MDCAT",
+              "ETEA",
+              "NTS/NAT",
+              "LAT",
+              "University's Own",
+              "SAT Accepted",
+            ].map((test) => (
+              <label key={test} className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.entryTests?.includes(test) || false}
+                  onChange={() => toggleFilterArray("entryTests", test)}
+                  className="w-3.5 h-3.5 rounded border-gray-300 text-orange-500 focus:ring-orange-400 accent-[#f97316] cursor-pointer shrink-0"
+                />
+                <span className="truncate">{test}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* 10. HOSTEL */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Hostel
+          </span>
+          <div className="space-y-2">
+            {["Any", "Boys Hostel", "Girls Hostel"].map((h) => {
+              const isChecked =
+                h === "Any"
+                  ? filters.hostel === "any" || !filters.hostel
+                  : filters.hostel === h;
+              return (
+                <label key={h} className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="hostel"
+                    value={h}
+                    checked={isChecked}
+                    onChange={() =>
+                      setFilters((p) => ({
+                        ...p,
+                        hostel: h === "Any" ? "any" : h,
+                      }))
+                    }
+                    className="w-4 h-4 text-orange-500 accent-[#f97316] focus:ring-orange-400 cursor-pointer"
+                  />
+                  <span>{h}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 11. SCHOLARSHIP */}
+        <div>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2.5">
+            Scholarship
+          </span>
+          <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!filters.scholarshipAvailable}
+              onChange={(e) =>
+                setFilters((p) => ({
+                  ...p,
+                  scholarshipAvailable: e.target.checked,
                 }))
               }
-              className={`flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-full whitespace-nowrap transition ${
-                filters.admissionStatus === s.value
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-              {s.label}
-            </button>
-          ))}
+              className="w-3.5 h-3.5 rounded border-gray-300 text-orange-500 focus:ring-orange-400 accent-[#f97316] cursor-pointer"
+            />
+            <span>Scholarship Available</span>
+          </label>
         </div>
-      </div>
-
-      {/* Campus Gender Type */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-gray-700 mb-3">Campus Gender Type</h4>
-        <div className="space-y-2">
-          {["Co-Education", "Women Only", "Men Only"].map((g) => (
-            <label key={g} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.genderType.includes(g)}
-                onChange={() => toggle("genderType", g)}
-                className="w-4 h-4 accent-orange-500"
-              />
-              <span className="text-sm text-gray-600">{g}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Minimum Marks */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-gray-700 mb-3">
-          Minimum Marks: {filters.minMarks}%
-        </h4>
-        <input
-          type="range"
-          min="45"
-          max="100"
-          value={filters.minMarks}
-          onChange={(e) =>
-            setFilters((prev) => ({
-              ...prev,
-              minMarks: parseInt(e.target.value),
-            }))
-          }
-          className="w-full accent-orange-500"
-        />
-        <div className="flex justify-between text-xs text-gray-400 mt-1">
-          <span>45%</span>
-          <span>100%</span>
-        </div>
-      </div>
-
-      {/* Tuition Fee Range â€” dropdown pair */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-gray-700 mb-3">
-          Tuition Fee Range (PKR)
-        </h4>
-        <FeeRangeFilter
-          minFee={filters.minFee}
-          maxFee={filters.maxFee}
-          onChange={({ minFee, maxFee }) =>
-            setFilters((prev) => ({ ...prev, minFee, maxFee }))
-          }
-        />
-      </div>
-
-      {/* Entry Test Requirement */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-gray-700 mb-3">
-          Entry Test Requirement
-        </h4>
-        <div className="space-y-2">
-          {[
-            "No Test Required",
-            "ECAT",
-            "MDCAT",
-            "NAT",
-            "GAT",
-            "NTS",
-            "University Own Test",
-          ].map((t) => (
-            <label key={t} className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.entryTests.includes(t)}
-                onChange={() => toggle("entryTests", t)}
-                className="w-4 h-4 rounded accent-orange-500"
-              />
-              <span className="text-gray-700 text-sm">{t}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Hostel Availability */}
-      <div className="mb-4">
-        <h4 className="font-semibold text-gray-700 mb-3">
-          Hostel Availability
-        </h4>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={filters.hostelAvailable}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, hostelAvailable: e.target.checked }))
-            }
-            className="w-4 h-4 rounded accent-orange-500"
-          />
-          <span className="text-gray-700 text-sm">Hostel Available</span>
-        </label>
-      </div>
-
-      {/* Scholarship Available */}
-      <div className="mb-2">
-        <h4 className="font-semibold text-gray-700 mb-3">
-          Scholarship Available
-        </h4>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={filters.scholarshipAvailable}
-            onChange={(e) =>
-              setFilters((p) => ({
-                ...p,
-                scholarshipAvailable: e.target.checked,
-              }))
-            }
-            className="w-4 h-4 rounded accent-orange-500"
-          />
-          <span className="text-gray-700 text-sm">Scholarship Available</span>
-        </label>
       </div>
     </div>
   );
@@ -848,23 +1132,29 @@ function AdvancedFilters({ filters, setFilters, onResetAll }) {
 const MobileFilters = AdvancedFilters;
 
 // ----------- HomePage -----------
+const INITIAL_FILTERS = {
+  provinces: [],
+  cities: [],
+  level: "",
+  universityType: [],
+  campusType: [],
+  admissionStatus: "any",
+  genderPolicy: "any",
+  shifts: [],
+  minMarks: 40,
+  minFee: "",
+  maxFee: "",
+  entryTests: [],
+  hostel: "any",
+  scholarshipAvailable: false,
+};
+
 function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state || {};
 
-  const [filters, setFilters] = useState({
-    admissionStatus: "",
-    genderType: [],
-    universityType: [],
-    campusType: [],
-    minMarks: 45,
-    minFee: FEE_MIN_BOUND,
-    maxFee: FEE_MAX_BOUND,
-    entryTests: [],
-    hostelAvailable: false,
-    scholarshipAvailable: false,
-  });
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
 
   const [selectedPrograms, setSelectedPrograms] = useState([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
@@ -884,18 +1174,7 @@ function HomePage() {
     setSelectedPrograms((prev) => prev.filter((p) => p !== label));
 
   const handleResetAll = () => {
-    setFilters({
-      admissionStatus: "",
-      genderType: [],
-      universityType: [],
-      campusType: [],
-      minMarks: 45,
-      minFee: FEE_MIN_BOUND,
-      maxFee: FEE_MAX_BOUND,
-      entryTests: [],
-      hostelAvailable: false,
-      scholarshipAvailable: false,
-    });
+    setFilters(INITIAL_FILTERS);
     setSelectedPrograms([]);
     setSearchValues({ program: "", city: "", university: "" });
   };
@@ -934,7 +1213,7 @@ function HomePage() {
       </section>
 
       {/* ---- Content section ---- */}
-      <section className="max-w-7xl mx-auto px-6 py-12">
+      <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Mobile: floating Filters button */}
         <div className="lg:hidden mb-4">
           <button
@@ -1016,6 +1295,21 @@ function HomePage() {
   );
 }
 
+// ----------- Loading skeleton -----------
+function CampusCardSkeleton() {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden animate-pulse flex flex-col h-full">
+      <div className="h-48 bg-gray-200 flex-shrink-0" />
+      <div className="p-4 flex flex-col flex-1 gap-2">
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="h-3 bg-gray-100 rounded w-2/5 mt-1" />
+        <div className="mt-auto h-8 bg-gray-100 rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
 // ----------- CampusGrid -----------
 function CampusGrid({
   filters,
@@ -1038,6 +1332,40 @@ function CampusGrid({
   const [selectedIds, setSelectedIds] = useState([]);
   const MAX_SELECT = 3;
 
+  // ---- Live campus data from API ----
+  const [liveCampuses, setLiveCampuses] = useState([]);
+  const [apiLoading, setApiLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
+
+  const fetchCampuses = useCallback(() => {
+    setApiLoading(true);
+    setApiError(false);
+    const qs = new URLSearchParams();
+    if (searchCity)       qs.set("city",       searchCity);
+    if (searchUniversity) qs.set("university",  searchUniversity);
+    if (searchProgram)    qs.set("program",     searchProgram);
+
+    fetch(`${API}/api/campuses?${qs.toString()}`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Campus list request failed");
+        return r.json();
+      })
+      .then((data) => {
+        setLiveCampuses(Array.isArray(data) ? data.map(normalizeLiveCampus) : []);
+      })
+      .catch(() => {
+        setLiveCampuses([]);
+        setApiError(true);
+      })
+      .finally(() => setApiLoading(false));
+  }, [searchCity, searchUniversity, searchProgram]);
+
+  useEffect(() => {
+    fetchCampuses();
+  }, [fetchCampuses]);
+
+  const campuses = liveCampuses;
+
   useEffect(() => {
     const close = (e) => {
       if (sortRef.current && !sortRef.current.contains(e.target))
@@ -1049,9 +1377,10 @@ function CampusGrid({
 
   // ---- Real filtering ----
   const filtered = useMemo(() => {
-    return campuses.filter((c) => {
-      // Hero search filters
-      if (searchCity && c.city.toLowerCase() !== searchCity.toLowerCase())
+        return campuses.filter((c) => {
+       if (!c) return false;
+       // Hero search filters
+if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
         return false;
       if (
         searchUniversity &&
@@ -1070,43 +1399,131 @@ function CampusGrid({
         return false;
 
       // Sidebar filters
-      if (
-        filters.admissionStatus &&
-        c.admissionStatus !== filters.admissionStatus
-      )
-        return false;
-      if (
-        filters.genderType.length > 0 &&
-        !filters.genderType.includes(c.genderType)
-      )
-        return false;
-      if (
-        filters.universityType.length > 0 &&
-        !filters.universityType.includes(c.universityType)
-      )
-        return false;
-      if (
-        filters.campusType.length > 0 &&
-        !filters.campusType.includes(c.campusCategory)
-      )
-        return false;
-      if (
-        c.feePerSemester < filters.minFee ||
-        c.feePerSemester > filters.maxFee
-      )
-        return false;
-      if (filters.hostelAvailable && !c.hostelAvailable) return false;
+      // 1. Location - Provinces
+      if (filters.provinces && filters.provinces.length > 0) {
+        const prov =
+          c.province ||
+          (["Lahore", "Faisalabad", "Multan", "Gujranwala", "Kala Shah Kaku"].includes(c.city)
+            ? "Punjab"
+            : c.city === "Karachi"
+            ? "Sindh"
+            : c.city === "Islamabad"
+            ? "Islamabad Capital Territory"
+            : "");
+        if (!filters.provinces.includes(prov)) return false;
+      }
+
+      // 1. Location - Cities
+      if (filters.cities && filters.cities.length > 0) {
+        if (!filters.cities.includes(c.city)) return false;
+      }
+
+      // LEVEL ("Undergraduate", "MS / MPhil", "PhD", "Associate Degree", "Diploma")
+      if (filters.level) {
+        const lvl = filters.level;
+        const matchesLevel = (c.programs || []).some((p) => {
+          const pl = p.toLowerCase();
+          if (lvl === "Undergraduate") {
+            return (
+              pl.includes("bachelor") ||
+              pl.includes("bs") ||
+              pl.includes("bba") ||
+              pl.includes("llb") ||
+              pl.includes("pharm-d") ||
+              pl.includes("dpt") ||
+              pl.includes("be ") ||
+              pl.includes("b.sc")
+            );
+          }
+          if (lvl === "MS / MPhil") {
+            return (
+              pl.includes("ms ") ||
+              pl.includes("ms-") ||
+              pl.includes("mphil") ||
+              pl.includes("master") ||
+              pl.includes("mba") ||
+              pl.includes("m.sc")
+            );
+          }
+          if (lvl === "PhD") {
+            return pl.includes("phd") || pl.includes("doctor of philosophy");
+          }
+          if (lvl === "Associate Degree") {
+            return pl.includes("associate degree") || pl.includes("ad ");
+          }
+          if (lvl === "Diploma") {
+            return pl.includes("diploma") || pl.includes("postgraduate diploma");
+          }
+          return false;
+        });
+        if (!matchesLevel) return false;
+      }
+
+      // 2. University Type ("Public", "Private")
+      if (filters.universityType && filters.universityType.length > 0) {
+        const matchesType = filters.universityType.some((t) => {
+          if (t === "Public") return c.universityType === "Govt." || c.universityType === "Public";
+          if (t === "Private") return c.universityType === "Pvt." || c.universityType === "Private";
+          return c.universityType === t;
+        });
+        if (!matchesType) return false;
+      }
+
+      // 3. Campus Category ("Main Campus", "Sub Campus", "Regional Campus", "City Campus")
+      if (filters.campusType && filters.campusType.length > 0) {
+        if (!filters.campusType.includes(c.campusCategory)) return false;
+      }
+
+      // 4. Admission Status ("Any", "Open", "Closing Soon", "Closed", "Unknown")
+      if (filters.admissionStatus && filters.admissionStatus !== "any") {
+        if (filters.admissionStatus === "closing_soon") {
+          if (c.admissionStatus !== "closing_soon") return false;
+        } else if (c.admissionStatus !== filters.admissionStatus) {
+          return false;
+        }
+      }
+
+      // 5. Gender Policy ("Any", "Co-Education", "Women Only", "Men Only")
+      if (filters.genderPolicy && filters.genderPolicy !== "any") {
+        if (c.genderType !== filters.genderPolicy) return false;
+      }
+
+      // 6. Shift ("Morning", "Evening", "Weekend")
+      if (filters.shifts && filters.shifts.length > 0) {
+        if (c.shifts && !c.shifts.some((s) => filters.shifts.includes(s))) return false;
+      }
+
+      // 7. My Marks
+      if (filters.minMarks && filters.minMarks > 40) {
+        if ((c.minMarksRequired || 40) > filters.minMarks) return false;
+      }
+
+      // 8. Tuition Fee
+      if (filters.minFee) {
+        if (c.feePerSemester < Number(filters.minFee)) return false;
+      }
+      if (filters.maxFee) {
+        if (c.feePerSemester > Number(filters.maxFee)) return false;
+      }
+
+      // 9. Entry Test
+      if (filters.entryTests && filters.entryTests.length > 0) {
+        const matchesTest = (c.entryTests || []).some((test) => {
+          if (filters.entryTests.includes(test)) return true;
+          if (test === "University Own Test" && filters.entryTests.includes("University's Own")) return true;
+          if ((test === "NTS" || test === "NAT") && filters.entryTests.includes("NTS/NAT")) return true;
+          return false;
+        });
+        if (!matchesTest) return false;
+      }
+
+      // 10. Hostel ("Any", "Boys Hostel", "Girls Hostel")
+      if (filters.hostel && filters.hostel !== "any") {
+        if (!c.hostelAvailable) return false;
+      }
+
+      // 11. Scholarship
       if (filters.scholarshipAvailable && !c.scholarshipAvailable) return false;
-      if (
-        filters.entryTests.length > 0 &&
-        !(c.entryTests || []).some((t) => filters.entryTests.includes(t))
-      )
-        return false;
-      if (
-        filters.minMarks > 45 &&
-        (c.minMarksRequired || 45) < filters.minMarks
-      )
-        return false;
 
       // Toolbar program filter
       if (
@@ -1117,7 +1534,7 @@ function CampusGrid({
 
       return true;
     });
-  }, [filters, selectedPrograms, searchCity, searchUniversity, searchProgram]);
+  }, [campuses, filters, selectedPrograms, searchCity, searchUniversity, searchProgram]);
 
   const displayed = useMemo(() => {
     const list = [...filtered];
@@ -1162,11 +1579,19 @@ function CampusGrid({
         <ProgramPicker selected={selectedPrograms} onToggle={onProgramToggle} />
         <div className="flex-1 min-w-[8px]" />
         <p className="text-sm text-gray-500 whitespace-nowrap">
-          Showing{" "}
-          <span className="font-semibold text-gray-700">
-            {displayed.length}
-          </span>{" "}
-          {displayed.length === 1 ? "campus" : "campuses"}
+          {apiLoading ? (
+            <span className="text-gray-400">Loading campuses…</span>
+          ) : apiError ? (
+            <span className="text-red-600">Campus list unavailable</span>
+          ) : (
+            <>
+              Showing{" "}
+              <span className="font-semibold text-gray-700">
+                {displayed.length}
+              </span>{" "}
+              {displayed.length === 1 ? "campus" : "campuses"}
+            </>
+          )}
         </p>
         <div className="flex items-center gap-2">
           {/* Select Campuses button */}
@@ -1373,22 +1798,47 @@ function CampusGrid({
         </div>
       )}
 
-      {/* ---- Grid: Sidebar + Cards ---- */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar */}
+      {/* ---- Layout: Sidebar + Cards ---- */}
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Left filter sidebar 300px */}
         {showFilters && (
-          <div className="hidden lg:block lg:col-span-1">
+          <aside className="hidden lg:block w-[300px] shrink-0 sticky top-24">
             <AdvancedFilters
               filters={filters}
               setFilters={setFilters}
               onResetAll={onResetAll}
+              matchCount={filtered.length}
             />
-          </div>
+          </aside>
         )}
 
         {/* Cards */}
-        <div className={showFilters ? "lg:col-span-3" : "lg:col-span-4"}>
-          {displayed.length === 0 ? (
+        <main className="flex-1 min-w-0">
+          {apiLoading ? (
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                  : "space-y-4"
+              }
+            >
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CampusCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : apiError ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <h3 className="text-lg font-semibold text-gray-700 mb-1">Could not load registered campuses.</h3>
+              <p className="text-sm text-gray-400 mb-5">Check your connection and try again.</p>
+              <button
+                type="button"
+                onClick={fetchCampuses}
+                className="px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-all"
+              >
+                Retry
+              </button>
+            </div>
+          ) : displayed.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <h3 className="text-lg font-semibold text-gray-700 mb-1">
                 No campuses match your filters.
@@ -1398,7 +1848,7 @@ function CampusGrid({
               </p>
               <button
                 onClick={onResetAll}
-                className="px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-all"
+                className="px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-all cursor-pointer"
               >
                 Reset Filters
               </button>
@@ -1407,7 +1857,7 @@ function CampusGrid({
             <div
               className={
                 viewMode === "grid"
-                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
                   : "space-y-4"
               }
             >
@@ -1428,7 +1878,7 @@ function CampusGrid({
               })}
             </div>
           )}
-        </div>
+        </main>
       </div>
 
       {/* Sticky compare bar */}

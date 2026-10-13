@@ -36,6 +36,8 @@ import {
   adminApproveProgramRequest,
   adminRejectProgramRequest,
   adminListActivity,
+  adminListCampusRegistrations,
+  adminUpdateCampusRegistrationStatus,
 } from "../controllers/admin_controller/adminController.js";
 import {
   submitProgramRequest,
@@ -312,6 +314,19 @@ router.get(
   "/admin/activity",
   verifyToken, authorizeRoles("admin"),
   adminListActivity,
+);
+
+// ── Super-Admin campus registrations ─────────────────────────────────────────
+router.get(
+  "/admin/campus-registrations",
+  verifyToken, authorizeRoles("admin"),
+  adminListCampusRegistrations,
+);
+router.patch(
+  "/admin/campus-registrations/:id/status",
+  verifyToken, authorizeRoles("admin"),
+  express.json(),
+  adminUpdateCampusRegistrationStatus,
 );
 
 export default router;

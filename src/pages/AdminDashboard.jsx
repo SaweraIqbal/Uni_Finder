@@ -1,4 +1,4 @@
-import { useState, useRef, useDeferredValue } from "react";
+import { useState, useRef, useDeferredValue, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Shield,
@@ -31,61 +31,11 @@ import ActivityLog from "../components/admin/ActivityLog.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { setFlash } from "../utils/flash.js";
 
-const NAV_ITEMS = [
-  {
-    id: "verifications",
-    label: "University Verifications",
-    icon: <Shield size={18} />,
-    badge: 3,
-  },
-  { id: "profiles", label: "University Profiles", icon: <Home size={18} /> },
-  {
-    id: "campus-approvals",
-    label: "Campus Approvals",
-    icon: <MapPin size={18} />,
-    badge: 3,
-  },
-  { id: "programs", label: "Program Management", icon: <BookOpen size={18} /> },
-  {
-    id: "program-approvals",
-    label: "Program Approvals",
-    icon: <ClipboardList size={18} />,
-    badge: 2,
-  },
-  {
-    id: "hostel-approvals",
-    label: "Hostel Approvals",
-    icon: <BedDouble size={18} />,
-    badge: 3,
-  },
-  { id: "analytics", label: "Analytics", icon: <BarChart2 size={18} /> },
-  { id: "activity-log", label: "Activity Log", icon: <History size={18} /> },
-];
-
-// Mock pending notifications data
-const PENDING_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: "campus",
-    title: "Campus: Lahore New City Campus",
-    description: "Pending your review",
-    targetScreen: "campus-approvals",
-  },
-  {
-    id: 2,
-    type: "campus",
-    title: "Campus: Rawalpindi Campus",
-    description: "Pending your review",
-    targetScreen: "campus-approvals",
-  },
-  {
-    id: 3,
-    type: "program",
-    title: "Program: BS Artificial Intelligence",
-    description: "Pending your review",
-    targetScreen: "program-approvals",
-  },
-];
+import {
+  listVerifications,
+  adminListCampusRegistrations,
+  adminListProgramRequests,
+} from "../api/verification.js";
 
 function renderScreen(screen, navigate) {
   switch (screen) {
@@ -120,6 +70,156 @@ export default function AdminDashboard() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [counts, setCounts] = useState({
+    verifications: 0,
+    campus: 0,
+    programs: 0,
+    hostels: 2,
+  });
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    if (!sessionStorage.getItem("token")) return;
+    try {
+      setLoadingNotifications(true);
+      const [verRes, campusRes, progRes] = await Promise.allSettled([
+        listVerifications("pending"),
+        adminListCampusRegistrations({ status: "pending", limit: 50 }),
+        adminListProgramRequests({ status: "pending", limit: 50 }),
+      ]);
+
+      const items = [];
+      let verCount = 0;
+      let campusCount = 0;
+      let progCount = 0;
+
+      // 1. University Verifications
+      if (verRes.status === "fulfilled" && verRes.value?.ok) {
+        const verList = Array.isArray(verRes.value.data) ? verRes.value.data : [];
+        verCount = verList.length;
+        verList.forEach((v) => {
+          items.push({
+            id: `ver-${v.id}`,
+            type: "university",
+            title: `University: ${v.university_name || v.name || "University Verification"}`,
+            description: `Pending verification for ${v.full_name || v.official_email || "Admin"}`,
+            targetScreen: "verifications",
+            date: v.created_at,
+          });
+        });
+      }
+
+      // 2. Campus Approvals
+      if (campusRes.status === "fulfilled" && campusRes.value?.ok) {
+        const cData = campusRes.value.data;
+        const cList = Array.isArray(cData?.registrations)
+          ? cData.registrations
+          : Array.isArray(cData)
+          ? cData
+          : [];
+        campusCount = cData?.stats?.pending ?? cList.length;
+        cList.forEach((c) => {
+          items.push({
+            id: `campus-${c.id}`,
+            type: "campus",
+            title: `Campus: ${c.officialName || c.name || "Campus Registration"}`,
+            description: `Pending your review · ${c.city || "Campus"}`,
+            targetScreen: "campus-approvals",
+            date: c.submittedAt || c.created_at,
+          });
+        });
+      }
+
+      // 3. Program Approvals
+      if (progRes.status === "fulfilled" && progRes.value?.ok) {
+        const pData = progRes.value.data;
+        const pList = Array.isArray(pData?.requests) ? pData.requests : [];
+        progCount = pData?.total ?? pList.length;
+        pList.forEach((p) => {
+          items.push({
+            id: `prog-${p.id}`,
+            type: "program",
+            title: `Program: ${p.name || "Program Request"}`,
+            description: `Pending review · ${p.university_name || "University"}`,
+            targetScreen: "program-approvals",
+            date: p.created_at,
+          });
+        });
+      }
+
+      // 4. Hostel Approvals
+      const hostelItems = [
+        {
+          id: "hostel-1",
+          type: "hostel",
+          title: "Hostel: Al-Noor Boys Hostel",
+          description: "Pending Admin Approval · Lahore",
+          targetScreen: "hostel-approvals",
+        },
+        {
+          id: "hostel-3",
+          type: "hostel",
+          title: "Hostel: FAST Boys Residence",
+          description: "Pending Admin Approval · Faisalabad",
+          targetScreen: "hostel-approvals",
+        },
+      ];
+      items.push(...hostelItems);
+      const hostelCount = hostelItems.length;
+
+      setCounts({
+        verifications: verCount,
+        campus: campusCount,
+        programs: progCount,
+        hostels: hostelCount,
+      });
+
+      setNotifications(items);
+    } catch (e) {
+      console.error("Failed to load notifications:", e);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 15000);
+    return () => clearInterval(interval);
+  }, [loadNotifications]);
+
+  const navItems = [
+    {
+      id: "verifications",
+      label: "University Verifications",
+      icon: <Shield size={18} />,
+      badge: counts.verifications > 0 ? counts.verifications : null,
+    },
+    { id: "profiles", label: "University Profiles", icon: <Home size={18} /> },
+    {
+      id: "campus-approvals",
+      label: "Campus Approvals",
+      icon: <MapPin size={18} />,
+      badge: counts.campus > 0 ? counts.campus : null,
+    },
+    { id: "programs", label: "Program Management", icon: <BookOpen size={18} /> },
+    {
+      id: "program-approvals",
+      label: "Program Approvals",
+      icon: <ClipboardList size={18} />,
+      badge: counts.programs > 0 ? counts.programs : null,
+    },
+    {
+      id: "hostel-approvals",
+      label: "Hostel Approvals",
+      icon: <BedDouble size={18} />,
+      badge: counts.hostels > 0 ? counts.hostels : null,
+    },
+    { id: "analytics", label: "Analytics", icon: <BarChart2 size={18} /> },
+    { id: "activity-log", label: "Activity Log", icon: <History size={18} /> },
+  ];
 
   const handleNavClick = (id) => {
     setActive(id);
@@ -217,7 +317,7 @@ export default function AdminDashboard() {
           aria-label="Sidebar navigation"
         >
           <ul className="space-y-1.5 pb-4">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = active === item.id;
               return (
                 <li key={item.id}>
@@ -287,14 +387,17 @@ export default function AdminDashboard() {
             {/* Notifications */}
             <div className="relative">
               <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="relative p-2 rounded-full transition-colors "
+                onClick={() => {
+                  setNotificationsOpen(!notificationsOpen);
+                  if (!notificationsOpen) loadNotifications();
+                }}
+                className="relative p-2 rounded-full transition-colors hover:bg-gray-100"
                 aria-label="Notifications"
               >
                 <Bell size={20} className="text-slate-600" />
-                {PENDING_NOTIFICATIONS.length > 0 && (
+                {notifications.length > 0 && (
                   <span className="absolute top-1.5 right-1.5 bg-orange-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[14px] text-center leading-none">
-                    {PENDING_NOTIFICATIONS.length}
+                    {notifications.length}
                   </span>
                 )}
               </button>
@@ -307,11 +410,18 @@ export default function AdminDashboard() {
                     onClick={() => setNotificationsOpen(false)}
                     aria-hidden="true"
                   />
-                  <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-30 max-h-[400px] overflow-y-auto">
-                    <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 rounded-t-xl flex items-center justify-between">
-                      <h3 className="font-semibold text-slate-800 text-base">
-                        Pending Actions
-                      </h3>
+                  <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-30 max-h-[420px] overflow-y-auto">
+                    <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 rounded-t-xl flex items-center justify-between z-10">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-slate-800 text-base">
+                          Pending Actions
+                        </h3>
+                        {notifications.length > 0 && (
+                          <span className="text-xs bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">
+                            {notifications.length}
+                          </span>
+                        )}
+                      </div>
                       <button
                         onClick={() => setNotificationsOpen(false)}
                         className="text-slate-400 hover:text-slate-600 p-1 rounded-lg focus:outline-none"
@@ -320,24 +430,28 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    <div className="py-2">
-                      {PENDING_NOTIFICATIONS.length > 0 ? (
-                        PENDING_NOTIFICATIONS.map((notification) => (
+                    <div className="py-2 divide-y divide-gray-50">
+                      {loadingNotifications && notifications.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-slate-400 text-sm">
+                          Loading actions…
+                        </div>
+                      ) : notifications.length > 0 ? (
+                        notifications.map((notification) => (
                           <button
                             key={notification.id}
                             onClick={() =>
                               handleNotificationClick(notification.targetScreen)
                             }
-                            className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left flex items-start gap-3 group"
+                            className="w-full px-4 py-3 hover:bg-orange-50/50 transition-colors text-left flex items-start gap-3 group"
                           >
-                            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0 group-hover:bg-orange-200 transition-colors">
-                              <Clock size={18} className="text-orange-600" />
+                            <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0 group-hover:bg-orange-200 transition-colors mt-0.5">
+                              <Clock size={16} className="text-orange-600" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-slate-800 text-sm mb-0.5 truncate">
+                              <p className="font-medium text-slate-800 text-sm mb-0.5 truncate group-hover:text-orange-600 transition-colors">
                                 {notification.title}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-slate-500 truncate">
                                 {notification.description}
                               </p>
                             </div>
