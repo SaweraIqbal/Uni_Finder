@@ -20,7 +20,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // University logos / banners served with long-lived cache + immutable filenames
 app.use(
@@ -32,69 +31,29 @@ app.use(
   }),
 );
 
-dbReady.then(() => {
-  db.query(
-      `
-      CREATE TABLE IF NOT EXISTS Student_signup (
-        id VARCHAR(255) PRIMARY KEY,
-        name VARCHAR(100),
-        username VARCHAR(254),
-        email VARCHAR(254) UNIQUE,
-        password VARCHAR(255),
-        role VARCHAR(20)
-      )`,
-      (err) => {
-        if (err) {
-          console.error("Table create error:", err);
-          return;
-        }
-        console.log("Student table ready");
+// ── Database: tables + seeding ──────────────────────────────────────────────
+dbReady
+  .then(() => {
+    initSchema(db, () => {
+      seedSuperAdmin()
+        .then(() => seedUniversities())
+        .then(() => seedPrograms())
+        .catch((seedErr) => console.error("Seed failed:", seedErr));
+      setTimeout(backfillAssignedIds, 1500);
+    });
+  })
+  .catch((error) => {
+    console.error("Database initialization failed:", error.message);
+  });
 
-        db.query(
-            `
-            CREATE TABLE IF NOT EXISTS Student_Profile (
-              std_id VARCHAR(255) PRIMARY KEY,
-              user_uid VARCHAR(255) NOT NULL,
-              full_name VARCHAR(100),
-              username VARCHAR(100),
-              email VARCHAR(100),
-              dob DATE,
-              age INT,
-              cnic VARCHAR(20),
-              address TEXT,
-              gender VARCHAR(20),
-              FOREIGN KEY (user_uid) REFERENCES Student_signup(id) ON DELETE CASCADE
-            )
-          `,
-            (err) => {
-              if (err) {
-                console.error("Profile table create error:", err);
-                return;
-              }
-              console.log("Student Profile table ready");
-
-              initSchema(db, () => {
-                seedSuperAdmin()
-                  .then(() => seedUniversities())
-                  .then(() => seedPrograms())
-                  .catch((seedErr) => console.error("Seed failed:", seedErr));
-                setTimeout(backfillAssignedIds, 1500);
-              });
-            },
-          );
-      },
-    );
-}).catch((error) => {
-  console.error("Database initialization failed:", error.message);
-});
-
+// ── Routes ──────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", registrationRoutes);
 app.use("/api", universityRoutes);
 app.use("/api", campusRoutes);
 
-
+// ── Error handler ───────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   if (err) {
     console.log("Request error:", err.message);

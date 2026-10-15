@@ -34,20 +34,24 @@ export const verifyToken = (req, res, next) => {
 
 
 
-export const authorizeRoles = (...roles) => {
-
-  return (req, res, next) => {
-
-    if (!roles.includes(req.user.role)) {
-
-      return res.status(403).json({
-        message: "Access Denied"
-      });
-
-    }
-
-    next();
-
-  };
-
+const ROLE_ALIASES = {
+  uni: "university",
+  university_admin: "university",
 };
+const normalizeRole = (r) => {
+  const key = String(r || "").toLowerCase();
+  return ROLE_ALIASES[key] || key;
+};
+
+export const authorizeRoles = (...roles) => {
+  const allowed = roles.map(normalizeRole);
+  return (req, res, next) => {
+    const role = normalizeRole(req.user?.role);
+    if (!allowed.includes(role)) {
+      console.log("AUTH DENIED -> token role:", req.user?.role, "| allowed:", roles);
+      return res.status(403).json({ message: "Access Denied" });
+    }
+    next();
+  };
+};
+

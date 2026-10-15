@@ -60,3 +60,8 @@ venv/
 # Scratch docs (list specific files — do NOT use *.md, that would ignore README.md too)
 TODO.md
 universities_data_requirement.md
+node_modules/
+.env
+**/.env
+src/backend/uploads/
+src/backend/backups/

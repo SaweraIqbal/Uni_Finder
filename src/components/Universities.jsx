@@ -64,11 +64,10 @@ function UniversityCard({ uni, isFav, onToggleFav, onExplore }) {
         {/* 2. University Type (Top Right Corner — Private/Public) */}
         <div className="absolute top-3 right-3 z-10">
           <span
-            className={`text-[11px] font-bold px-3 py-1 rounded-full shadow-md backdrop-blur-sm ${
-              (uni.type || "").toLowerCase() === "public"
+            className={`text-[11px] font-bold px-3 py-1 rounded-full shadow-md backdrop-blur-sm ${(uni.type || "").toLowerCase() === "public"
                 ? "bg-blue-600/90 text-white"
                 : "bg-orange-500 text-white"
-            }`}
+              }`}
           >
             {uni.type || "Private"}
           </span>
@@ -81,9 +80,8 @@ function UniversityCard({ uni, isFav, onToggleFav, onExplore }) {
           aria-label="Toggle favorite"
         >
           <FiHeart
-            className={`w-4 h-4 transition-colors ${
-              isFav ? "fill-red-500 text-red-500" : "text-gray-400"
-            }`}
+            className={`w-4 h-4 transition-colors ${isFav ? "fill-red-500 text-red-500" : "text-gray-400"
+              }`}
           />
         </button>
       </div>

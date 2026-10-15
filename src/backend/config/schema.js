@@ -13,6 +13,30 @@ const query = (db, sql, values = []) =>
 
 const tables = [
   // ① UNIVERSITIES — HEC master list + ownership (HEC columns written by sync only)
+  `CREATE TABLE IF NOT EXISTS Student_signup (
+     id       VARCHAR(255) PRIMARY KEY,
+     name     VARCHAR(100),
+     username VARCHAR(254),
+     email    VARCHAR(254) UNIQUE,
+     password VARCHAR(255),
+     role     VARCHAR(20)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  // ⓪b STUDENT_PROFILE — 1:1 profile, FK to Student_signup
+  `CREATE TABLE IF NOT EXISTS Student_Profile (
+     std_id    VARCHAR(255) PRIMARY KEY,
+     user_uid  VARCHAR(255) NOT NULL,
+     full_name VARCHAR(100),
+     username  VARCHAR(100),
+     email     VARCHAR(100),
+     dob       DATE,
+     age       INT,
+     cnic      VARCHAR(20),
+     address   TEXT,
+     gender    VARCHAR(20),
+     FOREIGN KEY (user_uid) REFERENCES Student_signup(id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
   `CREATE TABLE IF NOT EXISTS universities (
      id                VARCHAR(255) PRIMARY KEY,
      owner_uid         VARCHAR(255) NULL,
@@ -58,17 +82,17 @@ const tables = [
 
   // ② UNIVERSITY_PROFILES — admin-editable 1:1 profile
   `CREATE TABLE IF NOT EXISTS university_profiles (
-     university_id    VARCHAR(255) PRIMARY KEY,
-     established_year INT         NULL,
-     about_text       TEXT,
+     university_id     VARCHAR(255) PRIMARY KEY,
+     established_year  INT          NULL,
+     about_text        TEXT,
      mission_statement TEXT,
-     logo_path        VARCHAR(500),
-     banner_path      VARCHAR(500),
-     active_students  INT         NOT NULL DEFAULT 0,
-     website_url      VARCHAR(500) NULL,
-     admissions_email VARCHAR(254) NULL,
-     admissions_phone VARCHAR(50)  NULL,
-     updated_at       DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+     logo_path         VARCHAR(500) NULL,
+     banner_path       VARCHAR(500) NULL,
+     active_students   INT          NOT NULL DEFAULT 0,
+     website_url       VARCHAR(500) NULL,
+     admissions_email  VARCHAR(254) NULL,
+     admissions_phone  VARCHAR(50)  NULL,
+     updated_at        DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
   // ③ PROGRAMS — seeded from Excel; admin-managed; program requests by university admins
@@ -213,87 +237,89 @@ const tables = [
 
 const columnMigrations = [
   // Student_signup
-  ["Student_signup", "avatar_url",   "VARCHAR(500)"],
-  ["Student_signup", "assigned_id",  "VARCHAR(30)"],
+  ["Student_signup", "avatar_url", "VARCHAR(500)"],
+  ["Student_signup", "assigned_id", "VARCHAR(30)"],
   // universities — new HEC-sync columns
-  ["universities", "normalized_name",   "VARCHAR(200) NULL"],
-  ["universities", "hec_rank",          "INT NULL"],
-  ["universities", "campus_count",      "INT NOT NULL DEFAULT 0"],
-  ["universities", "campuses_text",     "TEXT NULL"],
-  ["universities", "last_synced_at",    "DATETIME NULL"],
+  ["universities", "normalized_name", "VARCHAR(200) NULL"],
+  ["universities", "hec_rank", "INT NULL"],
+  ["universities", "campus_count", "INT NOT NULL DEFAULT 0"],
+  ["universities", "campuses_text", "TEXT NULL"],
+  ["universities", "last_synced_at", "DATETIME NULL"],
   // universities — legacy profile columns (kept for backward-compat)
-  ["universities", "tagline",           "VARCHAR(255)"],
-  ["universities", "hero_subtitle",     "VARCHAR(500)"],
-  ["universities", "banner_url",        "VARCHAR(500)"],
-  ["universities", "about_title",       "VARCHAR(255)"],
-  ["universities", "about_text",        "TEXT"],
-  ["universities", "mission",           "TEXT"],
-  ["universities", "vision",            "TEXT"],
-  ["universities", "ranking",           "VARCHAR(20)"],
-  ["universities", "ranking_label",     "VARCHAR(150)"],
-  ["universities", "students",          "VARCHAR(50)"],
-  ["universities", "employment_rate",   "VARCHAR(50)"],
+  ["universities", "tagline", "VARCHAR(255)"],
+  ["universities", "hero_subtitle", "VARCHAR(500)"],
+  ["universities", "banner_url", "VARCHAR(500)"],
+  ["universities", "about_title", "VARCHAR(255)"],
+  ["universities", "about_text", "TEXT"],
+  ["universities", "mission", "TEXT"],
+  ["universities", "vision", "TEXT"],
+  ["universities", "ranking", "VARCHAR(20)"],
+  ["universities", "ranking_label", "VARCHAR(150)"],
+  ["universities", "students", "VARCHAR(50)"],
+  ["universities", "employment_rate", "VARCHAR(50)"],
   ["universities", "partner_countries", "VARCHAR(50)"],
-  ["universities", "total_campuses",    "VARCHAR(50)"],
-  ["universities", "domain",            "VARCHAR(100)"],
-  ["universities", "hec_rank",          "VARCHAR(20)"],   // kept as varchar for old rows
-  ["universities", "campuses",          "TEXT"],
-  ["universities", "oric_domain",       "VARCHAR(150)"],
+  ["universities", "total_campuses", "VARCHAR(50)"],
+  ["universities", "domain", "VARCHAR(100)"],
+  ["universities", "hec_rank", "VARCHAR(20)"],   // kept as varchar for old rows
+  ["universities", "campuses", "TEXT"],
+  ["universities", "oric_domain", "VARCHAR(150)"],
   ["universities", "focal_person_name", "VARCHAR(150)"],
-  ["universities", "focal_person_email","VARCHAR(254)"],
-  ["universities", "university_type",   "VARCHAR(30)"],
-  ["universities", "is_hec_listed",     "TINYINT(1) NOT NULL DEFAULT 0"],
+  ["universities", "focal_person_email", "VARCHAR(254)"],
+  ["universities", "university_type", "VARCHAR(30)"],
+  ["universities", "is_hec_listed", "TINYINT(1) NOT NULL DEFAULT 0"],
   // university_verification
-  ["university_verification", "full_name",                "VARCHAR(150)"],
-  ["university_verification", "designation",              "VARCHAR(100)"],
-  ["university_verification", "university_id",            "VARCHAR(255)"],
-  ["university_verification", "official_email",           "VARCHAR(254)"],
-  ["university_verification", "email_domain_verified",    "TINYINT(1) DEFAULT 0"],
-  ["university_verification", "phone",                    "VARCHAR(50)"],
+  ["university_verification", "full_name", "VARCHAR(150)"],
+  ["university_verification", "designation", "VARCHAR(100)"],
+  ["university_verification", "university_id", "VARCHAR(255)"],
+  ["university_verification", "official_email", "VARCHAR(254)"],
+  ["university_verification", "email_domain_verified", "TINYINT(1) DEFAULT 0"],
+  ["university_verification", "phone", "VARCHAR(50)"],
   ["university_verification", "authorization_letter_url", "VARCHAR(500)"],
-  ["university_verification", "designation_other",        "VARCHAR(60)"],
-  ["university_verification", "domain_state",             "VARCHAR(20)"],
-  ["university_verification", "focal_email_match",        "TINYINT(1) DEFAULT 0"],
-  ["university_verification", "focal_name_match",         "TINYINT(1) DEFAULT 0"],
-  ["university_verification", "reference_no",             "VARCHAR(16)"],
-  ["university_verification", "application_id",           "VARCHAR(255)"],
-  ["university_verification", "loe_path",                 "VARCHAR(1000)"],
+  ["university_verification", "designation_other", "VARCHAR(60)"],
+  ["university_verification", "domain_state", "VARCHAR(20)"],
+  ["university_verification", "focal_email_match", "TINYINT(1) DEFAULT 0"],
+  ["university_verification", "focal_name_match", "TINYINT(1) DEFAULT 0"],
+  ["university_verification", "reference_no", "VARCHAR(16)"],
+  ["university_verification", "application_id", "VARCHAR(255)"],
+  ["university_verification", "loe_path", "VARCHAR(1000)"],
   // applications — columns that may be missing on existing installs
-  ["applications", "reject_reason",   "TEXT"],
-  ["applications", "reviewed_by",     "VARCHAR(255)"],
-  ["applications", "reviewed_at",     "DATETIME"],
-  ["applications", "domain_state",    "VARCHAR(20) NOT NULL DEFAULT 'unknown'"],
-  ["applications", "focal_email_match","TINYINT(1) NOT NULL DEFAULT 0"],
+  ["applications", "reject_reason", "TEXT"],
+  ["applications", "reviewed_by", "VARCHAR(255)"],
+  ["applications", "reviewed_at", "DATETIME"],
+  ["applications", "domain_state", "VARCHAR(20) NOT NULL DEFAULT 'unknown'"],
+  ["applications", "focal_email_match", "TINYINT(1) NOT NULL DEFAULT 0"],
   ["applications", "focal_name_match", "TINYINT(1) NOT NULL DEFAULT 0"],
-  ["applications", "loe_path",         "VARCHAR(1000)"],
-  ["applications", "designation_other","VARCHAR(60)"],
-  ["applications", "ip_address",       "VARCHAR(45)"],
+  ["applications", "loe_path", "VARCHAR(1000)"],
+  ["applications", "designation_other", "VARCHAR(60)"],
+  ["applications", "ip_address", "VARCHAR(45)"],
   // programs — new columns on existing old-schema table
-  ["programs", "degree_type",      "VARCHAR(30) NOT NULL DEFAULT ''"],
-  ["programs", "specialization",   "VARCHAR(255) NULL"],
-  ["programs", "track",            "VARCHAR(100) NULL"],
-  ["programs", "original_name",    "VARCHAR(500) NOT NULL DEFAULT ''"],
-  ["programs", "status",           "ENUM('approved','pending','rejected') NOT NULL DEFAULT 'approved'"],
-  ["programs", "extra",            "JSON NULL"],
-  ["programs", "created_via",      "VARCHAR(30) NOT NULL DEFAULT 'seed'"],
-  ["programs", "submitted_by",     "VARCHAR(255) NULL"],
+  ["programs", "degree_type", "VARCHAR(30) NOT NULL DEFAULT ''"],
+  ["programs", "specialization", "VARCHAR(255) NULL"],
+  ["programs", "track", "VARCHAR(100) NULL"],
+  ["programs", "original_name", "VARCHAR(500) NOT NULL DEFAULT ''"],
+  ["programs", "status", "ENUM('approved','pending','rejected') NOT NULL DEFAULT 'approved'"],
+  ["programs", "extra", "JSON NULL"],
+  ["programs", "created_via", "VARCHAR(30) NOT NULL DEFAULT 'seed'"],
+  ["programs", "submitted_by", "VARCHAR(255) NULL"],
   ["programs", "rejection_reason", "TEXT NULL"],
-  ["programs", "reviewed_by",      "VARCHAR(255) NULL"],
-  ["programs", "reviewed_at",      "DATETIME NULL"],
+  ["programs", "reviewed_by", "VARCHAR(255) NULL"],
+  ["programs", "reviewed_at", "DATETIME NULL"],
   // activity_log — change action from ENUM to VARCHAR(60) for extensibility
   ["activity_log", "action", "VARCHAR(60) NOT NULL DEFAULT ''"],
   // university_profiles — contact & web presence fields
-  ["university_profiles", "website_url",      "VARCHAR(500) NULL"],
+  ["university_profiles", "website_url", "VARCHAR(500) NULL"],
   ["university_profiles", "admissions_email", "VARCHAR(254) NULL"],
   ["university_profiles", "admissions_phone", "VARCHAR(50)  NULL"],
+  ["university_profiles", "logo_path", "VARCHAR(500) NULL"],
+  ["university_profiles", "banner_path", "VARCHAR(500) NULL"],
 ];
 
 // ── 3. ensureColumns ─────────────────────────────────────────────────────────
 
 const ensureLongEmailColumns = (db, done) => {
   const cols = [
-    ["Student_signup",          "email"],
-    ["Student_signup",          "username"],
+    ["Student_signup", "email"],
+    ["Student_signup", "username"],
     ["university_verification", "official_email"],
   ];
   let idx = 0;
@@ -615,8 +641,8 @@ const ensureCampusTables = async (db) => {
   // These are already in the CREATE TABLE above, so this only runs on existing installs
   const cpCols = [
     ["details", "JSON NULL"],
-    ["status",  "VARCHAR(20) NOT NULL DEFAULT 'draft'"],
-    ["shifts",  "VARCHAR(100) NULL"],
+    ["status", "VARCHAR(20) NOT NULL DEFAULT 'draft'"],
+    ["shifts", "VARCHAR(100) NULL"],
   ];
   for (const [col, def] of cpCols) {
     try {
@@ -649,7 +675,7 @@ const ensureCampusTables = async (db) => {
     );
     if (keyRows[0].c === 0) {
       // Drop old composite key and add new single-column key
-      await query(db, `ALTER TABLE program_catalog DROP KEY uq_catalog`).catch(() => {});
+      await query(db, `ALTER TABLE program_catalog DROP KEY uq_catalog`).catch(() => { });
       await query(db, `ALTER TABLE program_catalog ADD UNIQUE KEY uq_catalog_name (normalized_name(191))`);
       console.log("program_catalog unique key updated to normalized_name only.");
     }
@@ -673,31 +699,31 @@ const ensureCampusTables = async (db) => {
 
   // ALTER guards for campus columns that older dumps may be missing
   const campusColGuards = [
-    ["campus_type",    "VARCHAR(50)  NULL"],
-    ["province",       "VARCHAR(100) NULL"],
-    ["description",    "TEXT         NULL"],
-    ["why_choose",     "TEXT         NULL"],
-    ["whatsapp",       "VARCHAR(50)  NULL"],
-    ["office_hours",   "VARCHAR(150) NULL"],
-    ["shift_morning",  "TINYINT(1)   NOT NULL DEFAULT 1"],
-    ["shift_evening",  "TINYINT(1)   NOT NULL DEFAULT 0"],
-    ["shift_weekend",  "TINYINT(1)   NOT NULL DEFAULT 0"],
-    ["gender_policy",  "VARCHAR(50)  NULL"],
-    ["lat",            "DECIMAL(10,8) NULL"],
-    ["lng",            "DECIMAL(11,8) NULL"],
-    ["is_main",        "TINYINT(1)   NOT NULL DEFAULT 0"],
-    ["admission_open",     "DATE         NULL"],
-    ["admission_close",    "DATE         NULL"],
-    ["intake_name",               "VARCHAR(100) NULL"],
-    ["classes_start",             "DATE         NULL"],
-    ["class_arrangement",         "VARCHAR(80)  NULL"],
+    ["campus_type", "VARCHAR(50)  NULL"],
+    ["province", "VARCHAR(100) NULL"],
+    ["description", "TEXT         NULL"],
+    ["why_choose", "TEXT         NULL"],
+    ["whatsapp", "VARCHAR(50)  NULL"],
+    ["office_hours", "VARCHAR(150) NULL"],
+    ["shift_morning", "TINYINT(1)   NOT NULL DEFAULT 1"],
+    ["shift_evening", "TINYINT(1)   NOT NULL DEFAULT 0"],
+    ["shift_weekend", "TINYINT(1)   NOT NULL DEFAULT 0"],
+    ["gender_policy", "VARCHAR(50)  NULL"],
+    ["lat", "DECIMAL(10,8) NULL"],
+    ["lng", "DECIMAL(11,8) NULL"],
+    ["is_main", "TINYINT(1)   NOT NULL DEFAULT 0"],
+    ["admission_open", "DATE         NULL"],
+    ["admission_close", "DATE         NULL"],
+    ["intake_name", "VARCHAR(100) NULL"],
+    ["classes_start", "DATE         NULL"],
+    ["class_arrangement", "VARCHAR(80)  NULL"],
     ["admission_status_override", "VARCHAR(20)  NULL"],
-    ["students",       "VARCHAR(50)  NULL"],
-    ["cover_image",    "VARCHAR(500) NULL"],
+    ["students", "VARCHAR(50)  NULL"],
+    ["cover_image", "VARCHAR(500) NULL"],
     ["required_documents", "JSON NULL"],
-    ["scholarships",       "JSON NULL"],
-    ["quota_policy",       "TEXT NULL"],
-    ["announcements",      "JSON NULL"],
+    ["scholarships", "JSON NULL"],
+    ["quota_policy", "TEXT NULL"],
+    ["announcements", "JSON NULL"],
   ];
   for (const [col, def] of campusColGuards) {
     try {
@@ -786,21 +812,21 @@ export const initSchema = (db, done) => {
   // work even if the server was already running when schema.js was updated.
   const criticalCols = [
     // applications — may be missing on older installs
-    ["applications", "reviewed_by",      "VARCHAR(255)"],
-    ["applications", "reviewed_at",      "DATETIME"],
-    ["applications", "reject_reason",    "TEXT"],
-    ["applications", "loe_path",         "VARCHAR(1000)"],
+    ["applications", "reviewed_by", "VARCHAR(255)"],
+    ["applications", "reviewed_at", "DATETIME"],
+    ["applications", "reject_reason", "TEXT"],
+    ["applications", "loe_path", "VARCHAR(1000)"],
     // programs — Phase 2 new columns (must exist before any admin query)
-    ["programs",     "extra",            "JSON NULL"],
-    ["programs",     "created_via",      "VARCHAR(30) NOT NULL DEFAULT 'seed'"],
-    ["programs",     "submitted_by",     "VARCHAR(255) NULL"],
-    ["programs",     "rejection_reason", "TEXT NULL"],
-    ["programs",     "reviewed_by",      "VARCHAR(255) NULL"],
-    ["programs",     "reviewed_at",      "DATETIME NULL"],
-    ["universities", "province",         "VARCHAR(100) NULL"],
-    ["universities", "status",           "VARCHAR(50) NOT NULL DEFAULT 'pending'"],
+    ["programs", "extra", "JSON NULL"],
+    ["programs", "created_via", "VARCHAR(30) NOT NULL DEFAULT 'seed'"],
+    ["programs", "submitted_by", "VARCHAR(255) NULL"],
+    ["programs", "rejection_reason", "TEXT NULL"],
+    ["programs", "reviewed_by", "VARCHAR(255) NULL"],
+    ["programs", "reviewed_at", "DATETIME NULL"],
+    ["universities", "province", "VARCHAR(100) NULL"],
+    ["universities", "status", "VARCHAR(50) NOT NULL DEFAULT 'pending'"],
     // campus_registrations — two-tier approval columns
-    ["campus_registrations", "uni_tier1_approved",    "TINYINT(1) NOT NULL DEFAULT 0"],
+    ["campus_registrations", "uni_tier1_approved", "TINYINT(1) NOT NULL DEFAULT 0"],
     ["campus_registrations", "uni_tier1_approved_at", "DATETIME NULL"],
     ["campus_registrations", "uni_tier1_approved_by", "VARCHAR(255) NULL"],
   ];
