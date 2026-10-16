@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import heroVideo from "../assets/video1.mp4";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../components/shared/SearchBar";
 import { formatPKR } from "../data/campuses";
 import { API } from "../api/client";
 
@@ -12,7 +12,7 @@ function normalizeLiveCampus(c) {
     c.is_main === 1 || c.is_main === true ||
     type === "main" || type === "main campus";
 
-  // Resolve cover image — prefix API base for relative paths
+  // Resolve cover image â€” prefix API base for relative paths
   let coverImg = c.cover_image || c.university_banner || null;
   if (coverImg && !/^https?:\/\//i.test(coverImg)) {
     coverImg = `${API}${coverImg}`;
@@ -305,13 +305,13 @@ const PROGRAM_TREE = [
         ],
       },
       {
-        label: "Other Masterâ€™s Degrees",
+        label: "Other MasterÃ¢â‚¬â„¢s Degrees",
         children: [
           "Master of Education (M.Ed)",
           "Master of Laws (LLM)",
           "Master of Architecture (M.Arch)",
           "Master of Public Health (MPH)",
-          "Master of Philosophy (MPhil) â€“ General",
+          "Master of Philosophy (MPhil) Ã¢â‚¬â€œ General",
         ],
       },
     ],
@@ -504,7 +504,7 @@ function ProgramPicker({ selected, onToggle }) {
 
   return (
     <div className="relative" ref={ref}>
-      {/* Trigger â€” same height/border/radius as other toolbar buttons */}
+      {/* Trigger Ã¢â‚¬â€ same height/border/radius as other toolbar buttons */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -545,7 +545,7 @@ function ProgramPicker({ selected, onToggle }) {
         </svg>
       </button>
 
-      {/* Popover panel â€” styled like Sort dropdown */}
+      {/* Popover panel Ã¢â‚¬â€ styled like Sort dropdown */}
       {open && (
         <div className="absolute left-0 top-full mt-2 w-[360px] sm:w-[420px] bg-white rounded-xl shadow-lg border border-gray-100 z-30 overflow-hidden">
           {/* Search */}
@@ -573,7 +573,7 @@ function ProgramPicker({ selected, onToggle }) {
               />
             </div>
           </div>
-          {/* Tree â€” scrollable */}
+          {/* Tree Ã¢â‚¬â€ scrollable */}
           <div className="max-h-72 overflow-y-auto p-2">
             {PROGRAM_TREE.map((node, i) => (
               <TreeNode
@@ -975,7 +975,7 @@ function AdvancedFilters({ filters, setFilters, onResetAll, matchCount = 19 }) {
             <span>100%</span>
           </div>
           <p className="text-xs text-green-700 font-medium mt-1.5 flex items-center gap-1">
-            <span>🎓</span>
+            <span>ðŸŽ“</span>
             <span>{minMarksValue === 40 ? "All 19 campuses match" : `${matchCount} campuses match`}</span>
           </p>
         </div>
@@ -1574,13 +1574,13 @@ if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
 
   return (
     <div className="relative">
-      {/* ---- Toolbar row â€” FULL WIDTH ---- */}
+      {/* ---- Toolbar row Ã¢â‚¬â€ FULL WIDTH ---- */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <ProgramPicker selected={selectedPrograms} onToggle={onProgramToggle} />
         <div className="flex-1 min-w-[8px]" />
         <p className="text-sm text-gray-500 whitespace-nowrap">
           {apiLoading ? (
-            <span className="text-gray-400">Loading campuses…</span>
+            <span className="text-gray-400">Loading campusesâ€¦</span>
           ) : apiError ? (
             <span className="text-red-600">Campus list unavailable</span>
           ) : (
@@ -2074,7 +2074,7 @@ function CampusCard({ campus, selectMode, isSelected, isDisabled, onSelect }) {
           </div>
         </div>
 
-        {/* CTA â€” normal mode only */}
+        {/* CTA Ã¢â‚¬â€ normal mode only */}
         {!selectMode && (
           <div className="mt-auto pt-2">
             <button
@@ -2094,3 +2094,4 @@ function CampusCard({ campus, selectMode, isSelected, isDisabled, onSelect }) {
 }
 
 export default HomePage;
+

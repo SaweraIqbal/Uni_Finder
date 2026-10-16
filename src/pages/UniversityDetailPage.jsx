@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import HeroSection       from "../components/heroSection";
-import UniversityStats   from "../components/universityStats";
-import UniversityInfo    from "../components/universityInfo";
-import UniversityGallery from "../components/universityGallery";
-import UniversityCampuses from "../components/universityCampuses";
-import ContactAdmissions from "../components/ContactAdmissions";
+import HeroSection       from "../components/shared/heroSection";
+import UniversityStats   from "../components/university/universityStats";
+import UniversityInfo    from "../components/university/universityInfo";
+import UniversityGallery from "../components/university/universityGallery";
+import UniversityCampuses from "../components/university/universityCampuses";
+import ContactAdmissions from "../components/university/ContactAdmissions";
 import { getUniversityById } from "../api/university";
 import { findUniversity }    from "../data/universities";
 
@@ -98,3 +98,7 @@ export default function UniversityDetailPage() {
     </main>
   );
 }
+
+
+
+

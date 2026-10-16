@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getAccount, updateAccount } from "../../api/university";
-import AvatarUploader from "../AvatarUploader";
+import AvatarUploader from "./AvatarUploader";
 
 export default function ProfileTab({ uid }) {
   const [form, setForm] = useState({ name: "", username: "", email: "", password: "" });
@@ -131,3 +131,4 @@ function Field({ label, ...props }) {
     </div>
   );
 }
+

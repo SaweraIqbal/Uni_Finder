@@ -1,8 +1,6 @@
 import { API, authHeaders } from "./client";
 
-/* ------------------------------------------------------------------ */
-/*  Admin — unchanged                                                  */
-/* ------------------------------------------------------------------ */
+
 
 export async function searchAccount(q) {
   const res = await fetch(
@@ -197,11 +195,6 @@ export async function adminListCampusRegistrations({
   return { ok: res.ok, status: res.status, data: await res.json() };
 }
 
-/**
- * PATCH /api/admin/campus-registrations/:id/status
- * body: { action, reason?, note?, requiredDocs? }
- * action: "approve" | "reject" | "request_resubmission"
- */
 export async function adminUpdateCampusRegistrationStatus(id, body) {
   const res = await fetch(
     `${API}/api/admin/campus-registrations/${id}/status`,

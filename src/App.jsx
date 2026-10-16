@@ -18,11 +18,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import HomePage from "./pages/homepage.jsx";
 import Profile from "./pages/profile.jsx";
-import AdminDashboard from "./pages/AdminDashboard";
 import UniversityDocuments from "./pages/UniversityDocuments.jsx";
-import UniversityDashboard from "./pages/UniversityDashboard.jsx";
-import CampusDashboard from "./pages/CampusDashboard.jsx";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/shared/ProtectedRoute";
 import UniversityDetailPage from "./pages/UniversityDetailPage.jsx";
 import CampusDetailPage from "./pages/CampusDetailPage.jsx";
 import CompareCampusesPage from "./pages/CompareCampusesPage.jsx";
@@ -32,6 +29,10 @@ import HostelOwnerDashboard from "./pages/hostel/HostelOwnerDashboard";
 import CampusRegisterPage from "./pages/CampusRegisterPage.jsx";
 import CampusRegistrationStatusPage from "./pages/CampusRegistrationStatusPage.jsx";
 import { CampusRegistrationProvider } from "./context/CampusRegistrationContext.jsx";
+
+import AdminDashboard from "./pages/superAdmin/AdminDashboard.jsx";
+import UniversityDashboard from "./pages/UniversityDashboard.jsx";
+import CampusDashboard from "./pages/campusAdmin/CampusDashboard.jsx";
 
 // import CompareUniversitiesPage from "./pages/compareUniversities.jsx";
 
@@ -57,7 +58,6 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/signup/:role" element={<Signup />} />
-          <Route path="/hostel/dashboard" element={<HostelOwnerDashboard />} />
           <Route
             path="/university/dashboard"
             element={
@@ -75,7 +75,7 @@ function App() {
             }
           />
 
-          {/* ── Campus Registration flow (dashboard se pehle) ── */}
+          {/* â”€â”€ Campus Registration flow (dashboard se pehle) â”€â”€ */}
           <Route element={<CampusRegLayout />}>
             <Route path="/campus/register" element={<CampusRegisterPage />} />
             <Route

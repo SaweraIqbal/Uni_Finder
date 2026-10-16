@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import StatusBadge from "../StatusBadge";
+import StatusBadge from "../shared/StatusBadge";
 import RejectModal from "../admin/RejectModal";
 import {
   listCampusRequestsForOwner,
@@ -80,7 +80,7 @@ export default function CampusRequestsTab({ ownerUid }) {
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-gray-400">Loading…</div>
+        <div className="p-8 text-center text-gray-400">Loadingâ€¦</div>
       ) : requests.length === 0 ? (
         <div className="p-8 text-center text-gray-400">No campus requests yet.</div>
       ) : (
@@ -102,7 +102,7 @@ export default function CampusRequestsTab({ ownerUid }) {
                   {r.admin_name}
                   <div className="text-xs text-gray-400">{r.admin_email}</div>
                 </td>
-                <td className="px-5 py-3 text-gray-600">{r.city || "—"}</td>
+                <td className="px-5 py-3 text-gray-600">{r.city || "â€”"}</td>
                 <td className="px-5 py-3"><StatusBadge status={r.status} /></td>
                 <td className="px-5 py-3 text-right">
                   {r.status === "pending" ? (
@@ -123,7 +123,7 @@ export default function CampusRequestsTab({ ownerUid }) {
                       </button>
                     </div>
                   ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-gray-400">â€”</span>
                   )}
                 </td>
               </tr>
@@ -146,3 +146,4 @@ export default function CampusRequestsTab({ ownerUid }) {
     </div>
   );
 }
+

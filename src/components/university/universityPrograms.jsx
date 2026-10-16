@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listPrograms } from "../api/university";
+import { listPrograms } from "../../api/university";
 
 
 export default function UniversityPrograms({ universityId }) {

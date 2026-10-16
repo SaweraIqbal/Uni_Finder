@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { listImages } from "../api/university";
-import { fileUrl } from "../api/client";
+import { listImages } from "../../api/university";
+import { fileUrl } from "../../api/client";
 
 export default function UniversityGallery({ universityId }) {
   const [images, setImages] = useState([]);

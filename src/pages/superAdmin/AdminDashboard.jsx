@@ -17,25 +17,25 @@ import {
   Camera,
 } from "lucide-react";
 
-import Logo from "../assets/Logo.png";
+import Logo from "../../assets/Logo.png";
 
 // Imports for child components (kept as is)
-import UniversityVerifications from "../components/admin/UniversityVerifications.jsx";
-import UniversityProfiles from "../components/admin/UniversityProfiles.jsx";
-import CampusApprovals from "../components/admin/CampusApprovals.jsx";
-import ProgramManagement from "../components/admin/ProgramManagement.jsx";
-import ProgramApprovals from "../components/admin/ProgramApprovals.jsx";
-import HostelApprovals from "../components/admin/HostelApprovals.jsx";
-import Analytics from "../components/admin/Analytics.jsx";
-import ActivityLog from "../components/admin/ActivityLog.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
-import { setFlash } from "../utils/flash.js";
+import UniversityVerifications from "../../components/admin/UniversityVerifications.jsx";
+import UniversityProfiles from "../../components/admin/UniversityProfiles.jsx";
+import CampusApprovals from "../../components/admin/CampusApprovals.jsx";
+import ProgramManagement from "../../components/admin/ProgramManagement.jsx";
+import ProgramApprovals from "../../components/admin/ProgramApprovals.jsx";
+import HostelApprovals from "../../components/admin/HostelApprovals.jsx";
+import Analytics from "../../components/admin/Analytics.jsx";
+import ActivityLog from "../../components/admin/ActivityLog.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { setFlash } from "../../utils/flash.js";
 
 import {
   listVerifications,
   adminListCampusRegistrations,
   adminListProgramRequests,
-} from "../api/verification.js";
+} from "../../api/verification.js";
 
 function renderScreen(screen, navigate) {
   switch (screen) {

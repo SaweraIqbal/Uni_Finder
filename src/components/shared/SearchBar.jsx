@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { listUniversities, searchProgramCatalog } from "../api/university";
-import { PAKISTAN_CITIES } from "../data/pakistan_cities";
+import { listUniversities, searchProgramCatalog } from "../../api/university";
+import { PAKISTAN_CITIES } from "../../data/pakistan_cities";
 
-/* ─── Shared icons ────────────────────────────────────────────────────────── */
+/* --- Shared icons ---------------------------------------------------------- */
 const ChevronIcon = ({ isOpen }) => (
   <svg className={`w-4 h-4 text-gray-400 transition-transform duration-300 shrink-0 ${isOpen ? "rotate-180" : ""}`}
     fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,7 +35,7 @@ function ArrowIcon() {
   );
 }
 
-/* ─── Generic dropdown option list ───────────────────────────────────────── */
+/* --- Generic dropdown option list ----------------------------------------- */
 function OptionList({ options, selected, onSelect }) {
   return (
     <ul className="max-h-60 overflow-y-auto [scrollbar-width:thin]">
@@ -61,7 +61,7 @@ function OptionList({ options, selected, onSelect }) {
   );
 }
 
-/* ─── Desktop City field — direct type-to-filter input ───────────────────── */
+/* --- Desktop City field — direct type-to-filter input --------------------- */
 function CityField({ value, onChange, setActiveDropdown, isOpen, onOpen, borderClass }) {
   const inputRef = useRef(null);
 
@@ -129,7 +129,7 @@ function CityField({ value, onChange, setActiveDropdown, isOpen, onOpen, borderC
   );
 }
 
-/* ─── Mobile City field — same inline type-to-filter ─────────────────────── */
+/* --- Mobile City field — same inline type-to-filter ----------------------- */
 function MobileCityField({ value, onChange, setActiveDropdown, isOpen, onOpen, hasBorder }) {
   const inputRef = useRef(null);
 
@@ -181,7 +181,7 @@ function MobileCityField({ value, onChange, setActiveDropdown, isOpen, onOpen, h
   );
 }
 
-/* ─── Desktop dropdown field — used for University ───────────────────────── */
+/* --- Desktop dropdown field — used for University ------------------------- */
 function DropdownField({ label, value, options, isOpen, onToggle, onSelect, setActiveDropdown, borderClass }) {
   return (
     <div className={`flex-1 relative ${borderClass}`}>
@@ -227,7 +227,7 @@ function DropdownField({ label, value, options, isOpen, onToggle, onSelect, setA
   );
 }
 
-/* ─── Mobile dropdown field — used for University ────────────────────────── */
+/* --- Mobile dropdown field — used for University -------------------------- */
 function MobileDropdownField({ label, value, options, isOpen, onToggle, onSelect, setActiveDropdown, hasBorder }) {
   return (
     <div className={hasBorder ? "border-b border-gray-100" : ""}>
@@ -270,7 +270,7 @@ function MobileDropdownField({ label, value, options, isOpen, onToggle, onSelect
   );
 }
 
-/* ─── Main SearchBar ──────────────────────────────────────────────────────── */
+/* --- Main SearchBar -------------------------------------------------------- */
 function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, resultsPath = "/homepage" }) {
   const navigate = useNavigate();
   const { program, city, university } = searchValues;
@@ -339,7 +339,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
   return (
     <div ref={wrapperRef} className="w-full max-w-4xl mx-auto">
 
-      {/* ── Desktop pill (md+) ── */}
+      {/* -- Desktop pill (md+) -- */}
       <div className="hidden md:flex bg-white rounded-full shadow-xl shadow-black/10 border border-gray-100 p-1 items-stretch">
 
         {/* Program — live search */}
@@ -420,7 +420,7 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
         </button>
       </div>
 
-      {/* ── Mobile stacked card ── */}
+      {/* -- Mobile stacked card -- */}
       <div className="flex flex-col md:hidden bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 overflow-hidden">
 
         {/* Program */}
@@ -505,3 +505,4 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
 }
 
 export default SearchBar;
+

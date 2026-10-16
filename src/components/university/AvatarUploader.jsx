@@ -1,7 +1,7 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { toast } from "react-toastify";
-import { uploadAvatar } from "../api/university";
-import { fileUrl } from "../api/client";
+import { uploadAvatar } from "../../api/university";
+import { fileUrl } from "../../api/client";
 
 export default function AvatarUploader({ uid, avatarUrl, name = "", onUploaded, size = 96 }) {
   const [busy, setBusy] = useState(false);
@@ -56,3 +56,4 @@ export default function AvatarUploader({ uid, avatarUrl, name = "", onUploaded, 
     </div>
   );
 }
+

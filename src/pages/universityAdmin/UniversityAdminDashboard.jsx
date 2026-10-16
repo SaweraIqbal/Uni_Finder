@@ -1,12 +1,12 @@
-import { UniversityAdminProvider, useUniversityAdmin } from "../components/universityAdmin/UniversityAdminContext";
-import { Footer, Header, Sidebar } from "../components/universityAdmin/Layout";
-import { SideSheet } from "../components/universityAdmin/ui";
-import OverviewSection from "../components/universityAdmin/OverviewSection";
-import UniversityProfileSection from "../components/universityAdmin/UniversityProfileSection";
-import CampusApprovalsSection from "../components/universityAdmin/CampusApprovalsSection";
-import ProgramRequestsSection from "../components/universityAdmin/ProgramRequestsSection";
-import ActivityLogSection from "../components/universityAdmin/ActivityLogSection";
-import ProgramsSection from "../components/universityAdmin/ProgramsSection";
+import { UniversityAdminProvider, useUniversityAdmin } from "../../components/universityAdmin/UniversityAdminContext";
+import { Footer, Header, Sidebar } from "../../components/universityAdmin/Layout";
+import { SideSheet } from "../../components/universityAdmin/ui";
+import OverviewSection from "../../components/universityAdmin/OverviewSection";
+import UniversityProfileSection from "../../components/universityAdmin/UniversityProfileSection";
+import CampusApprovalsSection from "../../components/universityAdmin/CampusApprovalsSection";
+import ProgramRequestsSection from "../../components/universityAdmin/ProgramRequestsSection";
+import ActivityLogSection from "../../components/universityAdmin/ActivityLogSection";
+import ProgramsSection from "../../components/universityAdmin/ProgramsSection";
 
 function DashboardInner() {
   const { currentPage } = useUniversityAdmin();

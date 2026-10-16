@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCampusesForUniversity } from "../data/campuses";
-import { API } from "../api/client";
+import { getCampusesForUniversity } from "../../data/campuses";
+import { API } from "../../api/client";
 
 const CAMPUS_DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1562774053-701939374585?w=900&auto=format&fit=crop&q=80";

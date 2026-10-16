@@ -1,15 +1,15 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { FiArrowUp } from "react-icons/fi";
 import heroVideo from "../assets/video2.mp4";
-import SearchBar from "../components/SearchBar";
-import StatsSection from "../components/StatsSection";
-import Features from "../components/Features";
-import HowItWorks from "../components/HowItWorks";
-import CompareUniversities from "../components/CompareUniversities";
-import Universities from "../components/Universities";
-import Hostels from "../components/Hostels";
+import SearchBar from "../components/shared/SearchBar";
+import StatsSection from "../components/home/StatsSection";
+import Features from "../components/home/Features";
+import HowItWorks from "../components/home/HowItWorks";
+import CompareUniversities from "../components/home/CompareUniversities";
+import Universities from "../components/home/Universities";
+import Hostels from "../components/home/Hostels";
 // import Reviews from "../components/Reviews";
-import ProblemFuture from "../components/ProblemFuture";
+import ProblemFuture from "../components/home/ProblemFuture";
 import { useLocation } from "react-router-dom";
 
 export default function LandingPage() {
@@ -119,4 +119,6 @@ export default function LandingPage() {
     </div>
   );
 }
+
+
 

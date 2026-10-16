@@ -1,10 +1,10 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { CAMPUS_DEFAULT_IMAGE, getCampusDetail } from "../api/campus";
 import { fileUrl } from "../api/client";
 import { getCampusById } from "../data/campuses";
 import { findUniversity } from "../data/universities";
-import { sectorLabel } from "../components/heroSection";
+import { sectorLabel } from "../components/shared/heroSection";
 import ProgramsOffered from "../components/campus/ProgramsOffered";
 import CampusTransport from "../components/campus/CampusTransport";
 import Scholarships from "../components/campus/Scholarships";
@@ -1378,3 +1378,5 @@ export default function CampusDetailPage() {
     </main>
   );
 }
+
+

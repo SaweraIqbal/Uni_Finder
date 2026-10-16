@@ -6,8 +6,8 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { listUniversities } from "../api/university";
-import { fileUrl } from "../api/client";
+import { listUniversities } from "../../api/university";
+import { fileUrl } from "../../api/client";
 import { toast } from "react-toastify";
 
 const FALLBACK_IMAGE =
@@ -271,3 +271,4 @@ export default function Universities() {
     </section>
   );
 }
+

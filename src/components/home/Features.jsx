@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { FiArrowRight, FiCheckCircle, FiX, FiClock } from "react-icons/fi";
 
-import searchIcon from "../assets/search.png";
-import compareIcon from "../assets/compare.png";
-import profileIcon from "../assets/profile.png";
-import hostelIcon from "../assets/hostel.png";
-import budgetIcon from "../assets/budget.png";
+import searchIcon from "../../assets/search.png";
+import compareIcon from "../../assets/compare.png";
+import profileIcon from "../../assets/profile.png";
+import hostelIcon from "../../assets/hostel.png";
+import budgetIcon from "../../assets/budget.png";
 
 const features = [
   {
@@ -281,3 +281,4 @@ export default function Features() {
     </section>
   );
 }
+

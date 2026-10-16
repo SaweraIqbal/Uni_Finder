@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { API } from "../api/client";
+import { API } from "../../api/client";
 
 const DEFAULT_BANNER =
   "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1800&auto=format&fit=crop&q=80";
@@ -177,3 +177,5 @@ export default function HeroSection({ university, onCompare, isWishlisted, onWis
     </section>
   );
 }
+
+

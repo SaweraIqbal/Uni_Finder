@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import logo from "../assets/Logo.png";
 import { getMyVerification } from "../api/verification";
 import { setFlash } from "../utils/flash";
-import UniversityAdminDashboard from "./UniversityAdminDashboard";
+import UniversityAdminDashboard from "./universityAdmin/UniversityAdminDashboard.jsx";
 import UniversityVerificationForm from "../components/universityAdmin/UniversityVerificationForm";
 import VerificationPendingScreen from "../components/universityAdmin/VerificationPendingScreen";
 import VerificationRejectedScreen from "../components/universityAdmin/VerificationRejectedScreen";

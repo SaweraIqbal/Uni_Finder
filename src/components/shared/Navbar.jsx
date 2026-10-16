@@ -1,8 +1,8 @@
-﻿import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { setFlash } from "../utils/flash";
-import logo from "../assets/Logo.png";
+import { useAuth } from "../../context/AuthContext";
+import { setFlash } from "../../utils/flash";
+import logo from "../../assets/Logo.png";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -107,7 +107,7 @@ export default function Navbar() {
                       }}
                       className="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 hover:text-orange-500 transition text-left text-sm"
                     >
-                      👤 My Profile
+                      ?? My Profile
                     </button>
                     <hr className="border-gray-100" />
                     <button
@@ -116,15 +116,15 @@ export default function Navbar() {
                         logout();
                         setFlash(
                           name
-                            ? `👋 Thanks ${name}, see you soon!`
-                            : "👋 Thanks for visiting — see you soon!",
+                            ? `?? Thanks ${name}, see you soon!`
+                            : "?? Thanks for visiting — see you soon!",
                         );
                         navigate("/");
                         setDropdownOpen(false);
                       }}
                       className="flex items-center gap-3 w-full px-4 py-3 hover:bg-red-50 hover:text-red-500 transition text-left text-sm"
                     >
-                      🚪 Log Out
+                      ?? Log Out
                     </button>
                   </div>
                 )}
@@ -226,10 +226,10 @@ export default function Navbar() {
               </button>
               <p className="text-xs text-gray-400 px-1 pt-1 uppercase tracking-wider">Sign Up as...</p>
               {[
-                { emoji: "🎓", label: "Student", path: "/signup/student" },
-                { emoji: "🏫", label: "University", path: "/signup/university" },
-                { emoji: "🏛️", label: "Campus", path: "/signup/campus" },
-                { emoji: "🏠", label: "Hostel Owner", path: "/signup/hostel" },
+                { emoji: "??", label: "Student", path: "/signup/student" },
+                { emoji: "??", label: "University", path: "/signup/university" },
+                { emoji: "???", label: "Campus", path: "/signup/campus" },
+                { emoji: "??", label: "Hostel Owner", path: "/signup/hostel" },
               ].map(({ emoji, label, path }) => (
                 <button
                   key={path}
@@ -246,3 +246,4 @@ export default function Navbar() {
     </header>
   );
 }
+

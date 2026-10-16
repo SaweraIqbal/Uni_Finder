@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import activeUsersIcon from "../assets/activeusers.png";
-import campusIcon      from "../assets/campuses.png";
-import programIcon     from "../assets/program.png";
-import establishedIcon from "../assets/established.png";
+import activeUsersIcon from "../../assets/activeusers.png";
+import campusIcon      from "../../assets/campuses.png";
+import programIcon     from "../../assets/program.png";
+import establishedIcon from "../../assets/established.png";
 
 /**
  * Derive the four stat items from live university data,

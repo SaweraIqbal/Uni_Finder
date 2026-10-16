@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/Logo.png";
 import { getMyUniversity } from "../../api/university";
-import Skeleton from "../Skeleton";
+import Skeleton from "./Skeleton";
 import DetailsTab from "./DetailsTab";
 import ProfileTab from "./ProfileTab";
 import ImagesTab from "./ImagesTab";
@@ -37,7 +37,7 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
   const handleLogout = () => {
     const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
     sessionStorage.clear();
-    setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
+    setFlash(name ? `ðŸ‘‹ Thanks ${name}, see you soon!` : "ðŸ‘‹ Thanks for visiting â€” see you soon!");
     navigate("/login");
   };
 
@@ -109,7 +109,7 @@ export default function UniversityPanel({ ownerUid, adminEmail }) {
         ) : active === "Campuses" ? (
           <CampusRequestsTab ownerUid={ownerUid} />
         ) : (
-          <Placeholder note={`🚧 ${active} section coming in the next step.`} />
+          <Placeholder note={`ðŸš§ ${active} section coming in the next step.`} />
         )}
       </main>
     </div>

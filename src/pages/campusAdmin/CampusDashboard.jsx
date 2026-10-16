@@ -13,12 +13,11 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { getMyCampusRequest } from "../api/campus";
-import { API, authHeaders } from "../api/client";
-import { CampusAdminProvider } from "../components/campusAdmin/CampusAdminContext";
-import CampusAdminDashboard from "../components/campusAdmin/CampusAdminDashboard";
-import { setFlash } from "../utils/flash";
-
+import { getMyCampusRequest } from "../../api/campus";
+import { API, authHeaders } from "../../api/client";
+import { CampusAdminProvider } from "../../components/campusAdmin/CampusAdminContext";
+import CampusAdminDashboard from "../../components/campusAdmin/CampusAdminDashboard";
+import { setFlash } from "../../utils/flash";
 export default function CampusDashboard() {
   const navigate = useNavigate();
   const uid  = sessionStorage.getItem("userId");
