@@ -1,0 +1,75 @@
+{
+  "_comment": "Single source of truth for degree prefix → {degree_type, level} used by seedPrograms.js AND build_program_catalog.py. Do NOT duplicate this mapping anywhere else.",
+
+  "levelFromSheetValue": {
+    "Undergraduate":    "Undergraduate",
+    "MS":               "MS",
+    "MS/MPhil":         "SPLIT",
+    "MPhil":            "MPhil",
+    "PhD":              "PhD",
+    "Ph.D":             "PhD",
+    "Associate Degree": "ADP",
+    "ADP":              "ADP",
+    "Diploma":          "Diploma",
+    "Certificate":      "Diploma"
+  },
+
+  "prefixMap": [
+    { "prefix": "BS",           "degree_type": "BS",        "level": "Undergraduate" },
+    { "prefix": "BSc",          "degree_type": "BSc",       "level": "Undergraduate" },
+    { "prefix": "BBA",          "degree_type": "BBA",       "level": "Undergraduate" },
+    { "prefix": "B.Com",        "degree_type": "B.Com",     "level": "Undergraduate" },
+    { "prefix": "B.Ed",         "degree_type": "B.Ed",      "level": "Undergraduate" },
+    { "prefix": "BFA",          "degree_type": "BFA",       "level": "Undergraduate" },
+    { "prefix": "BA",           "degree_type": "BA",        "level": "Undergraduate" },
+    { "prefix": "BDes",         "degree_type": "BDes",      "level": "Undergraduate" },
+    { "prefix": "B.Arch",       "degree_type": "B.Arch",    "level": "Undergraduate" },
+    { "prefix": "B.Tech",       "degree_type": "B.Tech",    "level": "Undergraduate" },
+    { "prefix": "BS Tech",      "degree_type": "BS Tech",   "level": "Undergraduate" },
+    { "prefix": "DPT",          "degree_type": "DPT",       "level": "Undergraduate" },
+    { "prefix": "Pharm-D",      "degree_type": "Pharm-D",   "level": "Undergraduate" },
+    { "prefix": "Bachelor of",  "degree_type": "Bachelor",  "level": "Undergraduate" },
+    { "prefix": "Bachelor in",  "degree_type": "Bachelor",  "level": "Undergraduate" },
+
+    { "prefix": "MS",           "degree_type": "MS",        "level": "MS" },
+    { "prefix": "MSc",          "degree_type": "MSc",       "level": "MS" },
+    { "prefix": "MBA",          "degree_type": "MBA",       "level": "MS" },
+    { "prefix": "EMBA",         "degree_type": "EMBA",      "level": "MS" },
+    { "prefix": "M.Com",        "degree_type": "M.Com",     "level": "MS" },
+    { "prefix": "MA",           "degree_type": "MA",        "level": "MS" },
+    { "prefix": "Master of",    "degree_type": "Master",    "level": "MS" },
+    { "prefix": "Master's",     "degree_type": "Master",    "level": "MS" },
+
+    { "prefix": "MPhil",        "degree_type": "MPhil",     "level": "MPhil" },
+    { "prefix": "M.Phil",       "degree_type": "MPhil",     "level": "MPhil" },
+
+    { "prefix": "PhD",          "degree_type": "PhD",       "level": "PhD" },
+    { "prefix": "Ph.D",         "degree_type": "PhD",       "level": "PhD" },
+    { "prefix": "Doctor of",    "degree_type": "Doctor",    "level": "Undergraduate" },
+
+    { "prefix": "ADP",          "degree_type": "ADP",       "level": "ADP" },
+    { "prefix": "Associate",    "degree_type": "ADP",       "level": "ADP" },
+
+    { "prefix": "Diploma",      "degree_type": "Diploma",   "level": "Diploma" },
+    { "prefix": "Certificate",  "degree_type": "Certificate","level": "Diploma" }
+  ],
+
+  "trackPatterns": [
+    "Weekend Track",
+    "Regular Track",
+    "Weekend",
+    "Regular",
+    "4 Years",
+    "2 Years",
+    "1.5 Year Weekend"
+  ],
+
+  "specializationPhrases": [
+    "Specialisation:",
+    "Specialization:",
+    "with Specialization in",
+    "with Minor in",
+    "Minor in",
+    "– "
+  ]
+}

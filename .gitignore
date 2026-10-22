@@ -1,0 +1,67 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.cursor/mcp.json
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+node_modules/
+build/
+dist/
+.env
+.env.*
+!.env.example
+src/backend/uploads/
+src/backend/private/
+*.zip
+*.mp4
+*.apk
+*.h5
+*.pkl
+*.DS_Store
+*.xlsx
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+
+# Original (uncompressed) hero videos — local backup, do not commit
+.video-originals/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Agent tooling
+.kilo/
+
+# Scratch docs (list specific files — do NOT use *.md, that would ignore README.md too)
+TODO.md
+universities_data_requirement.md
+node_modules/
+.env
+**/.env
+src/backend/uploads/
+src/backend/backups/
