@@ -1,12 +1,10 @@
 // C:\Users\Track Computers\Downloads\testfolder\uni-finder\src\components\Hostels.jsx
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   FiMapPin,
   FiStar,
   FiCheckCircle,
   FiX,
-  FiChevronLeft,
-  FiChevronRight,
   FiClock,
 } from "react-icons/fi";
 
@@ -215,8 +213,6 @@ function HostelCard({ hostel, onViewDetails }) {
 }
 
 export default function Hostels() {
-  var trackRef = useRef(null);
-
   var modalState = useState(false);
   var showModal = modalState[0];
   var setShowModal = modalState[1];
@@ -225,14 +221,6 @@ export default function Hostels() {
   var selectedHostel = hostelState[0];
   var setSelectedHostel = hostelState[1];
 
-  function scroll(direction) {
-    if (trackRef.current) {
-      trackRef.current.scrollBy({
-        left: direction * 294,
-        behavior: "smooth",
-      });
-    }
-  }
 
   function handleViewDetails(hostel) {
     setSelectedHostel(hostel);
@@ -258,26 +246,6 @@ export default function Hostels() {
             </h2>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={function () {
-                scroll(-1);
-              }}
-              className="w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 transition active:scale-95"
-              aria-label="Scroll left"
-            >
-              <FiChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={function () {
-                scroll(1);
-              }}
-              className="w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-600 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 transition active:scale-95"
-              aria-label="Scroll right"
-            >
-              <FiChevronRight className="w-4 h-4" />
-            </button>
-          </div>
         </div>
 
         <p className="text-sm text-gray-500 mb-5 max-w-2xl">
@@ -285,20 +253,45 @@ export default function Hostels() {
           menus, and zero-commission direct booking near your campus.
         </p>
 
-        {/* Carousel */}
-        <div
-          ref={trackRef}
-          className="flex gap-3.5 overflow-x-auto pb-4 [scroll-snap-type:x_mandatory] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {hostelList.map(function (hostel) {
-            return (
-              <HostelCard
-                key={hostel.id}
-                hostel={hostel}
-                onViewDetails={handleViewDetails}
-              />
-            );
-          })}
+        {/* Infinite auto-moving carousel */}
+        <style>{`
+          .hostel-marquee {
+            animation: hostel-scroll 35s linear infinite;
+            will-change: transform;
+          }
+
+          @keyframes hostel-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .hostel-marquee { animation-duration: 90s; }
+          }
+        `}</style>
+
+        <div className="overflow-hidden">
+          <div className="hostel-marquee flex w-max">
+            {[0, 1].map(function (group) {
+              return (
+                <div
+                  key={group}
+                  className="flex shrink-0 gap-3.5 pr-3.5"
+                  aria-hidden={group === 1 ? "true" : undefined}
+                >
+                  {hostelList.map(function (hostel) {
+                    return (
+                      <HostelCard
+                        key={`${group}-${hostel.id}`}
+                        hostel={hostel}
+                        onViewDetails={handleViewDetails}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Trust badges */}

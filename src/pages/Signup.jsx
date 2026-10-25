@@ -147,7 +147,7 @@ function Signup() {
   return (
     <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center bg-gray-100 p-4 ">
       <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
-        {/* Left Image - Hidden on Mobile */}
+      
         <div className="relative w-1/2 hidden md:block overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80"

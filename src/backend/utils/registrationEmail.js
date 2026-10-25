@@ -49,5 +49,6 @@ export const sendRegistrationEmail = async ({ to, subject, text }) => {
     subject,
     text,
   });
+  console.log("MAIL SENT to:", recipient, "| messageId:", result.messageId);
   return { recipient, messageId: result.messageId };
 };
