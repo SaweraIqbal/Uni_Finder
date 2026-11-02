@@ -30,6 +30,7 @@ import Analytics from "../../components/admin/Analytics.jsx";
 import ActivityLog from "../../components/admin/ActivityLog.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { setFlash } from "../../utils/flash.js";
+import CampusHostelVerifications from "../../components/admin/CampusHostelVerifications.jsx";
 
 import {
   listVerifications,
@@ -55,6 +56,8 @@ function renderScreen(screen, navigate) {
       return <Analytics onNavigate={navigate} />;
     case "activity-log":
       return <ActivityLog />;
+    case "campus-hostel-verifications":
+      return <CampusHostelVerifications />;
     default:
       return <UniversityVerifications />;
   }
@@ -217,6 +220,11 @@ export default function AdminDashboard() {
       icon: <BedDouble size={18} />,
       badge: counts.hostels > 0 ? counts.hostels : null,
     },
+    {
+  id: "campus-hostel-verifications",
+  label: "Campus Hostel Verifications",
+  icon: <BedDouble size={18} />,
+},
     { id: "analytics", label: "Analytics", icon: <BarChart2 size={18} /> },
     { id: "activity-log", label: "Activity Log", icon: <History size={18} /> },
   ];

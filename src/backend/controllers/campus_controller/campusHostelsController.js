@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import db from "../../config/db.js";
-
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 const q = (sql, vals = []) =>
   new Promise((res, rej) => db.query(sql, vals, (e, r) => (e ? rej(e) : res(r))));
 
@@ -139,3 +141,94 @@ export const rejectHostel = async (req, res) => {
     return res.status(500).json({ message: "DB error", error: e.message });
   }
 };
+
+export const viewCampusHostelDocument = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const role = req.user?.role;
+
+    if (!["university", "admin"].includes(role)) {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
+   const rows = await q(
+      `SELECT
+         d.file_path,
+         d.mime_type,
+         h.university_id
+       FROM campus_hostel_verification_documents d
+       JOIN campus_hostel_verifications h
+         ON h.id = d.campus_hostel_verification_id
+       WHERE d.id = ?
+       LIMIT 1`,
+      [documentId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        message: "Document not found",
+      });
+    }
+
+    const doc = rows[0];
+
+    if (
+      role === "university" &&
+      String(req.user?.university_id) !== String(doc.university_id)
+    ) {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
+    const currentDir = path.dirname(fileURLToPath(import.meta.url));
+    const uploadsDir = path.resolve(currentDir, "../../uploads");
+
+    const filePath = path.isAbsolute(doc.file_path)
+      ? path.resolve(doc.file_path)
+      : path.resolve(process.cwd(), doc.file_path);
+
+    const relativePath = path.relative(uploadsDir, filePath);
+
+    if (
+      relativePath === "" ||
+      relativePath.startsWith("..") ||
+      path.isAbsolute(relativePath)
+    ) {
+      return res.status(403).json({
+        message: "Invalid document path",
+      });
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        message: "Uploaded file not found",
+      });
+    }
+
+    if (
+      !["application/pdf", "image/jpeg", "image/png"].includes(doc.mime_type)
+    ) {
+      return res.status(415).json({
+        message: "Unsupported document type",
+      });
+    }
+
+    res.setHeader("Content-Type", doc.mime_type);
+    res.setHeader("Content-Disposition", "inline");
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error("View campus hostel document:", error);
+
+    return res.status(500).json({
+      message: "Failed to open document",
+    });
+  }
+};
+
+

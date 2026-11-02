@@ -55,6 +55,7 @@ import {
   getCampusById,
   getOverviewStats,
   getCampusActivity,
+  listApprovedCampusHostels,
 } from "../controllers/campus_controller/campusController.js";
 
 import {
@@ -163,5 +164,6 @@ router.put("/campus/hostel-approvals/:id/reject",    ...campusAuth, express.json
 router.get("/campuses",                           searchCampuses);
 router.get("/campuses/university/:universityId",  listCampusesByUniversity);
 router.get("/campuses/:id",                       getCampusById);
+router.get("/campuses/:id/hostels",                listApprovedCampusHostels); // public: only approved
 
 export default router;

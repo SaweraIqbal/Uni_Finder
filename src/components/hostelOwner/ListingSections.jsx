@@ -233,17 +233,45 @@ export function ServiceSection({ value, onChange }) {
 }
 
 // ---------- D. Mess / Food ----------
-export function MessSection({ value, onChange }) {
+export function MessSection({ value, onChange, onUploadPhoto }) {
   const set = (k, v) => onChange({ ...value, [k]: v });
   const photoRef = useRef(null);
   const off = !value.available;
 
-  const pickPhoto = (file) => {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return toast.error('Please choose an image file.');
-    if (file.size > 10 * 1024 * 1024) return toast.error('Image must be under 10 MB.');
-    set('menuPhoto', file.name);
-  };
+
+const pickPhoto = async (file) => {
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    toast.error("Please select an image file");
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    toast.error("Image must be under 10 MB");
+    return;
+  }
+
+  if (!onUploadPhoto) {
+    toast.error("Photo upload is not connected");
+    return;
+  }
+
+  try {
+    const imageUrl = await onUploadPhoto(file, "Mess Menu");
+
+    if (!imageUrl) return;
+
+    onChange({
+      ...value,
+      menuMode: "photo",
+      menuPhoto: imageUrl,
+    });
+  } catch (error) {
+    toast.error(error.message || "Menu photo upload failed");
+  }
+};
+
 
   const modes = [
     { id: 'skip', label: 'Skip' },
@@ -292,11 +320,48 @@ export function MessSection({ value, onChange }) {
             onChange={(e) => { pickPhoto(e.target.files?.[0]); e.target.value = ''; }} />
         </div>
 
-        {value.menuMode === 'photo' && (
-          <p className="mt-3 text-sm text-slate-600">
-            {value.menuPhoto ? `Selected: ${value.menuPhoto}` : 'No menu photo selected yet.'}
-          </p>
-        )}
+
+
+{value.menuMode === "photo" && (
+  <div className="mt-4 space-y-3">
+
+    {/* Debug: Always show image URL */}
+    <p className="break-all text-xs text-red-500">
+      Image URL: {value.menuPhoto || "EMPTY"}
+    </p>
+
+    {value.menuPhoto ? (
+      <>
+        <img
+          src={
+            value.menuPhoto.startsWith("http")
+              ? value.menuPhoto
+              : `http://localhost:5000${value.menuPhoto}`
+          }
+          alt="Weekly Mess Menu"
+          className="h-48 w-full max-w-sm rounded-xl border border-slate-200 object-contain"
+          onError={() => {
+            console.error(
+              "Mess menu image failed to load:",
+              value.menuPhoto
+            );
+          }}
+        />
+
+        <p className="break-all text-sm text-slate-600">
+          {value.menuPhoto.split("/").pop()}
+        </p>
+      </>
+    ) : (
+      <p className="text-sm text-slate-500">
+        No menu photo uploaded yet.
+      </p>
+    )}
+  </div>
+)}
+
+
+
         {value.menuMode === 'manual' && (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {DAYS.map((d) => (

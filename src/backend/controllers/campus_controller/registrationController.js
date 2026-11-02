@@ -12,7 +12,11 @@
  *   uni_tier1_approved_at  DATETIME NULL
  *   uni_tier1_approved_by  VARCHAR(255) NULL
  */
-import db from "../../config/db.js";
+import db, { createTransactionConnection } from "../../config/db.js";
+import { v4 as uuidv4 } from "uuid";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // ── promise wrapper ──────────────────────────────────────────────────────────
 const query = (sql, values = []) =>
@@ -55,7 +59,11 @@ const shapeRow = (reg) => {
     rejection: reg.rejection_reason
       ? { reason:    reg.rejection_reason,
           note:      reg.rejection_note,
-          decidedAt: reg.rejection_decidedAt }
+          decidedAt: reg.rejection_decidedAt,
+          // 'university' | 'super_admin'. Old rows (no rejected_by): super admin
+          // can only reject after tier-1 approval, so infer from that.
+          by:        reg.rejected_by ||
+                     (Number(reg.uni_tier1_approved) === 1 ? "super_admin" : "university") }
       : null,
     resubmission: reg.resubmission_requestedAt
       ? { requiredDocs: safe(reg.resubmission_requiredDocs) || [],
@@ -65,7 +73,7 @@ const shapeRow = (reg) => {
     history: safe(reg.history) || [],
     // tier-1 summary for UI
     tier1: {
-      approved:   !!reg.uni_tier1_approved,
+      approved: Number(reg.uni_tier1_approved) === 1,
       approvedAt: reg.uni_tier1_approved_at || null,
       approvedBy: reg.uni_tier1_approved_by || null,
     },
@@ -91,81 +99,314 @@ export const getApprovedUniversities = async (_req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 // 2. POST /api/campus-registrations   (auth: campus role)
 // ════════════════════════════════════════════════════════════════════════════
+
 export const submitRegistration = async (req, res) => {
-  const userId    = req.user.id;
+  const userId = req.user.id;
   const userEmail = req.user.email;
 
   const {
-    universityId, campusType, officialName, province, city, address,
-    registrantName, designation, phone, officialEmail, declarationAccepted,
+    universityId,
+    campusType,
+    officialName,
+    province,
+    city,
+    address,
+    registrantName,
+    designation,
+    phone,
+    officialEmail,
+    declarationAccepted,
+    hasHostel,
+    hostelName,
+    hostelGender,
+    hostelAddress,
+    hostelPhone,
+    hostelGps,
   } = req.body;
 
   const errors = {};
-  const CAMPUS_TYPES = ["Main Campus","Sub Campus","Regional Campus","City Campus"];
-  const DESIGNATIONS = ["Campus Coordinator","Registrar","Deputy Registrar","Director","Other"];
+  const CAMPUS_TYPES = [
+    "Main Campus",
+    "Sub Campus",
+    "Regional Campus",
+    "City Campus",
+  ];
+  const DESIGNATIONS = [
+    "Campus Coordinator",
+    "Registrar",
+    "Deputy Registrar",
+    "Director",
+    "Other",
+  ];
 
-  if (!universityId)                                errors.universityId   = "Please select a university.";
-  if (!CAMPUS_TYPES.includes(campusType))           errors.campusType     = "Invalid campus type.";
-  if (!officialName || officialName.trim().length < 3) errors.officialName = "Must be at least 3 characters.";
-  if (!province)                                    errors.province       = "Province is required.";
-  if (!city || !city.trim())                        errors.city           = "City is required.";
-  if (!registrantName || registrantName.trim().length < 3) errors.registrantName = "Must be at least 3 characters.";
-  if (!DESIGNATIONS.includes(designation))          errors.designation    = "Please select a valid designation.";
+  if (!universityId) errors.universityId = "Please select a university.";
+  if (!CAMPUS_TYPES.includes(campusType))
+    errors.campusType = "Invalid campus type.";
+  if (!officialName?.trim() || officialName.trim().length < 3)
+    errors.officialName = "Must be at least 3 characters.";
+  if (!province) errors.province = "Province is required.";
+  if (!city?.trim()) errors.city = "City is required.";
+  if (!registrantName?.trim() || registrantName.trim().length < 3)
+    errors.registrantName = "Must be at least 3 characters.";
+  if (!DESIGNATIONS.includes(designation))
+    errors.designation = "Please select a valid designation.";
 
   const canonPhone = normalisePhone(phone);
-  if (!phone || !phone.trim()) errors.phone = "Contact number is required.";
-  else if (!canonPhone)        errors.phone = "Enter a valid number: 03XXXXXXXXX or +92 3XX XXXXXXX";
+  if (!canonPhone) errors.phone = "Enter a valid contact number.";
 
-  if (officialEmail?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(officialEmail.trim()))
+  if (
+    officialEmail?.trim() &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(officialEmail.trim())
+  ) {
     errors.officialEmail = "Enter a valid email address.";
-  if (declarationAccepted !== "true" && declarationAccepted !== true)
-    errors.declarationAccepted = "You must accept the declaration.";
-
-  if (Object.keys(errors).length) return res.status(400).json({ errors });
-
-  const unis = await query(
-    "SELECT id, name FROM universities WHERE id = ? AND status = 'approved'", [universityId]
-  ).catch(() => []);
-  if (!unis.length) return res.status(400).json({ errors: { universityId: "Invalid or unapproved university." } });
-
-  const dupes = await query(
-    `SELECT id FROM campus_registrations
-     WHERE universityId = ?
-       AND LOWER(TRIM(officialName)) = LOWER(TRIM(?))
-       AND status IN ('pending','approved','resubmission_requested')`,
-    [universityId, officialName.trim()]
-  ).catch(() => []);
-  if (dupes.length) {
-    return res.status(409).json({
-      message: `A campus registration for "${officialName.trim()}" already exists or is pending review.`,
-    });
   }
 
-  const id       = `cr_${Date.now()}${Math.floor(Math.random() * 10000)}`;
-  const publicId = genPublicId();
-  const history  = JSON.stringify([{ status: "pending", note: "Initial submission", at: new Date() }]);
-  const docName  = req.file?.originalname || null;
-  const docPath  = req.file?.path         || null;
-  const docSize  = req.file?.size         || null;
+  if (declarationAccepted !== "true" && declarationAccepted !== true) {
+    errors.declarationAccepted = "You must accept the declaration.";
+  }
 
-  await query(
-    `INSERT INTO campus_registrations
-       (id, publicId, registrantUserId, registrantEmail,
-        universityId, campusType, officialName, province, city, address,
-        registrantName, designation, phone, officialEmail,
-        document_originalName, document_storedPath, document_size,
-        declarationAccepted, status, history, submittedAt)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'pending',?,NOW())`,
-    [
-      id, publicId, userId, userEmail,
-      universityId, campusType, officialName.trim(), province, city.trim(), (address || "").trim(),
-      registrantName.trim(), designation, canonPhone, officialEmail?.trim() || null,
-      docName, docPath, docSize, history,
-    ]
-  );
+  const wantsHostel = hasHostel === "yes" || hasHostel === "true";
+  let latitude = null;
+  let longitude = null;
+  let hostelContact = null;
 
-  res.status(201).json({ data: { publicId } });
+  const hostelDocFields = {
+    cnic: "hostelDoc_cnic",
+    ownership: "hostelDoc_ownership",
+    utility: "hostelDoc_utility",
+  };
+
+  if (wantsHostel) {
+    if (!hostelName?.trim())
+      errors.hostelName = "Hostel name is required.";
+
+    if (!["boys", "girls", "both"].includes(hostelGender))
+      errors.hostelGender = "Invalid hostel gender.";
+
+    if (!hostelAddress?.trim())
+      errors.hostelAddress = "Hostel address is required.";
+
+    hostelContact = normalisePhone(hostelPhone);
+    if (!hostelContact)
+      errors.hostelPhone = "Enter a valid hostel contact number.";
+
+    const parts = String(hostelGps || "").split(",");
+    latitude = Number(parts[0]);
+    longitude = Number(parts[1]);
+
+    if (
+      parts.length !== 2 ||
+      parts.some((p) => !p.trim()) ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      errors.hostelGps = "Enter valid latitude, longitude.";
+    }
+
+    for (const [type, field] of Object.entries(hostelDocFields)) {
+      if (!req.files?.[field]?.[0]) {
+        errors[field] = `${type} document is required.`;
+      }
+    }
+  }
+
+  if (Object.keys(errors).length) {
+    return res.status(400).json({ errors });
+  }
+
+  let connection;
+
+  try {
+    connection = createTransactionConnection().promise();
+
+    await connection.connect();
+    await connection.beginTransaction();
+
+    const [unis] = await connection.query(
+      "SELECT id FROM universities WHERE id = ? AND status = 'approved'",
+      [universityId]
+    );
+
+    if (!unis.length) {
+      await connection.rollback();
+      return res.status(400).json({
+        errors: { universityId: "Invalid or unapproved university." },
+      });
+    }
+
+    const [dupes] = await connection.query(
+      `SELECT id FROM campus_registrations
+       WHERE universityId = ?
+       AND LOWER(TRIM(officialName)) = LOWER(TRIM(?))
+       AND status IN ('pending', 'approved', 'resubmission_requested')`,
+      [universityId, officialName.trim()]
+    );
+
+    if (dupes.length) {
+      await connection.rollback();
+      return res.status(409).json({
+        message: "A campus registration with this name already exists.",
+      });
+    }
+
+    const registrationId =
+      `cr_${Date.now()}${Math.floor(Math.random() * 10000)}`;
+
+    const publicId = genPublicId();
+
+    const history = JSON.stringify([
+      {
+        status: "pending",
+        note: "Initial submission",
+        at: new Date(),
+      },
+    ]);
+
+    const campusDocument = req.files?.document?.[0] || null;
+
+    await connection.query(
+      `INSERT INTO campus_registrations
+       (
+         id, publicId, registrantUserId, registrantEmail,
+         universityId, campusType, officialName, province,
+         city, address, registrantName, designation,
+         phone, officialEmail, document_originalName,
+         document_storedPath, document_size,
+         declarationAccepted, status, history, submittedAt
+       )
+       VALUES (
+         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'pending',?,NOW()
+       )`,
+      [
+        registrationId,
+        publicId,
+        userId,
+        userEmail,
+        universityId,
+        campusType,
+        officialName.trim(),
+        province,
+        city.trim(),
+        (address || "").trim(),
+        registrantName.trim(),
+        designation,
+        canonPhone,
+        officialEmail?.trim() || null,
+        campusDocument?.originalname || null,
+        campusDocument?.path || null,
+        campusDocument?.size || null,
+        history,
+      ]
+    );
+
+    let hostelVerificationId = null;
+
+    if (wantsHostel) {
+      hostelVerificationId = uuidv4();
+
+      await connection.query(
+        `INSERT INTO campus_hostel_verifications
+         (
+           id,
+           campus_registration_id,
+           campus_id,
+           university_id,
+           hostel_name,
+           hostel_gender,
+           hostel_address,
+           hostel_phone,
+           latitude,
+           longitude,
+           university_approval,
+           super_admin_approval,
+           verification_status
+         )
+         VALUES (
+           ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?,
+           'pending', 'not_started', 'pending_university'
+         )`,
+        [
+          hostelVerificationId,
+          registrationId,
+          universityId,
+          hostelName.trim(),
+          hostelGender,
+          hostelAddress.trim(),
+          hostelContact,
+          latitude,
+          longitude,
+        ]
+      );
+
+      for (const [documentType, fieldName] of Object.entries(hostelDocFields)) {
+        const file = req.files[fieldName][0];
+
+        await connection.query(
+          `INSERT INTO campus_hostel_verification_documents
+           (
+             id,
+             campus_hostel_verification_id,
+             document_type,
+             original_name,
+             file_path,
+             mime_type,
+             file_size_bytes,
+             verification_status
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+          [
+            uuidv4(),
+            hostelVerificationId,
+            documentType,
+            file.originalname,
+            file.path,
+            file.mimetype,
+            file.size,
+          ]
+        );
+      }
+    }
+
+    await connection.commit();
+
+    return res.status(201).json({
+      message: "Campus registration submitted successfully.",
+      data: {
+        publicId,
+        registrationId,
+        hostelVerificationId,
+        hostelSubmitted: wantsHostel,
+      },
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("Rollback error:", rollbackError.message);
+      }
+    }
+
+    console.error("submitRegistration error:", error);
+
+    return res.status(500).json({
+      message: "Could not submit campus registration.",
+    });
+  } finally {
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (endError) {
+        console.error("Connection close error:", endError.message);
+      }
+    }
+  }
 };
+
 
 // ════════════════════════════════════════════════════════════════════════════
 // 3. GET /api/campus-registrations/mine   (auth: campus role)
@@ -258,7 +499,7 @@ export const resubmitRegistration = async (req, res) => {
        campusType=?, officialName=?, province=?, city=?, address=?,
        registrantName=?, designation=?, phone=?, officialEmail=?,
        status='pending',
-       rejection_reason=NULL, rejection_note=NULL, rejection_decidedAt=NULL,
+       rejection_reason=NULL, rejection_note=NULL, rejection_decidedAt=NULL, rejected_by=NULL,
        resubmission_requiredDocs=NULL, resubmission_note=NULL, resubmission_requestedAt=NULL,
        uni_tier1_approved=0, uni_tier1_approved_at=NULL, uni_tier1_approved_by=NULL,
        history=?
@@ -410,7 +651,7 @@ export const uniUpdateRegistrationStatus = async (req, res) => {
     await query(
       `UPDATE campus_registrations
        SET status='rejected', rejection_reason=?, rejection_note=?,
-           rejection_decidedAt=NOW(), uni_tier1_approved=0,
+           rejection_decidedAt=NOW(), rejected_by='university', uni_tier1_approved=0,
            history=?, updatedAt=NOW()
        WHERE id=?`,
       [reason.trim(), note?.trim() || null, JSON.stringify(history), id]
@@ -503,7 +744,8 @@ export const updateRegistrationStatus = async (req, res) => {
     history.push({ status: "rejected", note: reason + (note ? `: ${note}` : ""), at: new Date() });
     await query(
       `UPDATE campus_registrations
-       SET status='rejected', rejection_reason=?, rejection_note=?, rejection_decidedAt=NOW(), history=?
+       SET status='rejected', rejection_reason=?, rejection_note=?, rejection_decidedAt=NOW(),
+           rejected_by='super_admin', history=?
        WHERE id=?`,
       [reason.trim(), note?.trim() || null, JSON.stringify(history), id]
     );
@@ -529,3 +771,104 @@ export const updateRegistrationStatus = async (req, res) => {
 
   res.json({ message: "Status updated." });
 };
+
+
+export const viewCampusHostelDocument = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const role = req.user?.role;
+
+    if (!["university", "admin"].includes(role)) {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
+    const [rows] = await database.query(
+      `SELECT
+         d.file_path,
+         d.mime_type,
+         d.original_name,
+         h.university_id
+       FROM campus_hostel_verification_documents d
+       JOIN campus_hostel_verifications h
+         ON h.id = d.campus_hostel_verification_id
+       WHERE d.id = ?
+       LIMIT 1`,
+      [documentId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        message: "Document not found",
+      });
+    }
+
+    const doc = rows[0];
+
+    if (
+      role === "university" &&
+      (
+        !req.user?.university_id ||
+        String(req.user.university_id) !== String(doc.university_id)
+      )
+    ) {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
+    // Only files inside the backend uploads directory are allowed.
+    const currentDir = path.dirname(fileURLToPath(import.meta.url));
+    const uploadsDir = path.resolve(currentDir, "../../uploads");
+
+    const storedPath = doc.file_path;
+    const filePath = path.isAbsolute(storedPath)
+      ? path.resolve(storedPath)
+      : path.resolve(process.cwd(), storedPath);
+
+    const relativePath = path.relative(uploadsDir, filePath);
+
+    if (
+      relativePath.startsWith("..") ||
+      path.isAbsolute(relativePath) ||
+      relativePath === ""
+    ) {
+      return res.status(403).json({
+        message: "Invalid document path",
+      });
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        message: "Uploaded file not found",
+      });
+    }
+
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+    ];
+
+    if (!allowedTypes.includes(doc.mime_type)) {
+      return res.status(415).json({
+        message: "Unsupported document type",
+      });
+    }
+
+    res.setHeader("Content-Type", doc.mime_type);
+    res.setHeader("Content-Disposition", "inline");
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error("View campus hostel document:", error);
+
+    return res.status(500).json({
+      message: "Failed to open document",
+    });
+  }
+};
+

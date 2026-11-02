@@ -484,7 +484,7 @@ export const adminListCampusRegistrations = async (req, res) => {
            cr.registrantName, cr.designation, cr.phone, cr.officialEmail,
            cr.registrantEmail,
            cr.status,
-           cr.rejection_reason, cr.rejection_note, cr.rejection_decidedAt,
+           cr.rejection_reason, cr.rejection_note, cr.rejection_decidedAt, cr.rejected_by,
            cr.resubmission_requiredDocs, cr.resubmission_note, cr.resubmission_requestedAt,
            cr.document_originalName, cr.document_storedPath, cr.document_size,
            cr.history,
@@ -531,7 +531,9 @@ export const adminListCampusRegistrations = async (req, res) => {
       rejection: r.rejection_reason
         ? { reason:    r.rejection_reason,
             note:      r.rejection_note,
-            decidedAt: r.rejection_decidedAt }
+            decidedAt: r.rejection_decidedAt,
+            by:        r.rejected_by ||
+                       (Number(r.uni_tier1_approved) === 1 ? "super_admin" : "university") }
         : null,
       resubmission: r.resubmission_requestedAt
         ? { requiredDocs: safe(r.resubmission_requiredDocs) || [],
@@ -566,99 +568,247 @@ export const adminListCampusRegistrations = async (req, res) => {
 // Super-admin approves, rejects, or requests resubmission on a campus registration.
 // Body: { action: "approve"|"reject"|"request_resubmission", reason?, note?, requiredDocs? }
 // ═══════════════════════════════════════════════════════════════════════════
+
 export const adminUpdateCampusRegistrationStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { action, reason, note, requiredDocs } = req.body;
-    const reviewerUid  = req.user?.id    || null;
+
+    const reviewerUid = req.user?.id || null;
     const reviewerEmail = req.user?.email || "Super Admin";
 
     const rows = await q(
-      "SELECT * FROM campus_registrations WHERE id = ?", [id]
+      "SELECT * FROM campus_registrations WHERE id = ?",
+      [id]
     );
-    if (!rows.length) return err404(res, "Campus registration not found.");
+
+    if (!rows.length) {
+      return err404(res, "Campus registration not found.");
+    }
+
     const reg = rows[0];
 
     let history = [];
-    try { history = JSON.parse(reg.history || "[]"); } catch { /* empty */ }
 
+    try {
+      history = JSON.parse(reg.history || "[]");
+    } catch {
+      history = [];
+    }
+
+    // ==========================================
+    // FINAL APPROVAL
+    // ==========================================
     if (action === "approve") {
-      // TWO-TIER GATE: super admin can only give final approval after
-      // the university admin (tier-1) has approved the registration.
-      if (!reg.uni_tier1_approved) {
+
+      // Tier-1 approval must be completed first
+      if (Number(reg.uni_tier1_approved) !== 1) {
         return res.status(422).json({
-          message: "University Admin has not yet reviewed this registration. Tier-1 approval is required before Super Admin can approve.",
+          message:
+            "University Admin has not yet reviewed this registration. Tier-1 approval is required before Super Admin can approve.",
           code: "TIER1_NOT_APPROVED",
         });
       }
-      history.push({ status: "approved", note: note || null, by: reviewerEmail, at: new Date() });
+
+      history.push({
+        status: "approved",
+        note: note || null,
+        by: reviewerEmail,
+        at: new Date(),
+      });
+
       await q(
         `UPDATE campus_registrations
-         SET status='approved', history=?, updatedAt=NOW()
-         WHERE id=?`,
+         SET status = 'approved',
+             history = ?,
+             updatedAt = NOW()
+         WHERE id = ?`,
         [JSON.stringify(history), id]
       );
 
+      // ==========================================
+      // CREATE CAMPUS AND LINK REGISTERED HOSTEL
+      // ==========================================
       try {
+
+        // Check campus using its registration ID
         const campusRows = await q(
-          "SELECT id FROM campuses WHERE campus_admin_uid = ? LIMIT 1",
-          [reg.registrantUserId]
+          `SELECT id
+           FROM campuses
+           WHERE verification_id = ?
+           LIMIT 1`,
+          [reg.id]
         );
-        if (!campusRows.length) {
+
+        let campusId;
+
+        if (campusRows.length > 0) {
+
+          // Campus already exists
+          campusId = campusRows[0].id;
+
+        } else {
+
+          // Create new campus
           const { v4: uuidv4 } = await import("uuid");
-          const cid = uuidv4();
+
+          campusId = uuidv4();
+
           await q(
-            `INSERT INTO campuses (id, university_id, campus_admin_uid, verification_id, name, campus_type, city, province, address, phone, email)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO campuses
+              (
+                id,
+                university_id,
+                campus_admin_uid,
+                verification_id,
+                name,
+                campus_type,
+                city,
+                province,
+                address,
+                phone,
+                email
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              cid, reg.universityId, reg.registrantUserId, reg.id,
-              reg.officialName, reg.campusType, reg.city, reg.province,
-              reg.address, reg.phone, reg.officialEmail || reg.registrantEmail
+              campusId,
+              reg.universityId,
+              reg.registrantUserId,
+              reg.id,
+              reg.officialName,
+              reg.campusType,
+              reg.city,
+              reg.province,
+              reg.address,
+              reg.phone,
+              reg.officialEmail || reg.registrantEmail,
             ]
           );
         }
+
+        // Link registered hostel(s) with this campus
+        await q(
+          `UPDATE campus_hostel_verifications
+           SET campus_id = ?
+           WHERE campus_registration_id = ?
+           AND campus_id IS NULL`,
+          [campusId, reg.id]
+        );
+
       } catch (insertErr) {
-        console.warn("Auto-insert campus record error (non-fatal):", insertErr.message);
+        console.error(
+          "Campus creation/hostel linking error:",
+          insertErr
+        );
       }
 
-      return res.json({ message: "Campus registration approved." });
+      return res.json({
+        message: "Campus registration approved.",
+      });
 
-    } else if (action === "reject") {
-      if (!reason || !reason.trim())
+    }
+
+    // ==========================================
+    // REJECTION
+    // ==========================================
+    else if (action === "reject") {
+
+      if (!reason || !reason.trim()) {
         return err400(res, "Rejection reason is required.");
+      }
 
-      history.push({ status: "rejected", note: reason + (note ? `: ${note}` : ""), by: reviewerEmail, at: new Date() });
+      history.push({
+        status: "rejected",
+        note: reason + (note ? `: ${note}` : ""),
+        by: reviewerEmail,
+        at: new Date(),
+      });
+
       await q(
         `UPDATE campus_registrations
-         SET status='rejected',
-             rejection_reason=?, rejection_note=?, rejection_decidedAt=NOW(),
-             history=?, updatedAt=NOW()
-         WHERE id=?`,
-        [reason.trim(), note?.trim() || null, JSON.stringify(history), id]
+         SET status = 'rejected',
+             rejection_reason = ?,
+             rejection_note = ?,
+             rejection_decidedAt = NOW(),
+             rejected_by = 'super_admin',
+             history = ?,
+             updatedAt = NOW()
+         WHERE id = ?`,
+        [
+          reason.trim(),
+          note?.trim() || null,
+          JSON.stringify(history),
+          id,
+        ]
       );
-      return res.json({ message: "Campus registration rejected." });
 
-    } else if (action === "request_resubmission") {
-      const docs = Array.isArray(requiredDocs) ? requiredDocs.filter(Boolean) : [];
-      if (!docs.length)
-        return err400(res, "requiredDocs array with at least one item is required.");
+      return res.json({
+        message: "Campus registration rejected.",
+      });
 
-      history.push({ status: "resubmission_requested", note: note || null, by: reviewerEmail, at: new Date() });
+    }
+
+    // ==========================================
+    // REQUEST RESUBMISSION
+    // ==========================================
+    else if (action === "request_resubmission") {
+
+      const docs = Array.isArray(requiredDocs)
+        ? requiredDocs.filter(Boolean)
+        : [];
+
+      if (!docs.length) {
+        return err400(
+          res,
+          "requiredDocs array with at least one item is required."
+        );
+      }
+
+      history.push({
+        status: "resubmission_requested",
+        note: note || null,
+        by: reviewerEmail,
+        at: new Date(),
+      });
+
       await q(
         `UPDATE campus_registrations
-         SET status='resubmission_requested',
-             resubmission_requiredDocs=?, resubmission_note=?, resubmission_requestedAt=NOW(),
-             rejection_reason=NULL, rejection_note=NULL, rejection_decidedAt=NULL,
-             history=?, updatedAt=NOW()
-         WHERE id=?`,
-        [JSON.stringify(docs), note?.trim() || null, JSON.stringify(history), id]
+         SET status = 'resubmission_requested',
+             resubmission_requiredDocs = ?,
+             resubmission_note = ?,
+             resubmission_requestedAt = NOW(),
+             rejection_reason = NULL,
+             rejection_note = NULL,
+             rejection_decidedAt = NULL,
+             history = ?,
+             updatedAt = NOW()
+         WHERE id = ?`,
+        [
+          JSON.stringify(docs),
+          note?.trim() || null,
+          JSON.stringify(history),
+          id,
+        ]
       );
-      return res.json({ message: "Resubmission requested." });
 
-    } else {
+      return res.json({
+        message: "Resubmission requested.",
+      });
+
+    }
+
+    // ==========================================
+    // INVALID ACTION
+    // ==========================================
+    else {
       return err400(res, `Unknown action '${action}'.`);
     }
+
   } catch (e) {
-    return err500(res, "Could not update campus registration status.", e);
+    return err500(
+      res,
+      "Could not update campus registration status.",
+      e
+    );
   }
 };

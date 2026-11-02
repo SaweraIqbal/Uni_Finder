@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 import { toast } from 'react-toastify';
 import { Clock, PencilLine, FileText, MapPin, Check, ChevronDown } from 'lucide-react';
+const API = "http://localhost:5000";
 
 const MAX_MB = 10;
 const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -88,7 +89,7 @@ function SectionHeader({ icon: Icon, title, subtitle }) {
   );
 }
 
-function DocCard({ title, file, onPick, disabled }) {
+function DocCard({ title, file, onPick, disabled, uploading }) {
   const ref = useRef(null);
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
@@ -106,7 +107,7 @@ function DocCard({ title, file, onPick, disabled }) {
       </div>
       <p className="mt-4 text-sm font-medium">{title}</p>
       <p className="mt-1 truncate text-xs text-slate-500">
-        {file ? file.name : `PDF, JPG or PNG · Max ${MAX_MB} MB`}
+        {file ? (file.original_name || file.name) : `PDF, JPG or PNG · Max ${MAX_MB} MB`}
       </p>
       <input
         ref={ref}
@@ -124,57 +125,284 @@ function DocCard({ title, file, onPick, disabled }) {
         onClick={() => ref.current?.click()}
         className="mt-4 w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
       >
-        {file ? 'Replace file' : 'Choose file'}
+        {uploading ? 'Uploading...' : file ? 'Replace file' : 'Choose file'}
       </button>
     </div>
   );
 }
 
-export default function ProfileSection({ initial, campuses = [] }) {
-  const [form, setForm] = useState(initial);
-  const [docs, setDocs] = useState({});
-  const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState(initial.verification);
 
-  const locked = status === 'submitted' || status === 'approved';
+export default function ProfileSection({
+  hostelId,
+  initial,
+  campuses = [],
+}) {
+  const [form, setForm] = useState({ ...initial, gps: "", nearbyDistance: "" });
+  const [docs, setDocs] = useState({});
+  const [uploadingDoc, setUploadingDoc] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [status, setStatus] = useState(
+    initial?.verification || "not_submitted"
+  );
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    if (!hostelId) {
+      setLoadingProfile(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      try {
+        setLoadingProfile(true);
+
+        const token = sessionStorage.getItem("token");
+
+        const response = await fetch(
+          `http://localhost:5000/api/hostels/${hostelId}/profile`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load profile"
+          );
+        }
+
+        if (cancelled) return;
+
+        const profile = data.profile;
+        const existingDocs = Array.isArray(data.documents) ? data.documents : [];
+        setDocs(Object.fromEntries(existingDocs.map(d => [d.document_type, d])));
+
+        setForm((previous) => ({
+          ...previous,
+          name: profile.name ?? "",
+          about: profile.about ?? "",
+          gender: profile.gender ?? "boys",
+          ownership: profile.hostel_type ?? "private",
+          campusId: profile.campus_id ?? "",
+          address: profile.address ?? "",
+          gps:
+            profile.lat != null && profile.lng != null
+              ? `${profile.lat}, ${profile.lng}`
+              : "",
+          floors: profile.floors ?? "",
+          owner: {
+            name: profile.owner_name ?? "",
+            contact: profile.owner_contact ?? "",
+          },
+          warden: {
+            name: profile.warden_name ?? "",
+            contact: profile.warden_contact ?? "",
+          },
+        }));
+
+        const statusMap = {
+          draft: "not_submitted",
+          under_review: "submitted",
+          approved: "approved",
+          rejected: "rejected",
+        };
+
+        setStatus(
+          statusMap[profile.status] ?? "not_submitted"
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Load Profile Error:", error);
+          toast.error(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingProfile(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hostelId]);
+
+  const locked = status !== "not_submitted";
+
   const v = VERIFICATION[status];
+
+
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
   const setPerson = (who, key, value) =>
     setForm((f) => ({ ...f, [who]: { ...f[who], [key]: value } }));
 
-  const pickDoc = (id, file) => {
-    if (!file) return;
+  const pickDoc = async (id, file) => {
+    if (!file || locked) return;
     if (!ALLOWED.includes(file.type)) return toast.error('Only PDF, JPG or PNG files are allowed.');
     if (file.size > MAX_MB * 1024 * 1024) return toast.error(`File must be under ${MAX_MB} MB.`);
-    setDocs((d) => ({ ...d, [id]: file }));
+    const token = sessionStorage.getItem('token');
+    if (!token) return toast.error('Please login again.');
+    try {
+      setUploadingDoc(id);
+      const body = new FormData();
+      body.append('document', file);
+      body.append('document_type', id);
+      const res = await fetch(`${API}/api/hostels/${hostelId}/documents`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }, body,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Document upload failed');
+      const listRes = await fetch(`${API}/api/hostels/${hostelId}/documents`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!listRes.ok) throw new Error('Uploaded, but could not refresh documents');
+      const listData = await listRes.json();
+      const list = Array.isArray(listData) ? listData : (listData.documents || []);
+      setDocs(Object.fromEntries(list.map(d => [d.document_type, d])));
+      toast.success('Document uploaded to database.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setUploadingDoc('');
+    }
   };
-
   const validate = () => {
     const e = {};
-    if (!form.name.trim()) e.name = 'Enter the hostel name.';
-    if (!form.about.trim()) e.about = 'Add a short introduction.';
+    if (!String(form.name ?? '').trim()) e.name = 'Enter the hostel name.';
+    if (!String(form.about ?? '').trim()) e.about = 'Add a short introduction.';
     if (form.ownership === 'campus' && !form.campusId) e.campusId = 'Select the affiliated campus.';
-    if (!form.address.trim()) e.address = 'Enter the full address.';
-    if (!form.nearbyDistance.trim()) e.nearbyDistance = 'Enter the distance to the nearest campus.';
+    if (!String(form.address ?? '').trim()) e.address = 'Enter the full address.';
+    const parts = String(form.gps ?? '').split(',').map(x => Number(x.trim()));
+    if (!String(form.gps ?? '').trim() || parts.length !== 2 ||
+        !parts.every(Number.isFinite) || parts[0] < -90 || parts[0] > 90 ||
+        parts[1] < -180 || parts[1] > 180) {
+      e.gps = 'Enter valid GPS coordinates as latitude, longitude.';
+    }
     if (!form.floors || Number(form.floors) < 1) e.floors = 'Enter the number of floors.';
-    if (!form.owner.name.trim() || !form.owner.contact.trim()) e.owner = 'Enter the owner name and contact.';
-    if (!form.warden.name.trim() || !form.warden.contact.trim()) e.warden = 'Enter the warden name and contact.';
-    const missing = DOCS.filter((d) => !docs[d.id]);
-    if (missing.length) e.docs = `Upload: ${missing.map((m) => m.title).join(', ')}.`;
+    if (!String(form.owner?.name ?? '').trim() || !String(form.owner?.contact ?? '').trim()) e.owner = 'Enter owner name and contact.';
+    if (!String(form.warden?.name ?? '').trim() || !String(form.warden?.contact ?? '').trim()) e.warden = 'Enter warden name and contact.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!validate()) {
-      toast.error('Please fix the highlighted fields before submitting.');
+const [saving, setSaving] = useState(false);
+
+const handleSaveProfile = async () => {
+  if (!hostelId) {
+    toast.error("Please select a hostel.");
+    return;
+  }
+
+  if (!validate()) {
+    toast.error("Please fill the highlighted profile fields before saving.");
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const token = sessionStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Please login again.");
       return;
     }
-    // TODO: send form + docs to the API
-    setStatus('submitted');
-    toast.success('Submitted for verification.');
+
+    const gpsParts = String(form.gps || "")
+      .split(",")
+      .map((value) => Number(value.trim()));
+
+    const hasGps =
+      gpsParts.length === 2 &&
+      gpsParts.every(Number.isFinite) &&
+      gpsParts[0] >= -90 && gpsParts[0] <= 90 &&
+      gpsParts[1] >= -180 && gpsParts[1] <= 180;
+
+    if (form.gps?.trim() && !hasGps) {
+      toast.error("Enter GPS as latitude, longitude.");
+      return;
+    }
+
+    const payload = {
+      name: form.name,
+      about: form.about,
+      gender: form.gender,
+      hostel_type: form.ownership,
+      campus_id:
+        form.ownership === "campus"
+          ? form.campusId || null
+          : null,
+      address: form.address,
+      floors: Number(form.floors),
+      owner_name: form.owner.name,
+      owner_contact: form.owner.contact,
+      warden_name: form.warden.name,
+      warden_contact: form.warden.contact,
+    };
+
+    if (hasGps) {
+      payload.lat = gpsParts[0];
+      payload.lng = gpsParts[1];
+    }
+
+    const response = await fetch(
+      `${API}/api/hostels/${hostelId}/profile`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to save profile");
+    }
+
+    toast.success("Hostel profile saved successfully!");
+  } catch (error) {
+    console.error("Save Profile Error:", error);
+    toast.error(error.message);
+  } finally {
+    setSaving(false);
+  }
+};
+  const handleSubmit = async () => {
+    if (locked || submitting) return;
+    try {
+      setSubmitting(true);
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${API}/api/hostels/${hostelId}/submit`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Verification submission failed');
+      setStatus('submitted');
+      toast.success('Verification request submitted.');
+    } catch (err) {
+      toast.error(err.message + ' (Check that the submit API is implemented.)');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loadingProfile) {
+    return <div className="rounded-2xl bg-white p-6 text-slate-600">Loading hostel profile from database...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -238,7 +466,7 @@ export default function ProfileSection({ initial, campuses = [] }) {
                   onChange={(e) => set('campusId', e.target.value)}
                   className={`${input} appearance-none pr-10`}
                 >
-                  <option value="">Select campus for Tier-1 review</option>
+                  <option value="">Select affiliated campus</option>
                   {campuses.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -252,7 +480,7 @@ export default function ProfileSection({ initial, campuses = [] }) {
               </div>
               {errors.campusId && <p className="mt-1 text-xs text-red-600">{errors.campusId}</p>}
               <p className="mt-2 text-xs text-slate-500">
-                Your submission is routed to this campus administration for Tier-1 approval.
+                Your submission goes to the University Admin first, then Super Admin.
               </p>
             </div>
           )}
@@ -296,7 +524,7 @@ export default function ProfileSection({ initial, campuses = [] }) {
             </div>
 
             <div className="space-y-4">
-              <Field label="Confirmed GPS Coordinates" htmlFor="h-gps">
+              <Field label="Confirmed GPS Coordinates" htmlFor="h-gps" error={errors.gps}>
                 <input id="h-gps" className={input} disabled={locked} value={form.gps}
                   onChange={(e) => set('gps', e.target.value)} />
               </Field>
@@ -336,36 +564,46 @@ export default function ProfileSection({ initial, campuses = [] }) {
         </div>
       </div>
 
-      {/* Documents */}
+      {/* Documents and verification submission: one section */}
       <div className={card}>
-        <SectionHeader icon={FileText} title="Verification Documents" subtitle="Upload clear, valid documents for review." />
-        <div className="p-6">
+        <SectionHeader icon={FileText} title="Documents & Verification"
+          subtitle="Upload documents first, then request verification. Saving a draft does not submit it." />
+        <div className="space-y-5 p-6">
           <div className="grid gap-4 md:grid-cols-3">
-            {DOCS.map((d) => (
-              <DocCard key={d.id} title={d.title} file={docs[d.id]} disabled={locked}
-                onPick={(f) => pickDoc(d.id, f)} />
+            {DOCS.map(d => (
+              <DocCard key={d.id} title={d.title} file={docs[d.id]}
+                disabled={locked || Boolean(uploadingDoc)} uploading={uploadingDoc === d.id}
+                onPick={f => pickDoc(d.id, f)} />
             ))}
           </div>
-          {errors.docs && <p className="mt-3 text-xs text-red-600">{errors.docs}</p>}
+          {errors.docs && <p className="text-xs text-red-600">{errors.docs}</p>}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-5">
+            <div>
+              <h3 className="font-semibold">Submit for Verification</h3>
+              <p className="text-sm text-slate-500">
+                Private: Super Admin. Campus: University Admin, then Super Admin.
+                Only profile editing is locked after the backend accepts submission.
+              </p>
+            </div>
+            <button type="button" disabled={locked || submitting || Boolean(uploadingDoc)}
+              onClick={handleSubmit}
+              className="flex items-center gap-2 rounded-xl bg-[#ff6a00] px-5 py-3 text-sm font-semibold text-white hover:bg-[#e65f00] disabled:opacity-60">
+              {locked && <Check size={16} />}
+              {locked ? 'Submitted' : submitting ? 'Submitting...' : 'Submit for Verification'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Submit */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-orange-100 bg-orange-50 p-6">
+      {/* Independent profile draft save */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6">
         <div>
-          <h2 className="font-semibold">Ready to start verification?</h2>
-          <p className="text-sm text-slate-600">
-            Submitting locks Ownership Type and starts the approval pipeline. Autosaved drafts are not sent for review.
-          </p>
+          <h2 className="font-semibold text-slate-900">Save Hostel Profile</h2>
+          <p className="mt-1 text-sm text-slate-500">Save profile fields to MySQL without starting verification.</p>
         </div>
-        <button
-          type="button"
-          disabled={locked}
-          onClick={handleSubmit}
-          className="flex items-center gap-2 rounded-xl bg-[#ff6a00] px-5 py-3 text-sm font-semibold text-white hover:bg-[#e65f00] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {locked && <Check size={16} />}
-          {locked ? 'Submitted' : 'Submit for Verification'}
+        <button type="button" onClick={handleSaveProfile} disabled={saving || locked}
+          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+          {saving ? 'Saving...' : 'Save Profile'}
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BedDouble,
   Bell,
   BookOpen,
   Clock,
@@ -16,12 +17,13 @@ import { useUniversityAdmin } from "./UniversityAdminContext";
 import { Tooltip } from "./ui";
 
 const NAV_ITEMS = [
-  { page: "overview",          label: "Overview",          Icon: LayoutDashboard },
-  { page: "profile",           label: "University Profile", Icon: GraduationCap },
-  { page: "campuses",          label: "Campus Approvals",   Icon: MapPin,    badgeKey: "campus" },
-  { page: "programs",          label: "Programs",           Icon: BookOpen },
-  { page: "program-requests",  label: "Program Requests",   Icon: FileText,  badgeKey: "programRequest" },
-  { page: "activity",          label: "Activity Log",       Icon: BarChart3 },
+  { page: "overview", label: "Overview", Icon: LayoutDashboard },
+  { page: "profile", label: "University Profile", Icon: GraduationCap },
+  { page: "campuses", label: "Campus Approvals", Icon: MapPin, badgeKey: "campus" },
+  { page: "hostel-verifications", label: "Hostel Verifications", Icon: BedDouble },
+  { page: "programs", label: "Programs", Icon: BookOpen },
+  { page: "program-requests", label: "Program Requests", Icon: FileText, badgeKey: "programRequest" },
+  { page: "activity", label: "Activity Log", Icon: BarChart3 },
 ];
 
 function SidebarNav() {

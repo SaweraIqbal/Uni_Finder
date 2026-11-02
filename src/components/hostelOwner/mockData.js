@@ -29,7 +29,7 @@ export const mockProfile = {
   campusId: '', // required when ownership is 'campus'
   address: 'Street 12, Sector H-13, Islamabad',
   nearbyDistance: '',
-  gps: '33.6481° N, 72.9629° E',
+  gps: "",
   floors: '4',
   owner: { name: 'Ahsan Malik', contact: '300 1234567' },
   warden: { name: 'Kamran Ali', contact: '312 7654321' },

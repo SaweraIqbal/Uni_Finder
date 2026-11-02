@@ -829,6 +829,8 @@ export const initSchema = (db, done) => {
     ["campus_registrations", "uni_tier1_approved", "TINYINT(1) NOT NULL DEFAULT 0"],
     ["campus_registrations", "uni_tier1_approved_at", "DATETIME NULL"],
     ["campus_registrations", "uni_tier1_approved_by", "VARCHAR(255) NULL"],
+    // who rejected: 'university' | 'super_admin' (drives the red step on the status page)
+    ["campus_registrations", "rejected_by", "VARCHAR(20) NULL"],
   ];
   let ci = 0;
   const addCritical = () => {

@@ -367,3 +367,81 @@ export const getCampusById = async (req, res) => {
     return res.status(500).json({ message: "DB error", error: e.message });
   }
 };
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// GET /api/campuses/:id/hostels   (PUBLIC)
+// Sirf wohi hostels jo University Admin AUR Super Admin dono approve kar chuke
+// hon. Documents / review notes / university_id kabhi expose nahi hote.
+// ════════════════════════════════════════════════════════════════════════════
+const toRad = (d) => (d * Math.PI) / 180;
+const haversineKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+const num = (v) => {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+export const listApprovedCampusHostels = async (req, res) => {
+  try {
+    const campusId = req.params.id;
+
+    const campusRows = await q(
+      "SELECT lat, lng FROM campuses WHERE id=? LIMIT 1",
+      [campusId]
+    );
+    if (!campusRows.length) {
+      return res.status(404).json({ message: "Campus not found" });
+    }
+    const cLat = num(campusRows[0].lat);
+    const cLng = num(campusRows[0].lng);
+
+    const rows = await q(
+      `SELECT id, hostel_name, hostel_gender, hostel_address, hostel_phone,
+              latitude, longitude
+       FROM campus_hostel_verifications
+       WHERE campus_id = ?
+         AND university_approval   = 'approved'
+         AND super_admin_approval  = 'approved'
+         AND verification_status   = 'approved'
+       ORDER BY created_at DESC`,
+      [campusId]
+    );
+
+    const hostels = rows.map((h) => {
+      const hLat = num(h.latitude);
+      const hLng = num(h.longitude);
+      const distanceKm =
+        cLat != null && cLng != null && hLat != null && hLng != null
+          ? Math.round(haversineKm(cLat, cLng, hLat, hLng) * 10) / 10
+          : null;
+      return {
+        id: h.id,
+        name: h.hostel_name,
+        gender: h.hostel_gender,            // boys | girls | both
+        address: h.hostel_address || null,
+        phone: h.hostel_phone || null,
+        latitude: hLat,
+        longitude: hLng,
+        distance_km: distanceKm,
+        ownership: "Campus Own Hostel",
+      };
+    });
+
+    return res.json(hostels);
+  } catch (e) {
+    console.error("listApprovedCampusHostels:", e.message);
+    return res.status(500).json({
+      message: "Could not load hostels.",
+      ...(process.env.NODE_ENV !== "production" ? { detail: e.message } : {}),
+    });
+  }
+};

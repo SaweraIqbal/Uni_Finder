@@ -1,9 +1,4 @@
-/**
- * ProgramRequestsSection.jsx — Phase 2
- * Submit new program requests + view own request history.
- * Calls POST/GET /api/universities/me/program-requests.
- * Refetches stats/activity/pending after every submission.
- */
+
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useUniversityAdmin } from "./UniversityAdminContext";

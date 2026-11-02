@@ -21,6 +21,7 @@ import {
   Phone, Mail, MapPin, User, Trash2, Plus, Lock,
 } from "lucide-react";
 import Modal            from "./Modal.jsx";
+import SharedPill, { getApprovalStages } from "../shared/StatusPill.jsx";
 import { useToast, ToastContainer } from "./Toast.jsx";
 import {
   adminListCampusRegistrations,
@@ -44,40 +45,18 @@ const fmtBytes = (n) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-/* ─── Status pill ────────────────────────────────────────────────────────── */
-const PILL = {
-  pending:               { bg: "bg-amber-50",   text: "text-amber-700",   dot: "bg-amber-400",   label: "Pending"        },
-  approved:              { bg: "bg-emerald-50",  text: "text-emerald-700", dot: "bg-emerald-500", label: "Approved"       },
-  rejected:              { bg: "bg-red-50",      text: "text-red-600",     dot: "bg-red-400",     label: "Rejected"       },
-  resubmission_requested:{ bg: "bg-orange-50",   text: "text-orange-700",  dot: "bg-orange-400",  label: "Resubmission Req." },
-};
+/* ─── Status pills (shared design: clock / check / x icons) ─────────────── */
+// Overall status pill (used in the review drawer).
+const StatusPill = SharedPill;
 
-function StatusPill({ status }) {
-  const s = (status || "").toLowerCase();
-  const c = PILL[s] || { bg:"bg-gray-100", text:"text-gray-600", dot:"bg-gray-400", label: status };
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${c.bg} ${c.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-      {c.label}
-    </span>
-  );
+// University admin stage → green when approved, red when rejected there.
+function Tier1Cell({ reg }) {
+  return <SharedPill status={getApprovalStages(reg).university} />;
 }
 
-/* ─── Tier-1 cell (university admin review status) ───────────────────────── */
-// Shows whether the university admin has done their tier-1 review.
-// Super admin can only give final approval once uni_tier1_approved = 1.
-function Tier1Cell({ reg }) {
-  const approved = !!reg.uni_tier1_approved;
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
-      approved ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
-    }`}>
-      {approved
-        ? <CheckCircle2 className="w-3 h-3" />
-        : <Clock className="w-3 h-3" />}
-      {approved ? "Approved" : "Pending"}
-    </span>
-  );
+// Super admin stage → green when approved, red when rejected here.
+function SuperAdminCell({ reg }) {
+  return <SharedPill status={getApprovalStages(reg).superAdmin} />;
 }
 
 /* ─── Skeleton loader ────────────────────────────────────────────────────── */
@@ -700,10 +679,12 @@ export default function CampusApprovals() {
                     <p className="text-xs text-gray-500 mt-0.5">{r.universityName} · {r.city}</p>
                     <p className="text-xs text-gray-400 font-mono mt-0.5">{r.publicId}</p>
                   </div>
-                  <StatusPill status={r.status} />
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
                   <Tier1Cell reg={r} />
+                  <SuperAdminCell reg={r} />
+                </div>
+                <div className="flex items-center justify-end pt-2 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={() => setSelectedId(r.id)}
@@ -754,13 +735,13 @@ export default function CampusApprovals() {
                     <td className="px-6 py-4 text-slate-600 text-sm whitespace-nowrap">
                       {r.city}
                     </td>
-                    {/* Tier-1 */}
+                    {/* University approval */}
                     <td className="px-6 py-4">
                       <Tier1Cell reg={r} />
                     </td>
-                    {/* Status */}
+                    {/* Super admin approval */}
                     <td className="px-6 py-4">
-                      <StatusPill status={r.status} />
+                      <SuperAdminCell reg={r} />
                     </td>
                     {/* Action */}
                     <td className="px-6 py-4">
@@ -830,7 +811,7 @@ function THead() {
   return (
     <thead>
       <tr className="border-b border-gray-100">
-        {["Campus", "University", "City", "Tier-1 (Univ. Admin)", "Status", "Action"].map((h) => (
+        {["Campus", "University", "City", "University Approval", "Super Admin Approval", "Action"].map((h) => (
           <th key={h} className="text-left text-gray-400 text-xs font-semibold uppercase tracking-wider px-6 py-4">
             {h}
           </th>

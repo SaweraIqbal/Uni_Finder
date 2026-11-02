@@ -14,6 +14,11 @@ import seedSuperAdmin from "./config/seedAdmin.js";
 import seedUniversities from "./config/seedUniversities.js";
 import seedPrograms from "./config/seedPrograms.js";
 import backfillAssignedIds from "./config/backfillIds.js";
+import createHostelSchema from "./config/hostelSchema.js";
+import hostelRoutes from "./routes/hostelRoutes.js";
+import hostelModuleRoutes from "./routes/hostelModuleRoutes.js";
+
+import hostelProfileRoutes from "./routes/hostelProfileRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -36,6 +41,9 @@ app.use(
 dbReady
   .then(() => {
     initSchema(db, () => {
+      createHostelSchema(db).catch((err) => {
+  console.error("Hostel schema initialization failed:", err.message);
+});
       seedSuperAdmin()
         .then(() => seedUniversities())
         .then(() => seedPrograms())
@@ -53,7 +61,19 @@ app.use("/api", dashboardRoutes);
 app.use("/api", registrationRoutes);
 app.use("/api", universityRoutes);
 app.use("/api", campusRoutes);
+app.use("/api/hostels", hostelRoutes);
+app.use("/api/hostels", hostelModuleRoutes);
 
+app.use("/api/hostels", hostelProfileRoutes);
+
+
+
+app.use(
+  "/uploads/hostels/photos",
+  express.static(
+    path.resolve("uploads/hostels/photos")
+  )
+);
 // ── Error handler ───────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   if (err) {

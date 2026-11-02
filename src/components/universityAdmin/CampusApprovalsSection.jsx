@@ -18,6 +18,7 @@ import {
 import { toast } from "react-toastify";
 
 import { PageHeader } from "./ui";
+import SharedPill, { getApprovalStages } from "../shared/StatusPill";
 import { useUniversityAdmin } from "./UniversityAdminContext";
 import {
   uniAdminListCampusRegistrations,
@@ -40,35 +41,17 @@ const fmtBytes = (n) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-/* ─── Status pill ─────────────────────────────────────────────────────────── */
-const PILL = {
-  pending:                { bg: "bg-amber-50",  text: "text-amber-700",  dot: "bg-amber-400",  label: "Pending"       },
-  approved:               { bg: "bg-green-50",  text: "text-green-700",  dot: "bg-green-500",  label: "Approved"      },
-  rejected:               { bg: "bg-red-50",    text: "text-red-700",    dot: "bg-red-400",    label: "Rejected"      },
-  resubmission_requested: { bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-400", label: "Resubmit Req." },
-};
-function StatusPill({ status }) {
-  const s = (status || "").toLowerCase();
-  const c = PILL[s] || { bg:"bg-gray-100", text:"text-gray-600", dot:"bg-gray-400", label: status };
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${c.bg} ${c.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-      {c.label}
-    </span>
-  );
+/* ─── Status pills (shared design: clock / check / x icons) ─────────────── */
+const StatusPill = SharedPill;
+
+// University stage (this admin's own decision)
+function Tier1Badge({ reg }) {
+  return <SharedPill status={getApprovalStages(reg).university} />;
 }
 
-/* ─── Tier-1 badge ─────────────────────────────────────────────────────────── */
-function Tier1Badge({ approved }) {
-  return approved ? (
-    <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-700">
-      <CheckCircle2 className="w-3 h-3" /> Approved by you
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
-      <Clock className="w-3 h-3" /> Awaiting your review
-    </span>
-  );
+// Super admin stage (final decision)
+function SuperAdminBadge({ reg }) {
+  return <SharedPill status={getApprovalStages(reg).superAdmin} />;
 }
 
 /* ─── Skeleton ─────────────────────────────────────────────────────────────── */
@@ -554,8 +537,8 @@ export default function CampusApprovalsSection() {
                     </td>
                     <td className="px-6 py-4 text-slate-600 text-sm whitespace-nowrap">{r.city}</td>
                     <td className="px-6 py-4 text-slate-500 text-xs whitespace-nowrap">{fmtDate(r.submittedAt)}</td>
-                    <td className="px-6 py-4"><Tier1Badge approved={r.tier1?.approved} /></td>
-                    <td className="px-6 py-4"><StatusPill status={r.status} /></td>
+                    <td className="px-6 py-4"><Tier1Badge reg={r} /></td>
+                    <td className="px-6 py-4"><SuperAdminBadge reg={r} /></td>
                     <td className="px-6 py-4">
                       <button type="button" onClick={() => setSelectedId(r.id)}
                         className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-orange-400">
@@ -577,10 +560,12 @@ export default function CampusApprovalsSection() {
                     <p className="text-sm font-semibold text-slate-800 truncate">{r.officialName}</p>
                     <p className="text-xs text-gray-400 font-mono mt-0.5">{r.publicId}</p>
                   </div>
-                  <StatusPill status={r.status} />
                 </div>
-                <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
-                  <Tier1Badge approved={r.tier1?.approved} />
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <Tier1Badge reg={r} />
+                  <SuperAdminBadge reg={r} />
+                </div>
+                <div className="flex items-center justify-end pt-2.5 border-t border-gray-100">
                   <button type="button" onClick={() => setSelectedId(r.id)}
                     className="text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg transition-colors">
                     Review
@@ -644,7 +629,7 @@ function THead() {
   return (
     <thead>
       <tr className="border-b border-gray-100">
-        {["Campus", "City", "Submitted", "Your Review", "Status", "Action"].map((h) => (
+        {["Campus", "City", "Submitted", "University Approval", "Super Admin Approval", "Action"].map((h) => (
           <th key={h} className="text-left text-gray-400 text-xs font-semibold uppercase tracking-wider px-6 py-4">
             {h}
           </th>
