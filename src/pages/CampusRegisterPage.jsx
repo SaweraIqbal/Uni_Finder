@@ -1,7 +1,7 @@
 /**
  * CampusRegisterPage.jsx  —  /campus/register
  *
- * Sections A–E: campus affiliation, identity, verification, optional hostel, declaration.
+ * Sections A–D: campus affiliation, identity, verification, and declaration.
  * Map picker removed. Phone accepts 03XXXXXXXXX or +923XXXXXXXXX.
  * Universities fetched live from GET /api/universities/approved.
  * Submit → POST /api/campus-registrations (FormData + optional PDF).
@@ -11,7 +11,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate }  from "react-router-dom";
-import { ChevronDown, Search, X, AlertTriangle, FileText, UploadCloud, CheckCircle2 } from "lucide-react";
+import { ChevronDown, Search, X, AlertTriangle } from "lucide-react";
 import { toast }        from "react-toastify";
 
 import CampusRegShell              from "../components/campusReg/CampusRegShell";
@@ -229,60 +229,6 @@ function UniversitySelect({ value, onChange, error }) {
   );
 }
 
-/* ─── Optional campus-hostel verification documents ──────────────────────── */
-const HOSTEL_DOCUMENTS = [
-  { key: "cnic", title: "Owner CNIC" },
-  { key: "ownership", title: "Proof of Ownership or Lease" },
-  { key: "utility", title: "Recent Utility Bill" },
-];
-const HOSTEL_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
-const MAX_HOSTEL_FILE_SIZE = 10 * 1024 * 1024;
-
-function HostelDocumentCard({ title, file, onChange, error }) {
-  const inputRef = useRef(null);
-  const chooseFile = (event) => {
-    const selected = event.target.files?.[0];
-    if (!selected) return;
-    if (!HOSTEL_FILE_TYPES.includes(selected.type)) {
-      toast.error("Only PDF, JPG and PNG documents are allowed.");
-      event.target.value = "";
-      return;
-    }
-    if (selected.size > MAX_HOSTEL_FILE_SIZE) {
-      toast.error("Document must be 10 MB or smaller.");
-      event.target.value = "";
-      return;
-    }
-    onChange(selected);
-  };
-
-  return (
-    <div className={`rounded-2xl border border-dashed p-4 bg-slate-50/70 ${error ? "border-red-400" : "border-slate-200"}`}>
-      <div className="flex items-start justify-between gap-2 mb-4">
-        <div className="rounded-xl bg-white shadow-sm p-2.5">
-          <FileText className="w-5 h-5 text-orange-500" />
-        </div>
-        <span className={`text-xs rounded-full px-2.5 py-1 ${file ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"}`}>
-          {file ? "Selected" : "Not Uploaded"}
-        </span>
-      </div>
-      <p className="text-sm font-semibold text-slate-800">{title}</p>
-      <p className="text-xs text-slate-500 mt-1">PDF, JPG or PNG · Max 10 MB</p>
-      {file && <p className="mt-2 text-xs text-green-700 truncate" title={file.name}>{file.name}</p>}
-      <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={chooseFile} />
-      <button type="button" onClick={() => inputRef.current?.click()}
-        className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200">
-        {file ? "Change file" : "Choose file"}
-      </button>
-      {file && (
-        <button type="button" onClick={() => { onChange(null); if (inputRef.current) inputRef.current.value = ""; }}
-          className="mt-2 text-xs text-red-500 hover:underline">Remove</button>
-      )}
-      <FieldErr msg={error} />
-    </div>
-  );
-}
-
 /* ─── build initial form from a prefill record (resubmission) ─────────────── */
 function buildForm(prefill) {
   return {
@@ -297,13 +243,6 @@ function buildForm(prefill) {
     phone:          prefill?.phone          || "",
     officialEmail:  prefill?.officialEmail  || "",
     document:       prefill?.document       || null,   // { name, size } | null
-    hasHostel:      prefill?.hasHostel === true ? "yes" : "no",
-    hostelName:     prefill?.hostelName || "",
-    hostelGender:   prefill?.hostelGender || "boys",
-    hostelAddress:  prefill?.hostelAddress || "",
-    hostelPhone:    prefill?.hostelPhone || "",
-    hostelGps:      prefill?.hostelGps || "",
-    hostelDocuments: { cnic: null, ownership: null, utility: null },
     declaration:    false,
   };
 }
@@ -324,20 +263,6 @@ function validate(f) {
   else if (!isValidPhone(f.phone))       e.phone          = "Enter a valid number: 03XXXXXXXXX or +92 3XX XXXXXXX";
   if (f.officialEmail.trim() && !EMAIL_RE.test(f.officialEmail.trim()))
                                          e.officialEmail  = "Enter a valid email address.";
-  if (f.hasHostel === "yes") {
-    if (!f.hostelName.trim()) e.hostelName = "Hostel name is required.";
-    if (!f.hostelAddress.trim()) e.hostelAddress = "Hostel address is required.";
-    if (!isValidPhone(f.hostelPhone)) e.hostelPhone = "Enter a valid contact number.";
-    const coords = f.hostelGps.split(",").map((part) => Number(part.trim()));
-    if (coords.length !== 2 || !coords.every(Number.isFinite) ||
-        coords[0] < -90 || coords[0] > 90 || coords[1] < -180 || coords[1] > 180 ||
-        !f.hostelGps.trim()) {
-      e.hostelGps = "Enter valid GPS coordinates: latitude, longitude.";
-    }
-    for (const doc of HOSTEL_DOCUMENTS) {
-      if (!f.hostelDocuments[doc.key]) e[`hostelDoc_${doc.key}`] = `${doc.title} is required.`;
-    }
-  }
   if (!f.declaration)                    e.declaration    = "You must confirm the declaration.";
   return e;
 }
@@ -345,8 +270,7 @@ function validate(f) {
 const FIELD_ORDER = [
   "universityId","campusType","officialName","province","city",
   "registrantName","designation","phone","officialEmail",
-  "hostelName","hostelAddress","hostelPhone","hostelGps",
-  "hostelDoc_cnic","hostelDoc_ownership","hostelDoc_utility","declaration",
+  "declaration",
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════ */
@@ -379,10 +303,6 @@ export default function CampusRegisterPage() {
     setErrors((e) => { const n = { ...e }; delete n[field]; return n; });
     if (field === "universityId" || field === "city") setDupError("");
   };
-  const setHostelDoc = (key, file) => {
-    setForm((f) => ({ ...f, hostelDocuments: { ...f.hostelDocuments, [key]: file } }));
-    setErrors((old) => { const next = { ...old }; delete next[`hostelDoc_${key}`]; return next; });
-  };
   const setE  = (field) => (e) => set(field)(e.target.value);
   const blur  = (field) => () => {
     if (!touched[field]) return;
@@ -396,13 +316,6 @@ export default function CampusRegisterPage() {
   // ── selected university name (for declaration text) ──────────────────────
   // We store the name separately once chosen so it survives dropdown close
   const [selectedUniName, setSelectedUniName] = useState(registration?.universityName || "");
-  const handleUniChange = (id) => {
-    set("universityId")(id);
-    // name is fetched async inside UniversitySelect; read from the dropdown state
-    // by listening to a shared list isn't worth the coupling — the declaration
-    // text will show the stored name once the user picks.
-    // We'll update it from the universities list in the submit payload instead.
-  };
 
   // ── submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
@@ -421,10 +334,6 @@ export default function CampusRegisterPage() {
       }
       return;
     }
-
-    // The current campus API does not support hostel data or documents yet.
-    // Do not submit only the campus portion and falsely report hostel verification.
-  
 
     setSubmitting(true);
     setDupError("");
@@ -447,34 +356,6 @@ export default function CampusRegisterPage() {
         // UploadTile stores the raw File on _file when a real file is chosen
         fd.append("document", form.document._file);
       }
-      
-// Optional campus hostel information
-fd.append("hasHostel", form.hasHostel);
-
-if (form.hasHostel === "yes") {
-  fd.append("hostelName", form.hostelName.trim());
-  fd.append("hostelGender", form.hostelGender);
-  fd.append("hostelAddress", form.hostelAddress.trim());
-  fd.append("hostelPhone", form.hostelPhone.trim());
-  fd.append("hostelGps", form.hostelGps.trim());
-
-  // Hostel verification documents
-  const hostelDocs = {
-    cnic: "hostelDoc_cnic",
-    ownership: "hostelDoc_ownership",
-    utility: "hostelDoc_utility",
-  };
-
-  for (const [key, fieldName] of Object.entries(hostelDocs)) {
-    const file = form.hostelDocuments[key];
-
-    if (file) {
-      fd.append(fieldName, file);
-    }
-  }
-}
-
-
       const isResub  = isResubmission && registration?.id;
       const endpoint = isResub
         ? `${API}/api/campus-registrations/${registration.id}/resubmit`
@@ -731,99 +612,8 @@ if (form.hasHostel === "yes") {
           </div>
         </Section>
 
-        {/* ── Section D: Optional Campus Hostel ──────────────────────────── */}
-        <Section letter="D" title="Campus Hostel Information (Optional)">
-          <div>
-            <Label>Does this campus provide hostel accommodation?</Label>
-            <div className="flex flex-wrap gap-5 mt-2">
-              {[
-                { value: "yes", label: "Yes, hostel available" },
-                { value: "no", label: "No hostel" },
-              ].map((option) => (
-                <label key={option.value} className="inline-flex items-center gap-2 cursor-pointer text-sm text-slate-700">
-                  <input type="radio" name="hasHostel" value={option.value}
-                    checked={form.hasHostel === option.value}
-                    onChange={() => set("hasHostel")(option.value)}
-                    className="accent-orange-500" />
-                  {option.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {form.hasHostel === "yes" ? (
-            <div className="space-y-4 border-t border-slate-100 pt-5">
-              <div ref={reg("hostelName")}>
-                <Label required>Official Hostel Name</Label>
-                <input value={form.hostelName} onChange={setE("hostelName")}
-                  onBlur={blur("hostelName")} placeholder="e.g. Main Campus Boys Hostel"
-                  className={inputCls(touched.hostelName && errors.hostelName)} />
-                {touched.hostelName && <FieldErr msg={errors.hostelName} />}
-              </div>
-              <div>
-                <Label required>Hostel Gender Type</Label>
-                <div className="flex flex-wrap gap-5 mt-2">
-                  {["boys", "girls", "both"].map((value) => (
-                    <label key={value} className="inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                      <input type="radio" name="hostelGender" value={value}
-                        checked={form.hostelGender === value} onChange={() => set("hostelGender")(value)}
-                        className="accent-orange-500" />
-                      {value.charAt(0).toUpperCase() + value.slice(1)}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div ref={reg("hostelAddress")}>
-                <Label required>Hostel Address</Label>
-                <textarea rows={2} value={form.hostelAddress} onChange={setE("hostelAddress")}
-                  onBlur={blur("hostelAddress")} placeholder="Street, area, city, province"
-                  className={`${inputCls(touched.hostelAddress && errors.hostelAddress)} resize-y`} />
-                {touched.hostelAddress && <FieldErr msg={errors.hostelAddress} />}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div ref={reg("hostelPhone")}>
-                  <Label required>Hostel Contact Number</Label>
-                  <input type="tel" value={form.hostelPhone} onChange={setE("hostelPhone")}
-                    onBlur={blur("hostelPhone")} placeholder="03XXXXXXXXX"
-                    className={inputCls(touched.hostelPhone && errors.hostelPhone)} />
-                  {touched.hostelPhone && <FieldErr msg={errors.hostelPhone} />}
-                </div>
-                <div ref={reg("hostelGps")}>
-                  <Label required>GPS Coordinates</Label>
-                  <input value={form.hostelGps} onChange={setE("hostelGps")}
-                    onBlur={blur("hostelGps")} placeholder="31.5204, 74.3587"
-                    className={inputCls(touched.hostelGps && errors.hostelGps)} />
-                  {touched.hostelGps && <FieldErr msg={errors.hostelGps} />}
-                </div>
-              </div>
-              <div className="border-t border-slate-100 pt-5">
-                <h4 className="text-base font-semibold text-slate-800">Hostel Verification Documents</h4>
-                <p className="text-sm text-slate-500 mt-1 mb-4">
-                  Upload the three documents required for hostel verification.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {HOSTEL_DOCUMENTS.map((doc) => (
-                    <div key={doc.key} ref={reg(`hostelDoc_${doc.key}`)}>
-                      <HostelDocumentCard title={doc.title} file={form.hostelDocuments[doc.key]}
-                        onChange={(file) => setHostelDoc(doc.key, file)}
-                        error={touched[`hostelDoc_${doc.key}`] ? errors[`hostelDoc_${doc.key}`] : ""} />
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-3 text-xs text-amber-700">
-                  Hostel documents are selected locally. Upload and verification will be enabled when the backend is connected.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 bg-slate-50 rounded-lg p-3">
-              No hostel details or documents required. Continue to Declaration.
-            </p>
-          )}
-        </Section>
-
-        {/* ── Section E: Declaration ──────────────────────────────────────── */}
-        <Section letter="E" title="Declaration">
+        {/* ── Section D: Declaration ──────────────────────────────────────── */}
+        <Section letter="D" title="Declaration">
           <div ref={reg("declaration")}>
             <label className="flex items-start gap-3 cursor-pointer group">
               <div className="relative mt-0.5 shrink-0">

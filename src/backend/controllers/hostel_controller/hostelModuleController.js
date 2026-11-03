@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { Buffer } from "node:buffer";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -471,7 +472,10 @@ export const deletePhoto = async (req, res) => {
 // ---------------- DOCUMENTS ----------------
 
 const documentTypes = [
+  "cnic",
+  "utility_bill",
   "ownership_proof",
+  "campus_authorization",
   "lease_agreement",
   "management_authorization",
   "registration_certificate",
@@ -499,14 +503,10 @@ export const addDocument = async (req, res) => {
     }
 
     const type = req.body?.document_type;
-
-  const allowedTypes = ["cnic", "ownership", "utility"];
-
-if (!allowedTypes.includes(req.body.document_type)) {
-  return res.status(400).json({
-    message: "Invalid document type",
-  });
-}
+    if (!documentTypes.includes(type)) {
+      await removeFile(req.file.path);
+      return res.status(400).json({ message: "Invalid document type" });
+    }
 
     const id = uuidv4();
     const filePath = `/uploads/hostels/${req.file.filename}`;

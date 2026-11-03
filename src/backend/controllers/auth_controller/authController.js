@@ -2,13 +2,18 @@ import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import db from "../../config/db.js";
 import jwt from "jsonwebtoken";
+import process from "node:process";
 import { assignedIdFor } from "../../utils/assignedId.js";
 
 export const signup = (req, res) => {
-  const userId = uuidv4();
-
   const { name, username, email, password, role } = req.body;
-  console.log("ROLE FROM FRONTEND:", role);
+  const allowedRoles = ["student", "university", "campus", "hostel", "campus_hostel"];
+
+  if (!name?.trim() || !username?.trim() || !email?.trim() || !password || !allowedRoles.includes(role)) {
+    return res.status(400).json({ message: "Please provide valid account details and role." });
+  }
+
+  const userId = uuidv4();
 
   const hashedPassword = bcrypt.hashSync(password, 10);
 
@@ -22,7 +27,7 @@ export const signup = (req, res) => {
   db.query(
     sql,
     [userId, name, username, email, hashedPassword, role, assignedId],
-    (err, result) => {
+    (err) => {
       if (err) {
         return res.status(500).json(err);
       }
@@ -86,7 +91,7 @@ export const login = (req, res) => {
             },
           );
         });
-      } catch (_) { /* non-fatal — university_id stays null */ }
+      } catch { /* non-fatal — university_id stays null */ }
     }
 
     const payload = { id: user.id, email: user.email, role: user.role };

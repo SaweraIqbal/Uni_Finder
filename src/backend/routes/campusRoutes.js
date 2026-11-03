@@ -20,11 +20,12 @@
  *    DELETE /campus/societies/:id                   — delete
  *    GET    /campus/:campusId/facilities            — load
  *    PUT    /campus/:campusId/facilities            — save
- *    GET    /campus/:campusId/hostels               — list (with availability flag)
+ *    GET    /campus/:campusId/hostels               — list with photos
+ *    POST   /campus/:campusId/hostels               — create (goes live immediately)
  *    PUT    /campus/:campusId/hostel-availability   — toggle show/hide
- *    GET    /campus/:campusId/hostel-approvals      — pending hostel approvals
- *    PUT    /campus/hostel-approvals/:id/approve    — forward to super admin
- *    PUT    /campus/hostel-approvals/:id/reject     — reject
+ *    POST   /campus/hostels/:hostelId/photos              — add images
+ *    PUT    /campus/hostels/:hostelId/photos/:photoId/cover — set cover image
+ *    DELETE /campus/hostels/:hostelId/photos/:photoId      — remove image
  *    GET    /campus/programs/:id/detail             — rich offering detail
  *    PUT    /campus/programs/:id/detail             — save rich detail
  *    PUT    /campus/programs/:id/publish
@@ -38,6 +39,10 @@
 import express from "express";
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/upload.js";
+import {
+  campusHostelPhotoUpload,
+  campusHostelExtraPhotoUpload,
+} from "../middleware/campusHostelUpload.js";
 
 import {
   submitCampusRequest,
@@ -88,9 +93,9 @@ import {
   listHostels,
   addHostel,
   setHostelAvailability,
-  listHostelApprovals,
-  approveHostel,
-  rejectHostel,
+  addHostelPhotos,
+  setHostelCover,
+  deleteHostelPhoto,
 } from "../controllers/campus_controller/campusHostelsController.js";
 
 import {
@@ -152,13 +157,13 @@ router.delete("/campus/societies/:id",           ...campusAuth, deleteSociety);
 router.get("/campus/:campusId/facilities",       ...campusAuth, getFacilities);
 router.put("/campus/:campusId/facilities",       ...campusAuth, express.json(), saveFacilities);
 
-// ── Hostels ───────────────────────────────────────────────────────────────
-router.get("/campus/:campusId/hostels",              ...campusAuth, listHostels);
-router.post("/campus/:campusId/hostels",             ...campusAuth, express.json(), addHostel);
-router.put("/campus/:campusId/hostel-availability",  ...campusAuth, express.json(), setHostelAvailability);
-router.get("/campus/:campusId/hostel-approvals",     ...campusAuth, listHostelApprovals);
-router.put("/campus/hostel-approvals/:id/approve",   ...campusAuth, approveHostel);
-router.put("/campus/hostel-approvals/:id/reject",    ...campusAuth, express.json(), rejectHostel);
+// ── Hostels (created hostels go live immediately) ─────────────────────────
+router.get   ("/campus/:campusId/hostels",             ...campusAuth, listHostels);
+router.post  ("/campus/:campusId/hostels",             ...campusAuth, campusHostelPhotoUpload, addHostel);
+router.put   ("/campus/:campusId/hostel-availability", ...campusAuth, express.json(), setHostelAvailability);
+router.post  ("/campus/hostels/:hostelId/photos",      ...campusAuth, campusHostelExtraPhotoUpload, addHostelPhotos);
+router.put   ("/campus/hostels/:hostelId/photos/:photoId/cover", ...campusAuth, setHostelCover);
+router.delete("/campus/hostels/:hostelId/photos/:photoId",       ...campusAuth, deleteHostelPhoto);
 
 // ── Public search / detail ────────────────────────────────────────────────
 router.get("/campuses",                           searchCampuses);

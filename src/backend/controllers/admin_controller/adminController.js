@@ -686,18 +686,9 @@ export const adminUpdateCampusRegistrationStatus = async (req, res) => {
           );
         }
 
-        // Link registered hostel(s) with this campus
-        await q(
-          `UPDATE campus_hostel_verifications
-           SET campus_id = ?
-           WHERE campus_registration_id = ?
-           AND campus_id IS NULL`,
-          [campusId, reg.id]
-        );
-
       } catch (insertErr) {
         console.error(
-          "Campus creation/hostel linking error:",
+          "Campus creation error:",
           insertErr
         );
       }

@@ -371,8 +371,7 @@ export const getCampusById = async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════════════════
 // GET /api/campuses/:id/hostels   (PUBLIC)
-// Sirf wohi hostels jo University Admin AUR Super Admin dono approve kar chuke
-// hon. Documents / review notes / university_id kabhi expose nahi hote.
+// Campus Admin ke Hostels page se bane live hostels, un ki images ke saath.
 // ════════════════════════════════════════════════════════════════════════════
 const toRad = (d) => (d * Math.PI) / 180;
 const haversineKm = (lat1, lon1, lat2, lon2) => {
@@ -389,50 +388,87 @@ const num = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 };
+const jsonOr = (v, fallback) => {
+  if (v == null) return fallback;
+  if (typeof v === "object") return v;
+  try { return JSON.parse(v); } catch { return fallback; }
+};
+const genderOf = (v) => {
+  const g = (v || "").toLowerCase();
+  return g === "mixed" ? "both" : g;
+};
 
 export const listApprovedCampusHostels = async (req, res) => {
   try {
     const campusId = req.params.id;
 
     const campusRows = await q(
-      "SELECT lat, lng FROM campuses WHERE id=? LIMIT 1",
+      `SELECT lat, lng, name, hostel_available FROM campuses WHERE id=? LIMIT 1`,
       [campusId]
     );
     if (!campusRows.length) {
       return res.status(404).json({ message: "Campus not found" });
     }
+    if (!campusRows[0].hostel_available) return res.json([]);
+
     const cLat = num(campusRows[0].lat);
     const cLng = num(campusRows[0].lng);
 
     const rows = await q(
-      `SELECT id, hostel_name, hostel_gender, hostel_address, hostel_phone,
-              latitude, longitude
-       FROM campus_hostel_verifications
-       WHERE campus_id = ?
-         AND university_approval   = 'approved'
-         AND super_admin_approval  = 'approved'
-         AND verification_status   = 'approved'
-       ORDER BY created_at DESC`,
+      `SELECT id, name, gender, hostel_type, address, walk_dist, contact,
+              rooms, rent_min, distance_km, latitude, longitude, amenities
+       FROM campus_hostels
+       WHERE campus_id = ? AND status IN ('live','approved')
+       ORDER BY created_at ASC`,
       [campusId]
     );
 
+    const photoRows = rows.length
+      ? await q(
+          `SELECT id, hostel_id, image_url, caption, is_cover
+           FROM campus_hostel_photos
+           WHERE hostel_id IN (${rows.map(() => "?").join(",")})
+           ORDER BY is_cover DESC, sort_order ASC, created_at ASC`,
+          rows.map((r) => r.id)
+        )
+      : [];
+
+    const photosByHostel = new Map();
+    for (const photo of photoRows) {
+      if (!photosByHostel.has(photo.hostel_id)) photosByHostel.set(photo.hostel_id, []);
+      photosByHostel.get(photo.hostel_id).push({
+        id: photo.id,
+        image_url: photo.image_url,
+        caption: photo.caption,
+      });
+    }
+
     const hostels = rows.map((h) => {
+      const photos = photosByHostel.get(h.id) || [];
+      const stored = num(h.distance_km);
       const hLat = num(h.latitude);
       const hLng = num(h.longitude);
-      const distanceKm =
-        cLat != null && cLng != null && hLat != null && hLng != null
+      const computed =
+        stored ??
+        (cLat != null && cLng != null && hLat != null && hLng != null
           ? Math.round(haversineKm(cLat, cLng, hLat, hLng) * 10) / 10
-          : null;
+          : null);
+
       return {
         id: h.id,
-        name: h.hostel_name,
-        gender: h.hostel_gender,            // boys | girls | both
-        address: h.hostel_address || null,
-        phone: h.hostel_phone || null,
+        name: h.name,
+        gender: genderOf(h.gender),
+        address: h.address || h.walk_dist || null,
+        phone: h.contact || null,
+        rooms: num(h.rooms),
+        rent_min: num(h.rent_min),
+        amenities: jsonOr(h.amenities, []),
         latitude: hLat,
         longitude: hLng,
-        distance_km: distanceKm,
-        ownership: "Campus Own Hostel",
+        distance_km: computed,
+        ownership: h.hostel_type || "Campus Hostel",
+        cover_url: photos[0]?.image_url || null,
+        photos,
       };
     });
 

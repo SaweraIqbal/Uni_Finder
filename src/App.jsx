@@ -24,6 +24,8 @@ import UniversityDetailPage from "./pages/UniversityDetailPage.jsx";
 import CampusDetailPage from "./pages/CampusDetailPage.jsx";
 import CompareCampusesPage from "./pages/CompareCampusesPage.jsx";
 import HostelOwnerDashboard from "./pages/hostel/HostelOwnerDashboard";
+import HostelRegistrationPage from "./pages/hostel/HostelRegistrationPage.jsx";
+import HostelRegistrationStatusPage from "./pages/hostel/HostelRegistrationStatusPage.jsx";
 
 // Campus Registration pre-dashboard flow
 import CampusRegisterPage from "./pages/CampusRegisterPage.jsx";
@@ -67,6 +69,14 @@ function App() {
             }
           />
           <Route
+            path="/hostel/registration-status"
+            element={
+              <ProtectedRoute role={["hostel", "campus_hostel"]}>
+                <HostelRegistrationStatusPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/campus/dashboard"
             element={
               <ProtectedRoute role="campus">
@@ -84,6 +94,14 @@ function App() {
             />
           </Route>
 
+          <Route
+            path="/hostel/register/:role"
+            element={
+              <ProtectedRoute role={["hostel", "campus_hostel"]}>
+                <HostelRegistrationPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/dashboard"
             element={
@@ -128,7 +146,7 @@ function App() {
             <Route
               path="/hostel/dashboard"
               element={
-                <ProtectedRoute role="hostel">
+                <ProtectedRoute role={["hostel", "campus_hostel"]}>
                   <HostelOwnerDashboard />
                 </ProtectedRoute>
               }

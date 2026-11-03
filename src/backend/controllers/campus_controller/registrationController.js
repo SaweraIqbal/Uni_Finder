@@ -13,10 +13,6 @@
  *   uni_tier1_approved_by  VARCHAR(255) NULL
  */
 import db, { createTransactionConnection } from "../../config/db.js";
-import { v4 as uuidv4 } from "uuid";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 // ── promise wrapper ──────────────────────────────────────────────────────────
 const query = (sql, values = []) =>
@@ -116,12 +112,6 @@ export const submitRegistration = async (req, res) => {
     phone,
     officialEmail,
     declarationAccepted,
-    hasHostel,
-    hostelName,
-    hostelGender,
-    hostelAddress,
-    hostelPhone,
-    hostelGps,
   } = req.body;
 
   const errors = {};
@@ -163,55 +153,6 @@ export const submitRegistration = async (req, res) => {
 
   if (declarationAccepted !== "true" && declarationAccepted !== true) {
     errors.declarationAccepted = "You must accept the declaration.";
-  }
-
-  const wantsHostel = hasHostel === "yes" || hasHostel === "true";
-  let latitude = null;
-  let longitude = null;
-  let hostelContact = null;
-
-  const hostelDocFields = {
-    cnic: "hostelDoc_cnic",
-    ownership: "hostelDoc_ownership",
-    utility: "hostelDoc_utility",
-  };
-
-  if (wantsHostel) {
-    if (!hostelName?.trim())
-      errors.hostelName = "Hostel name is required.";
-
-    if (!["boys", "girls", "both"].includes(hostelGender))
-      errors.hostelGender = "Invalid hostel gender.";
-
-    if (!hostelAddress?.trim())
-      errors.hostelAddress = "Hostel address is required.";
-
-    hostelContact = normalisePhone(hostelPhone);
-    if (!hostelContact)
-      errors.hostelPhone = "Enter a valid hostel contact number.";
-
-    const parts = String(hostelGps || "").split(",");
-    latitude = Number(parts[0]);
-    longitude = Number(parts[1]);
-
-    if (
-      parts.length !== 2 ||
-      parts.some((p) => !p.trim()) ||
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude) ||
-      latitude < -90 ||
-      latitude > 90 ||
-      longitude < -180 ||
-      longitude > 180
-    ) {
-      errors.hostelGps = "Enter valid latitude, longitude.";
-    }
-
-    for (const [type, field] of Object.entries(hostelDocFields)) {
-      if (!req.files?.[field]?.[0]) {
-        errors[field] = `${type} document is required.`;
-      }
-    }
   }
 
   if (Object.keys(errors).length) {
@@ -266,7 +207,7 @@ export const submitRegistration = async (req, res) => {
       },
     ]);
 
-    const campusDocument = req.files?.document?.[0] || null;
+    const campusDocument = req.file || null;
 
     await connection.query(
       `INSERT INTO campus_registrations
@@ -303,74 +244,6 @@ export const submitRegistration = async (req, res) => {
       ]
     );
 
-    let hostelVerificationId = null;
-
-    if (wantsHostel) {
-      hostelVerificationId = uuidv4();
-
-      await connection.query(
-        `INSERT INTO campus_hostel_verifications
-         (
-           id,
-           campus_registration_id,
-           campus_id,
-           university_id,
-           hostel_name,
-           hostel_gender,
-           hostel_address,
-           hostel_phone,
-           latitude,
-           longitude,
-           university_approval,
-           super_admin_approval,
-           verification_status
-         )
-         VALUES (
-           ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?,
-           'pending', 'not_started', 'pending_university'
-         )`,
-        [
-          hostelVerificationId,
-          registrationId,
-          universityId,
-          hostelName.trim(),
-          hostelGender,
-          hostelAddress.trim(),
-          hostelContact,
-          latitude,
-          longitude,
-        ]
-      );
-
-      for (const [documentType, fieldName] of Object.entries(hostelDocFields)) {
-        const file = req.files[fieldName][0];
-
-        await connection.query(
-          `INSERT INTO campus_hostel_verification_documents
-           (
-             id,
-             campus_hostel_verification_id,
-             document_type,
-             original_name,
-             file_path,
-             mime_type,
-             file_size_bytes,
-             verification_status
-           )
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
-          [
-            uuidv4(),
-            hostelVerificationId,
-            documentType,
-            file.originalname,
-            file.path,
-            file.mimetype,
-            file.size,
-          ]
-        );
-      }
-    }
-
     await connection.commit();
 
     return res.status(201).json({
@@ -378,8 +251,6 @@ export const submitRegistration = async (req, res) => {
       data: {
         publicId,
         registrationId,
-        hostelVerificationId,
-        hostelSubmitted: wantsHostel,
       },
     });
   } catch (error) {
@@ -772,103 +643,4 @@ export const updateRegistrationStatus = async (req, res) => {
   res.json({ message: "Status updated." });
 };
 
-
-export const viewCampusHostelDocument = async (req, res) => {
-  try {
-    const { documentId } = req.params;
-    const role = req.user?.role;
-
-    if (!["university", "admin"].includes(role)) {
-      return res.status(403).json({
-        message: "Access denied",
-      });
-    }
-
-    const [rows] = await database.query(
-      `SELECT
-         d.file_path,
-         d.mime_type,
-         d.original_name,
-         h.university_id
-       FROM campus_hostel_verification_documents d
-       JOIN campus_hostel_verifications h
-         ON h.id = d.campus_hostel_verification_id
-       WHERE d.id = ?
-       LIMIT 1`,
-      [documentId]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({
-        message: "Document not found",
-      });
-    }
-
-    const doc = rows[0];
-
-    if (
-      role === "university" &&
-      (
-        !req.user?.university_id ||
-        String(req.user.university_id) !== String(doc.university_id)
-      )
-    ) {
-      return res.status(403).json({
-        message: "Access denied",
-      });
-    }
-
-    // Only files inside the backend uploads directory are allowed.
-    const currentDir = path.dirname(fileURLToPath(import.meta.url));
-    const uploadsDir = path.resolve(currentDir, "../../uploads");
-
-    const storedPath = doc.file_path;
-    const filePath = path.isAbsolute(storedPath)
-      ? path.resolve(storedPath)
-      : path.resolve(process.cwd(), storedPath);
-
-    const relativePath = path.relative(uploadsDir, filePath);
-
-    if (
-      relativePath.startsWith("..") ||
-      path.isAbsolute(relativePath) ||
-      relativePath === ""
-    ) {
-      return res.status(403).json({
-        message: "Invalid document path",
-      });
-    }
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({
-        message: "Uploaded file not found",
-      });
-    }
-
-    const allowedTypes = [
-      "application/pdf",
-      "image/jpeg",
-      "image/png",
-    ];
-
-    if (!allowedTypes.includes(doc.mime_type)) {
-      return res.status(415).json({
-        message: "Unsupported document type",
-      });
-    }
-
-    res.setHeader("Content-Type", doc.mime_type);
-    res.setHeader("Content-Disposition", "inline");
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-
-    return res.sendFile(filePath);
-  } catch (error) {
-    console.error("View campus hostel document:", error);
-
-    return res.status(500).json({
-      message: "Failed to open document",
-    });
-  }
-};
 

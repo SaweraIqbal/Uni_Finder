@@ -15,8 +15,7 @@ import ProgramRequestsPage                                 from "./pages/Program
 import FacilitiesPage                                      from "./pages/FacilitiesPage";
 import GalleryPage,           { GalleryActions }           from "./pages/GalleryPage";
 import SocietiesPage,         { SocietiesActions }         from "./pages/SocietiesPage";
-import HostelsPage                                         from "./pages/HostelsPage";
-import HostelApprovalsPage                                 from "./pages/HostelApprovalsPage";
+import HostelsPage                                         from "./pages/CampusHostelReviewPage";
 import ActivityLogPage                                     from "./pages/ActivityLogPage";
 
 /* ─── Per-page right-side header actions ─────────────────────────────────── */
@@ -44,7 +43,6 @@ function ActivePage({ page, galleryUploadTrigger, societyAddTrigger }) {
     case "gallery":           return <GalleryPage externalUploadTrigger={galleryUploadTrigger} />;
     case "societies":         return <SocietiesPage externalAddTrigger={societyAddTrigger} />;
     case "hostels":           return <HostelsPage />;
-    case "hostel-approvals":  return <HostelApprovalsPage />;
     case "activity":          return <ActivityLogPage />;
     default:                  return <OverviewPage />;
   }

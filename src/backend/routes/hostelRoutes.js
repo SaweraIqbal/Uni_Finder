@@ -12,15 +12,27 @@ import {
   getMyHostelById,
   updateHostel,
   deleteHostel,
+  registerHostel,
+  getHostelReviewQueue,
+  reviewHostelRegistration,
+  downloadHostelReviewDocument,
 } from "../controllers/hostel_controller/hostelController.js";
+import hostelRegistrationUpload from "../middleware/hostelRegistrationUpload.js";
+import requireApprovedHostel from "../middleware/requireApprovedHostel.js";
 
 const router = express.Router();
 
-// All hostel-owner routes require authentication
-router.use(verifyToken, authorizeRoles("hostel"));
+router.get("/review-queue", verifyToken, authorizeRoles("admin", "campus"), getHostelReviewQueue);
+router.patch("/:id/review", verifyToken, authorizeRoles("admin", "campus"), express.json(), reviewHostelRegistration);
+router.get("/:id/review-documents/:documentId", verifyToken, authorizeRoles("admin", "campus"), downloadHostelReviewDocument);
 
-router.post("/", createHostel);
+// All hostel-owner routes require authentication
+router.use(verifyToken, authorizeRoles("hostel", "campus_hostel"));
+
+router.post("/register", hostelRegistrationUpload, registerHostel);
 router.get("/mine", getMyHostels);
+router.use(requireApprovedHostel);
+router.post("/", createHostel);
 router.get("/:id", getMyHostelById);
 router.patch("/:id", updateHostel);
 router.delete("/:id", deleteHostel);

@@ -26,14 +26,18 @@ export default function UploadTile({
   error,           // external validation error string
   highlight,       // amber highlight mode (resubmission)
   required = false,
+  accept = ALLOWED_EXT,
+  allowedTypes = ALLOWED_TYPES,
 }) {
   const inputRef     = useRef(null);
   const [internalErr, setInternalErr] = useState(null);
   const displayError = internalErr || error;
 
   const validate = (f) => {
-    if (!ALLOWED_TYPES.includes(f.type) && !f.name.toLowerCase().endsWith(".pdf")) {
-      return "Only PDF files are allowed.";
+    const acceptedExtensions = accept.split(",").map((ext) => ext.trim().toLowerCase());
+    const hasAcceptedExtension = acceptedExtensions.some((ext) => f.name.toLowerCase().endsWith(ext));
+    if (!allowedTypes.includes(f.type) && !hasAcceptedExtension) {
+      return `Choose an accepted file type: ${accept}.`;
     }
     if (f.size > MAX_SIZE_BYTES) {
       return `File is too large (${formatBytes(f.size)}). Maximum is 10 MB.`;
@@ -75,7 +79,7 @@ export default function UploadTile({
       <input
         ref={inputRef}
         type="file"
-        accept={ALLOWED_EXT}
+        accept={accept}
         className="hidden"
         onChange={handleChange}
         aria-label={label}
@@ -96,6 +100,16 @@ export default function UploadTile({
               Required
             </span>
           )}
+          <span className="text-[10px] font-semibold uppercase tracking-wide bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full shrink-0">
+            Selected
+          </span>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="text-xs font-medium text-orange-600 hover:text-orange-700 shrink-0"
+          >
+            Change
+          </button>
           <button
             type="button"
             onClick={handleRemove}
@@ -116,7 +130,9 @@ export default function UploadTile({
             <Upload className={`w-5 h-5 ${highlight ? "text-amber-500" : "text-slate-400"}`} />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium text-slate-600">{label}</p>
+            <p className="text-sm font-medium text-slate-600">
+              {label}{required && <span className="ml-1 text-red-500">*</span>}
+            </p>
             <p className="text-xs text-slate-400 mt-0.5">{hint}</p>
           </div>
           {highlight && (

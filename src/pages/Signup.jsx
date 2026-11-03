@@ -62,7 +62,7 @@ function Signup() {
 
     if (!validate()) return;
 
-    const allowedRoles = ["student", "university", "hostel", "campus"];
+    const allowedRoles = ["student", "university", "hostel", "campus", "campus_hostel"];
 
     if (!role || !allowedRoles.includes(role)) {
       toast.error("Invalid role in URL");
@@ -105,6 +105,7 @@ function Signup() {
               name: formData.fullName,
               username: formData.username,
               role: userRole,
+              assigned_id: data.user.assigned_id,
             }),
           );
         }
@@ -124,7 +125,11 @@ function Signup() {
               break;
 
             case "hostel":
-              navigate("/hostel/dashboard", { replace: true });
+              navigate("/hostel/register/hostel", { replace: true });
+              break;
+
+            case "campus_hostel":
+              navigate("/hostel/register/campus_hostel", { replace: true });
               break;
 
             case "admin":

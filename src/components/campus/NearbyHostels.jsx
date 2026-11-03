@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  BedDouble,
   Building2,
   ChevronDown,
   Heart,
@@ -8,10 +9,11 @@ import {
   Phone,
   ShieldCheck,
   SlidersHorizontal,
+  Wallet,
   X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { API } from "../../api/client";
+import { API, fileUrl } from "../../api/client";
 
 const GENDER_OPTIONS = [
   { id: "all", label: "All hostels" },
@@ -45,6 +47,57 @@ const mapsUrl = (h) =>
   h.latitude != null && h.longitude != null
     ? `https://www.google.com/maps?q=${h.latitude},${h.longitude}`
     : null;
+
+const photosOf = (h) =>
+  (Array.isArray(h?.photos) ? h.photos : [])
+    .map((p) => p?.image_url)
+    .filter(Boolean);
+
+function HostelGallery({ hostel }) {
+  const photos = photosOf(hostel);
+  const [index, setIndex] = useState(0);
+  const active = photos[index];
+
+  if (photos.length === 0) {
+    return (
+      <div className="relative h-40 bg-gradient-to-br from-orange-50 to-slate-100 flex items-center justify-center">
+        <Building2 size={44} className="text-orange-300" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="relative h-48 bg-slate-100">
+        <img
+          src={fileUrl(active)}
+          alt={hostel.name}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute bottom-2.5 right-2.5 rounded-full bg-slate-900/60 px-2.5 py-1 text-[11px] font-semibold text-white">
+          {index + 1} / {photos.length}
+        </div>
+      </div>
+      {photos.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto p-3">
+          {photos.map((url, i) => (
+            <button
+              key={`${url}-${i}`}
+              type="button"
+              onClick={() => setIndex(i)}
+              className={`relative h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors
+                ${i === index ? "border-orange-500" : "border-transparent hover:border-orange-200"}`}
+              aria-label={`Photo ${i + 1}`}
+            >
+              <img src={fileUrl(url)} alt="" className="h-full w-full object-cover" loading="lazy" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Dropdown({ label, icon: Icon, options, value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -106,7 +159,6 @@ export default function NearbyHostels({ campusId }) {
   const [saved, setSaved] = useState({});
   const [details, setDetails] = useState(null);
 
-  // Sirf wohi hostels aate hain jo University Admin + Super Admin dono approve kar chuke hon.
   useEffect(() => {
     if (!campusId) {
       setHostels([]);
@@ -177,7 +229,7 @@ export default function NearbyHostels({ campusId }) {
         <div>
           <h2 className="text-xl font-bold text-gray-800">Campus Hostels</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Verified hostels approved by the university and UniFinder.
+            Hostels listed by this campus, with photos and contact details.
           </p>
         </div>
         {hostels.length > 0 && (
@@ -207,7 +259,7 @@ export default function NearbyHostels({ campusId }) {
         <div className="text-center py-14 text-sm text-red-500">{error}</div>
       ) : hostels.length === 0 ? (
         <div className="text-center py-14 text-sm text-gray-400">
-          No verified hostel is listed for this campus yet.
+          This campus has not listed any hostel yet.
         </div>
       ) : list.length === 0 ? (
         <div className="text-center py-14 text-sm text-gray-400">
@@ -223,7 +275,22 @@ export default function NearbyHostels({ campusId }) {
                 className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col sm:flex-row hover:shadow-md hover:border-orange-100 hover:-translate-y-0.5 transition-all duration-300"
               >
                 <div className="relative sm:w-[34%] min-h-[120px] flex-shrink-0 overflow-hidden bg-gradient-to-br from-orange-50 to-slate-100 flex items-center justify-center">
-                  <Building2 size={40} className="text-orange-300" />
+                  {h.cover_url ? (
+                    <img
+                      src={fileUrl(h.cover_url)}
+                      alt={h.name}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <Building2 size={40} className="text-orange-300" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/25 to-transparent" />
+                  {photosOf(h).length > 0 && (
+                    <span className="absolute bottom-2.5 right-2.5 rounded-full bg-slate-900/60 px-2 py-0.5 text-[10px] font-bold text-white">
+                      {photosOf(h).length} photos
+                    </span>
+                  )}
                   <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
                     <span
                       className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm ${typeClass(h.gender)}`}
@@ -265,7 +332,7 @@ export default function NearbyHostels({ campusId }) {
 
                   <div className="mt-auto pt-3 flex items-end justify-between gap-3">
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
-                      <ShieldCheck size={12} /> Verified
+                      <ShieldCheck size={12} /> Listed by campus
                     </span>
                     <button
                       type="button"
@@ -289,20 +356,18 @@ export default function NearbyHostels({ campusId }) {
           onClick={() => setDetails(null)}
         >
           <div
-            className="relative bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+            className="relative bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative h-32 bg-gradient-to-br from-orange-50 to-slate-100 flex items-center justify-center">
-              <Building2 size={48} className="text-orange-300" />
-              <button
-                type="button"
-                onClick={() => setDetails(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 text-gray-600 flex items-center justify-center"
-                aria-label="Close"
-              >
-                <X size={16} />
-              </button>
-            </div>
+            <HostelGallery key={details.id} hostel={details} />
+            <button
+              type="button"
+              onClick={() => setDetails(null)}
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 text-gray-600 flex items-center justify-center"
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
             <div className="p-5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${typeClass(details.gender)}`}>
@@ -322,6 +387,30 @@ export default function NearbyHostels({ campusId }) {
               )}
               {details.distance_km != null && (
                 <p className="text-sm text-slate-500 mt-1.5">{details.distance_km} km from campus</p>
+              )}
+              {!!(details.rooms || details.rent_min) && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {details.rooms ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                      <BedDouble size={13} className="text-orange-400" /> {details.rooms} rooms
+                    </span>
+                  ) : null}
+                  {details.rent_min ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                      <Wallet size={13} className="text-orange-400" /> From Rs.{" "}
+                      {Number(details.rent_min).toLocaleString("en-PK")}/month
+                    </span>
+                  ) : null}
+                </div>
+              )}
+              {Array.isArray(details.amenities) && details.amenities.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {details.amenities.map((a, i) => (
+                    <span key={`${a}-${i}`} className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-700">
+                      {a}
+                    </span>
+                  ))}
+                </div>
               )}
               {details.phone && (
                 <a

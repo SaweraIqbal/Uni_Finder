@@ -569,6 +569,9 @@ const ensureCampusTables = async (db) => {
        rooms        INT           NULL,
        rent_min     VARCHAR(50)   NULL,
        walk_dist    VARCHAR(50)   NULL,
+       distance_km  DECIMAL(4,1) NULL,
+       latitude     DECIMAL(10,8) NULL,
+       longitude    DECIMAL(11,8) NULL,
        status       VARCHAR(30)   NOT NULL DEFAULT 'pending',
        amenities    JSON          NULL,
        rooms_detail JSON          NULL,
@@ -578,6 +581,20 @@ const ensureCampusTables = async (db) => {
        created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
        updated_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
        INDEX idx_ch_campus (campus_id)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+    // campus_hostel_photos — cover + gallery images for a campus hostel
+    `CREATE TABLE IF NOT EXISTS campus_hostel_photos (
+       id          VARCHAR(255)  NOT NULL PRIMARY KEY,
+       hostel_id   VARCHAR(255)  NOT NULL,
+       image_url   VARCHAR(500)  NOT NULL,
+       caption     VARCHAR(255)  NULL,
+       is_cover    TINYINT(1)    NOT NULL DEFAULT 0,
+       sort_order  INT           NOT NULL DEFAULT 0,
+       created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       INDEX idx_chp_hostel (hostel_id),
+       CONSTRAINT fk_chp_hostel FOREIGN KEY (hostel_id)
+         REFERENCES campus_hostels(id) ON DELETE CASCADE
      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
     // campus_program_requests  (campus admin → university admin flow)
@@ -634,6 +651,31 @@ const ensureCampusTables = async (db) => {
       await query(db, sql);
     } catch (e) {
       console.log("Campus table create:", e.message);
+    }
+  }
+
+  const hostelCols = [
+    ["distance_km", "DECIMAL(4,1) NULL"],
+    ["latitude", "DECIMAL(10,8) NULL"],
+    ["longitude", "DECIMAL(11,8) NULL"],
+    ["address", "VARCHAR(255) NULL"],
+  ];
+  for (const [col, def] of hostelCols) {
+    try {
+      const rows = await query(
+        db,
+        `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+         WHERE table_schema = DATABASE()
+           AND table_name = 'campus_hostels'
+           AND column_name = ?`,
+        [col]
+      );
+      if (rows[0].c === 0) {
+        await query(db, `ALTER TABLE campus_hostels ADD COLUMN \`${col}\` ${def}`);
+        console.log(`Added campus_hostels.${col}`);
+      }
+    } catch (e) {
+      console.log(`campus_hostels.${col}:`, e.message);
     }
   }
 

@@ -16,6 +16,7 @@ import {
   listCampusImages,
   listCampusPrograms,
 } from "../../api/campus";
+import { API, authHeaders } from "../../api/client";
 
 const CampusAdminContext = createContext(null);
 
@@ -46,6 +47,7 @@ export function CampusAdminProvider({
   const [images, setImages] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [loadingCampus, setLoadingCampus] = useState(true);
+  const [hostelRequestCount, setHostelRequestCount] = useState(0);
 
   // ── Side drawer (shared) ──────────────────────────────────────────────────
   const [drawer, setDrawer] = useState(null); // { title, content }
@@ -95,6 +97,21 @@ export function CampusAdminProvider({
     fetchCampus();
   }, [fetchCampus]);
 
+  const refreshHostelRequestCount = useCallback(async () => {
+    try {
+      const response = await fetch(`${API}/api/hostels/review-queue`, { headers: authHeaders() });
+      if (!response.ok) return;
+      const data = await response.json();
+      setHostelRequestCount((data.hostels || []).filter((hostel) => hostel.status.startsWith("pending_")).length);
+    } catch { /* badge refresh is non-blocking */ }
+  }, []);
+
+  useEffect(() => {
+    refreshHostelRequestCount();
+    const interval = setInterval(refreshHostelRequestCount, 15000);
+    return () => clearInterval(interval);
+  }, [refreshHostelRequestCount]);
+
   const refetch = useCallback(() => {
     fetchedRef.current = false;
     fetchCampus();
@@ -130,6 +147,8 @@ export function CampusAdminProvider({
         images,
         programs,
         loadingCampus,
+        hostelRequestCount,
+        setHostelRequestCount,
         refetch,
         ownerUid,
 

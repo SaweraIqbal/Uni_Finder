@@ -5,6 +5,7 @@ import {
   verifyToken,
   authorizeRoles,
 } from "../middleware/authMiddleware.js";
+import requireApprovedHostel from "../middleware/requireApprovedHostel.js";
 
 import {
   hostelPhotoUpload,
@@ -29,7 +30,8 @@ import {
 const router = express.Router();
 
 // Hostel owner authentication
-router.use(verifyToken, authorizeRoles("hostel"));
+router.use(verifyToken, authorizeRoles("hostel", "campus_hostel"));
+router.use(requireApprovedHostel);
 
 // Upload middleware helper
 const uploadOne = (middleware, field) => (req, res, next) => {

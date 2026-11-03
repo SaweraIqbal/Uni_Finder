@@ -1350,7 +1350,7 @@ export default function CampusDetailPage() {
       case "societies":
         return <CampusSocietiesTab societies={campus.societies || []} />;
       case "hostels":
-  return <NearbyHostels campusId={campus.id} />;
+        return <NearbyHostels campusId={campus.id} />;
       case "admissions":
         return <AdmissionsTab />;
       // case "reviews":

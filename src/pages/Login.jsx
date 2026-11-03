@@ -101,8 +101,25 @@ function Login() {
           navigate("/university/dashboard", { replace: true });
         } else if (role === "campus") {
           navigate("/campus/dashboard", { replace: true });
-        } else if (role === "hostel") {
-          navigate("/hostel/dashboard", { replace: true });
+        } else if (role === "hostel" || role === "campus_hostel") {
+          try {
+            const hostelResponse = await fetch("http://localhost:5000/api/hostels/mine", {
+              headers: { Authorization: `Bearer ${data.token}` },
+            });
+            const hostelData = await hostelResponse.json();
+            const registrations = Array.isArray(hostelData.hostels) ? hostelData.hostels : [];
+            const approved = registrations.some((hostel) => hostel.status === "approved");
+            navigate(
+              approved
+                ? "/hostel/dashboard"
+                : registrations.length
+                  ? "/hostel/registration-status"
+                  : `/hostel/register/${role}`,
+              { replace: true },
+            );
+          } catch {
+            navigate(`/hostel/register/${role}`, { replace: true });
+          }
         } else {
           navigate("/homepage", { replace: true });
         }

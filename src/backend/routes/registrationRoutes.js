@@ -15,15 +15,6 @@ import {
   updateRegistrationStatus,
 
 } from "../controllers/campus_controller/registrationController.js";
-import {
-  getUniversityCampusHostels,
-  getAllCampusHostels,
-  getCampusHostelById,
-    reviewUniversityCampusHostel,
-    viewCampusHostelDocument,
-    reviewSuperAdminCampusHostel,
-    getMyCampusHostel,
-} from "../controllers/campus_controller/campusHostelController.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
@@ -38,51 +29,19 @@ const storage = multer.diskStorage({
 });
 
 
-const HOSTEL_FIELDS = [
-  "hostelDoc_cnic",
-  "hostelDoc_ownership",
-  "hostelDoc_utility",
-];
-
 const upload = multer({
   storage,
   limits: {
     fileSize: 10 * 1024 * 1024,
-    files: 4,
+    files: 1,
   },
   fileFilter: (_req, file, cb) => {
-    const isCampusDocument = file.fieldname === "document";
-    const isHostelDocument = HOSTEL_FIELDS.includes(file.fieldname);
-
-    if (isCampusDocument) {
-      return cb(
-        null,
-        file.mimetype === "application/pdf"
-      );
-    }
-
-    if (isHostelDocument) {
-      return cb(
-        null,
-        [
-          "application/pdf",
-          "image/jpeg",
-          "image/png",
-        ].includes(file.mimetype)
-      );
-    }
-
-    cb(new Error("UNEXPECTED_FIELD"));
+    cb(null, file.fieldname === "document" && file.mimetype === "application/pdf");
   },
 });
 
 const uploadMiddleware = (req, res, next) => {
-  upload.fields([
-    { name: "document", maxCount: 1 },
-    { name: "hostelDoc_cnic", maxCount: 1 },
-    { name: "hostelDoc_ownership", maxCount: 1 },
-    { name: "hostelDoc_utility", maxCount: 1 },
-  ])(req, res, (err) => {
+  upload.single("document")(req, res, (err) => {
     if (err) {
       return res.status(400).json({
         message:
@@ -91,10 +50,6 @@ const uploadMiddleware = (req, res, next) => {
             : "Invalid upload fields or too many files.",
       });
     }
-
-    // Existing controller still expects req.file.
-    // Preserve compatibility until controller is updated.
-    req.file = req.files?.document?.[0] || null;
 
     next();
   });
@@ -126,58 +81,4 @@ router.patch("/campus-registrations/:id/tier1",
 // Also used indirectly via adminController.adminUpdateCampusRegistrationStatus.
 router.patch("/campus-registrations/:id/status",
   verifyToken, authorizeRoles("admin"), express.json(), updateRegistrationStatus);
-// Campus Hostel Verification — University Admin
-router.get(
-  "/campus-hostels/university",
-  verifyToken,
-  authorizeRoles("university"),
-  getUniversityCampusHostels
-);
-
-// Campus Hostel Verification — Super Admin
-router.get(
-  "/campus-hostels/admin",
-  verifyToken,
-  authorizeRoles("admin"),
-  getAllCampusHostels
-);
-router.get(
-  "/campus-hostels/mine",
-  verifyToken,
-  authorizeRoles("campus"),
-  getMyCampusHostel
-);
-// Single Campus Hostel Verification — Both reviewers
-router.get(
-  "/campus-hostels/:id",
-  verifyToken,
-  authorizeRoles("university", "admin"),
-  getCampusHostelById
-);
-
-// University Admin — Approve / Reject Campus Hostel
-router.patch(
-  "/campus-hostels/:id/university-review",
-  verifyToken,
-  authorizeRoles("university"),
-  reviewUniversityCampusHostel
-);
-
-router.patch(
-  "/campus-hostels/:id/super-admin-review",
-  verifyToken,
-  authorizeRoles("admin"),
-  reviewSuperAdminCampusHostel
-);
-
-
-// Secure Campus Hostel Document View
-router.get(
-  "/campus-hostel-documents/:documentId/view",
-  verifyToken,
-  authorizeRoles("university", "admin"),
-  viewCampusHostelDocument
-);
-
-
 export default router;

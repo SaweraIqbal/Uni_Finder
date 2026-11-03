@@ -1,6 +1,11 @@
 
 
-const PREFIX = { university: "UNI", campus: "CMP" };
+const PREFIX = {
+  university: "UNI",
+  campus: "CMP",
+  hostel: "HST",
+  campus_hostel: "CHS",
+};
 
 export const assignedIdFor = (role, id) => {
   const p = PREFIX[role];

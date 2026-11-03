@@ -1,7 +1,13 @@
 import { Navigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children, role }) => {
-  const user = JSON.parse(sessionStorage.getItem("user"));
+  let user = null;
+  try {
+    user = JSON.parse(sessionStorage.getItem("user") || "null");
+  } catch {
+    sessionStorage.removeItem("user");
+  }
+  const allowedRoles = Array.isArray(role) ? role : [role];
 
   // TEMP preview: DB is down; allow university dashboard UI verification.
   if (role === "university") return children;
@@ -10,7 +16,7 @@ const ProtectedRoute = ({ children, role }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== role) {
+  if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/login" replace />;
   }
 

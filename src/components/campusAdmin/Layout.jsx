@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  ShieldCheck,
   Users,
   Waves,
   X,
@@ -31,12 +30,11 @@ export const NAV_ITEMS = [
   { id: "gallery",           label: "Gallery",             Icon: Camera },
   { id: "societies",         label: "Societies",           Icon: Users },
   { id: "hostels",           label: "Hostels",             Icon: HotelIcon },
-  { id: "hostel-approvals",  label: "Hostel Approvals",    Icon: ShieldCheck, badge: 2 },
 ];
 
 /* ─── Sidebar nav content ────────────────────────────────────────────────── */
 function SidebarNav() {
-  const { currentPage, navigateTo, adminName, adminInitials, onLogout, setSidebarOpen } =
+  const { currentPage, navigateTo, adminName, adminInitials, onLogout, setSidebarOpen, hostelRequestCount } =
     useCampusAdmin();
 
   return (
@@ -69,6 +67,7 @@ function SidebarNav() {
       <nav className="flex-1 px-3 py-4 overflow-y-auto custom-scrollbar space-y-0.5">
         {NAV_ITEMS.map(({ id, label, Icon, badge }) => {
           const isActive = currentPage === id;
+          const itemBadge = badge ?? (id === "hostels" && hostelRequestCount > 0 ? hostelRequestCount : null);
           return (
             <button
               type="button"
@@ -83,13 +82,13 @@ function SidebarNav() {
             >
               <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
               <span className="flex-1 truncate">{label}</span>
-              {badge != null && (
+              {itemBadge != null && (
                 <span
                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-tight shrink-0 ${
                     isActive ? "bg-white/20 text-white" : "bg-amber-500 text-white"
                   }`}
                 >
-                  {badge}
+                  {itemBadge}
                 </span>
               )}
             </button>
@@ -162,8 +161,7 @@ const PAGE_META = {
   "facilities":        { title: "Facilities & Environment", subtitle: "What students will see about campus life." },
   "gallery":           { title: "Campus Gallery",           subtitle: "Students judge your campus by these photos." },
   "societies":         { title: "Societies & Clubs",        subtitle: "Student communities at this campus." },
-  "hostels":           { title: "Hostels",                  subtitle: "Campus hostel affiliation and availability." },
-  "hostel-approvals":  { title: "Hostel Approvals",         subtitle: "Review campus hostels before forwarding to Super Admin for final approval." },
+  "hostels":           { title: "Hostels",                  subtitle: "Review hostel registration requests for your campus." },
   "activity":          { title: "Activity Log",              subtitle: "Full history of all actions taken on this campus." },
 };
 
@@ -246,7 +244,7 @@ export function Header({ rightContent }) {
                 <div className="divide-y divide-slate-50">
                   {[
                     { label: "BS Psychology — fee structure missing", sub: "Program Offerings" },
-                    { label: "Al-Rehmat Hostel awaiting approval", sub: "Hostel Approvals" },
+                    { label: "Hostel photos missing for a listed hostel", sub: "Hostels" },
                     { label: "Environment & Policies section empty", sub: "Facilities & Environment" },
                   ].map((n, i) => (
                     <div key={i} className="flex items-start gap-3 px-4 py-3">

@@ -163,7 +163,8 @@ export default function Navbar() {
                       { emoji: "🎓", label: "Student", sub: "Find universities & hostels", path: "/signup/student" },
                       { emoji: "🏫", label: "University", sub: "Register your university", path: "/signup/university" },
                       { emoji: "🏛️", label: "Campus", sub: "Register a university campus", path: "/signup/campus" },
-                      { emoji: "🏠", label: "Hostel Owner", sub: "List your hostel", path: "/signup/hostel" },
+                      { emoji: "🏫", label: "Campus Hostel", sub: "Register a campus hostel", path: "/signup/campus_hostel" },
+                      { emoji: "🏠", label: "Independent Hostel", sub: "Register a private hostel", path: "/signup/hostel" },
                     ].map(({ emoji, label, sub, path }, i, arr) => (
                       <div key={path}>
                         <button
@@ -229,7 +230,8 @@ export default function Navbar() {
                 { emoji: "??", label: "Student", path: "/signup/student" },
                 { emoji: "??", label: "University", path: "/signup/university" },
                 { emoji: "???", label: "Campus", path: "/signup/campus" },
-                { emoji: "??", label: "Hostel Owner", path: "/signup/hostel" },
+                { emoji: "🏫", label: "Campus Hostel", path: "/signup/campus_hostel" },
+                { emoji: "🏠", label: "Independent Hostel", path: "/signup/hostel" },
               ].map(({ emoji, label, path }) => (
                 <button
                   key={path}

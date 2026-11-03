@@ -41,7 +41,10 @@ const createHostelSchema = async (db) => {
       id VARCHAR(255) PRIMARY KEY,
       hostel_id VARCHAR(255) NOT NULL,
       document_type ENUM(
+        'cnic',
+        'utility_bill',
         'ownership_proof',
+        'campus_authorization',
         'lease_agreement',
         'management_authorization',
         'registration_certificate',
@@ -139,6 +142,7 @@ const createHostelSchema = async (db) => {
       hostel_id VARCHAR(255) NOT NULL,
       reviewer_uid VARCHAR(255) NOT NULL,
       reviewer_role ENUM(
+        'campus',
         'university',
         'admin'
       ) NOT NULL,
@@ -174,6 +178,35 @@ const createHostelSchema = async (db) => {
       console.error("Hostel schema error:", err.message);
       throw err;
     }
+  }
+
+  try {
+    await query(db, `ALTER TABLE hostel_documents MODIFY COLUMN document_type ENUM(
+      'cnic', 'utility_bill', 'ownership_proof', 'campus_authorization',
+      'lease_agreement', 'management_authorization', 'registration_certificate', 'other'
+    ) NOT NULL`);
+  } catch (err) {
+    console.error("Hostel document type migration error:", err.message);
+    throw err;
+  }
+
+  try {
+    await query(db, `ALTER TABLE hostel_approvals MODIFY COLUMN reviewer_role ENUM('campus', 'university', 'admin') NOT NULL`);
+  } catch (err) {
+    console.error("Hostel reviewer role migration error:", err.message);
+    throw err;
+  }
+
+  try {
+    await query(db, `UPDATE hostels
+      SET status = CASE
+        WHEN hostel_type = 'university' THEN 'pending_campus'
+        ELSE 'pending_admin'
+      END
+      WHERE status = 'under_review'`);
+  } catch (err) {
+    console.error("Hostel review status migration error:", err.message);
+    throw err;
   }
 
   console.log("All hostel tables ready");

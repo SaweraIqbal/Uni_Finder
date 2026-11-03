@@ -26,8 +26,13 @@ export default function HostelOwnerDashboard() {
   const [selectedHostelId, setSelectedHostelId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [lockedStatus, setLockedStatus] = useState(null);
 
   const navigate = useNavigate();
+  let registrationRole = "hostel";
+  try {
+    registrationRole = JSON.parse(sessionStorage.getItem("user") || "{}").role || registrationRole;
+  } catch { /* use the independent-hostel default */ }
 
   const title =
     NAV_ITEMS.find((n) => n.id === active)?.label ?? "Overview";
@@ -58,10 +63,19 @@ export default function HostelOwnerDashboard() {
           );
         }
 
-        const list = Array.isArray(data.hostels)
+        const allHostels = Array.isArray(data.hostels)
           ? data.hostels
           : [];
+        const list = allHostels.filter((hostel) => hostel.status === "approved");
 
+        if (list.length === 0) {
+          setLockedStatus(allHostels[0] || { status: "not_submitted" });
+          setHostels([]);
+          setLoading(false);
+          return;
+        }
+
+        setLockedStatus(null);
         setHostels(list);
 
         setSelectedHostelId((previousId) => {
@@ -79,6 +93,27 @@ export default function HostelOwnerDashboard() {
         setLoading(false);
       }
     };
+
+  if (!loading && !error && lockedStatus) {
+    const statusMessage = lockedStatus.status === "rejected"
+      ? `Your registration was rejected.${lockedStatus.review_reason ? ` Reason: ${lockedStatus.review_reason}` : " Contact the reviewer before submitting again."}`
+      : lockedStatus.status === "pending_campus"
+        ? "Your campus hostel request is waiting for the campus admin's review. Dashboard access will be enabled after approval."
+        : lockedStatus.status === "pending_admin"
+          ? "Your hostel request is waiting for the super admin's review. Dashboard access will be enabled after approval."
+          : "Submit a hostel registration before opening the dashboard.";
+    return (
+      <main className="min-h-screen bg-slate-50 p-6">
+        <section className="mx-auto mt-16 max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-slate-800">Hostel dashboard locked</h1>
+          <p className="mt-3 text-sm text-slate-600">{statusMessage}</p>
+          <button onClick={() => navigate(`/hostel/register/${registrationRole}`)} className="mt-6 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
+            View registration
+          </button>
+        </section>
+      </main>
+    );
+  }
 
     loadHostels();
   }, []);
