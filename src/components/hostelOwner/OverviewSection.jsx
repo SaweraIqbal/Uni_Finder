@@ -11,16 +11,6 @@ import {
 } from 'lucide-react';
 
 const STATUS = {
-  draft: {
-    listing: 'Draft',
-    banner: 'bg-slate-50 border-slate-200',
-    iconBox: 'bg-slate-100 text-slate-600',
-    pill: 'bg-slate-200 text-slate-700',
-    pillText: 'Not submitted',
-    title: 'Listing not submitted',
-    text: 'Finish your setup and submit your hostel for campus approval.',
-    icon: Clock,
-  },
   under_review: {
     listing: 'Under review',
     banner: 'bg-amber-50 border-amber-200',
@@ -69,12 +59,16 @@ function StatCard({ icon: Icon, label, value, hint }) {
 }
 
 export default function OverviewSection({ data, onNavigate }) {
-  const s = STATUS[data.status] ?? STATUS.draft;
+  const s = STATUS[data.status] ?? STATUS.under_review;
   const StatusIcon = s.icon;
+  const bannerText = data.status === 'under_review' && data.reviewerLabel
+    ? `Waiting for review by ${data.reviewerLabel}. You can keep editing and saving while you wait.`
+    : data.status === 'rejected' && data.rejectionReason
+      ? `${s.text} Reason: ${data.rejectionReason}`
+      : s.text;
 
   const doneCount = data.setup.filter((i) => i.done).length;
   const completeness = Math.round((doneCount / data.setup.length) * 100);
-  // Design shows 75% with 2 of 3 steps done; use a real value once the API sends it.
   const shownCompleteness = data.completeness ?? completeness;
   const completenessLabel =
     shownCompleteness >= 100 ? 'Complete' : shownCompleteness >= 60 ? 'Good' : 'Getting started';
@@ -93,7 +87,7 @@ export default function OverviewSection({ data, onNavigate }) {
               {s.pillText}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-600">{s.text}</p>
+          <p className="mt-1 text-sm text-slate-600">{bannerText}</p>
         </div>
         <button
           onClick={() => onNavigate('status')}

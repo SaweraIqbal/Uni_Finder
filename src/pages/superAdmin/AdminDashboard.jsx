@@ -25,7 +25,7 @@ import UniversityProfiles from "../../components/admin/UniversityProfiles.jsx";
 import CampusApprovals from "../../components/admin/CampusApprovals.jsx";
 import ProgramManagement from "../../components/admin/ProgramManagement.jsx";
 import ProgramApprovals from "../../components/admin/ProgramApprovals.jsx";
-import HostelApprovals from "../../components/admin/HostelApprovalQueue.jsx";
+import HostelApprovals from "../../components/shared/HostelReviewDashboard.jsx";
 import Analytics from "../../components/admin/Analytics.jsx";
 import ActivityLog from "../../components/admin/ActivityLog.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
     },
     {
       id: "hostel-approvals",
-      label: "Hostel Approvals",
+      label: "Independent Hostels",
       icon: <BedDouble size={18} />,
       badge: counts.hostels > 0 ? counts.hostels : null,
     },

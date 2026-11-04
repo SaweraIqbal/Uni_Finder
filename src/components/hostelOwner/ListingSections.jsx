@@ -482,13 +482,13 @@ const POLICY_CATEGORIES = [
 ];
 
 export function PoliciesSection({ value, onChange }) {
-  const [draft, setDraft] = useState(null); // { id|null, category, text }
+  const [policyForm, setPolicyForm] = useState(null);
 
   const save = () => {
-    if (!draft.text.trim()) return toast.error('Write the policy text first.');
-    if (draft.id) onChange(value.map((p) => (p.id === draft.id ? { ...p, category: draft.category, text: draft.text.trim() } : p)));
-    else onChange([...value, { id: String(Date.now()), category: draft.category, text: draft.text.trim() }]);
-    setDraft(null);
+    if (!policyForm.text.trim()) return toast.error('Write the policy text first.');
+    if (policyForm.id) onChange(value.map((p) => (p.id === policyForm.id ? { ...p, category: policyForm.category, text: policyForm.text.trim() } : p)));
+    else onChange([...value, { id: String(Date.now()), category: policyForm.category, text: policyForm.text.trim() }]);
+    setPolicyForm(null);
   };
 
   return (
@@ -500,7 +500,7 @@ export function PoliciesSection({ value, onChange }) {
             <p className="mt-3 text-sm leading-relaxed text-slate-700">{p.text}</p>
             <div className="mt-4 flex gap-2">
               <button type="button" className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium hover:bg-slate-200"
-                onClick={() => setDraft({ id: p.id, category: p.category, text: p.text })}>Edit</button>
+                onClick={() => setPolicyForm({ id: p.id, category: p.category, text: p.text })}>Edit</button>
               <button type="button" className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
                 onClick={() => onChange(value.filter((x) => x.id !== p.id))}>Remove</button>
             </div>
@@ -508,27 +508,27 @@ export function PoliciesSection({ value, onChange }) {
         ))}
       </div>
 
-      {draft ? (
+      {policyForm ? (
         <div className={`${box} space-y-4 p-5`}>
           <div>
             <Label htmlFor="pol-cat">Category</Label>
-            <select id="pol-cat" className={input} value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
+            <select id="pol-cat" className={input} value={policyForm.category} onChange={(e) => setPolicyForm({ ...policyForm, category: e.target.value })}>
               {POLICY_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <Label htmlFor="pol-text">Policy</Label>
-            <textarea id="pol-text" rows={3} className={`${input} resize-y`} value={draft.text}
-              onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
+            <textarea id="pol-text" rows={3} className={`${input} resize-y`} value={policyForm.text}
+              onChange={(e) => setPolicyForm({ ...policyForm, text: e.target.value })} />
           </div>
           <div className="flex gap-3">
-            <button type="button" className={primaryBtn} onClick={save}>{draft.id ? 'Update policy' : 'Add policy'}</button>
+            <button type="button" className={primaryBtn} onClick={save}>{policyForm.id ? 'Update policy' : 'Add policy'}</button>
             <button type="button" className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50"
-              onClick={() => setDraft(null)}>Cancel</button>
+              onClick={() => setPolicyForm(null)}>Cancel</button>
           </div>
         </div>
       ) : (
-        <button type="button" className={primaryBtn} onClick={() => setDraft({ id: null, category: POLICY_CATEGORIES[0], text: '' })}>
+        <button type="button" className={primaryBtn} onClick={() => setPolicyForm({ id: null, category: POLICY_CATEGORIES[0], text: '' })}>
           + Add Policy
         </button>
       )}

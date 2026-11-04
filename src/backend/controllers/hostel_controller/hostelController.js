@@ -108,12 +108,17 @@ export const registerHostel = async (req, res) => {
       return res.status(403).json({ message: "Hostel owner account required." });
     }
 
-    const { name, campus_id, address, gender, contact_phone } = req.body;
+    const { name, campus_id, address, gender, contact_phone, lat, lng } = req.body;
     if (!name?.trim() || name.trim().length > 255) {
       return res.status(400).json({ message: "Enter a valid hostel name." });
     }
     if (!contact_phone?.trim() || contact_phone.trim().length > 50) {
       return res.status(400).json({ message: "Enter a valid contact number." });
+    }
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+    if (lat == null || lng == null || String(lat).trim() === "" || String(lng).trim() === "" || !Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      return res.status(400).json({ message: "Enter valid hostel GPS coordinates." });
     }
     if (!["boys", "girls"].includes(gender)) {
       return res.status(400).json({ message: "Select a hostel accommodation type." });
@@ -157,8 +162,8 @@ export const registerHostel = async (req, res) => {
     await connection.beginTransaction();
     await connection.query(
       `INSERT INTO hostels
-       (id, owner_uid, name, hostel_type, campus_id, address, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (id, owner_uid, name, hostel_type, campus_id, address, lat, lng, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         hostelId,
         req.user.id,
@@ -166,6 +171,8 @@ export const registerHostel = async (req, res) => {
         campusHostel ? "university" : "private",
         campusHostel ? campus_id : null,
         campusHostel ? campusAddress : address.trim(),
+        latitude,
+        longitude,
         campusHostel ? "pending_campus" : "pending_admin",
       ]
     );
@@ -211,8 +218,18 @@ export const getHostelReviewQueue = async (req, res) => {
     const isCampusReviewer = req.user.role === "campus";
     const hostels = await query(
       `SELECT h.id, h.name, h.hostel_type, h.campus_id, h.address, h.status,
-              h.created_at, s.name AS owner_name, s.email AS owner_email,
-              d.gender, d.contact_phone, d.contact_email, c.name AS campus_name,
+              h.floors, h.lat, h.lng, h.created_at,
+              s.name AS owner_name, s.email AS owner_email,
+              d.gender, d.contact_phone, d.contact_email, d.description AS about,
+              c.name AS campus_name,
+              (SELECT COUNT(*) FROM hostel_rooms r
+               WHERE r.hostel_id = h.id) AS room_types,
+              (SELECT COALESCE(SUM(r.total_rooms), 0) FROM hostel_rooms r
+               WHERE r.hostel_id = h.id) AS total_rooms,
+              (SELECT MIN(r.monthly_rent) FROM hostel_rooms r
+               WHERE r.hostel_id = h.id) AS rent_min,
+              (SELECT MAX(r.monthly_rent) FROM hostel_rooms r
+               WHERE r.hostel_id = h.id) AS rent_max,
               (SELECT ha.reason FROM hostel_approvals ha
                WHERE ha.hostel_id = h.id AND ha.decision = 'rejected'
                ORDER BY ha.reviewed_at DESC LIMIT 1) AS review_reason
@@ -229,17 +246,34 @@ export const getHostelReviewQueue = async (req, res) => {
 
     if (hostels.length) {
       const ids = hostels.map((hostel) => hostel.id);
-      const documents = await query(
-        `SELECT id, hostel_id, document_type, original_name, verification_status
-         FROM hostel_documents WHERE hostel_id IN (${ids.map(() => "?").join(",")})`,
-        ids
-      );
-      const byHostel = new Map();
-      for (const document of documents) {
-        if (!byHostel.has(document.hostel_id)) byHostel.set(document.hostel_id, []);
-        byHostel.get(document.hostel_id).push(document);
-      }
-      hostels.forEach((hostel) => { hostel.documents = byHostel.get(hostel.id) || []; });
+      const placeholders = ids.map(() => "?").join(",");
+      const [documents, photos] = await Promise.all([
+        query(
+          `SELECT id, hostel_id, document_type, original_name, verification_status
+           FROM hostel_documents WHERE hostel_id IN (${placeholders})`,
+          ids
+        ),
+        query(
+          `SELECT id, hostel_id, image_url, caption, is_cover
+           FROM hostel_photos WHERE hostel_id IN (${placeholders})
+           ORDER BY is_cover DESC, created_at DESC LIMIT 200`,
+          ids
+        ),
+      ]);
+      const groupBy = (rows) => {
+        const map = new Map();
+        for (const row of rows) {
+          if (!map.has(row.hostel_id)) map.set(row.hostel_id, []);
+          map.get(row.hostel_id).push(row);
+        }
+        return map;
+      };
+      const docsByHostel = groupBy(documents);
+      const photosByHostel = groupBy(photos);
+      hostels.forEach((hostel) => {
+        hostel.documents = docsByHostel.get(hostel.id) || [];
+        hostel.photos = (photosByHostel.get(hostel.id) || []).slice(0, 6);
+      });
     }
 
     return res.json({ hostels });
@@ -315,6 +349,37 @@ export const reviewHostelRegistration = async (req, res) => {
   }
 };
 
+export const resubmitHostelRegistration = async (req, res) => {
+  try {
+    const rows = await query(
+      "SELECT id, hostel_type, status FROM hostels WHERE id = ? AND owner_uid = ? LIMIT 1",
+      [req.params.id, req.user.id]
+    );
+    const hostel = rows[0];
+    if (!hostel) return res.status(404).json({ message: "Hostel not found." });
+    if (hostel.status !== "rejected") {
+      return res.status(409).json({ message: "Only a rejected hostel registration can be resubmitted." });
+    }
+
+    const nextStatus = hostel.hostel_type === "university" ? "pending_campus" : "pending_admin";
+    await query("UPDATE hostels SET status = ? WHERE id = ?", [nextStatus, hostel.id]);
+    await query(
+      "UPDATE hostel_documents SET verification_status = 'pending' WHERE hostel_id = ?",
+      [hostel.id]
+    );
+
+    return res.json({
+      status: nextStatus,
+      message: nextStatus === "pending_campus"
+        ? "Hostel resubmitted for campus admin review."
+        : "Hostel resubmitted for super admin review.",
+    });
+  } catch (err) {
+    console.error("Hostel resubmit error:", err);
+    return res.status(500).json({ message: "Could not resubmit hostel registration." });
+  }
+};
+
 export const downloadHostelReviewDocument = async (req, res) => {
   try {
     const isCampusReviewer = req.user.role === "campus";
@@ -360,6 +425,9 @@ const checkCampus = async (campusId) => {
   return rows.length > 0;
 };
 
+const ownedByRole = (hostel, role) =>
+  hostel?.hostel_type === (role === "campus_hostel" ? "university" : "private");
+
 // POST /api/hostels
 export const createHostel = async (req, res) => {
   try {
@@ -372,6 +440,10 @@ export const createHostel = async (req, res) => {
 
     const campusId = data.campus_id || null;
 
+    if (data.hostel_type !== (req.user.role === "campus_hostel" ? "university" : "private")) {
+      return res.status(403).json({ message: "Hostel category does not match this account." });
+    }
+
     if (!(await checkCampus(campusId))) {
       return res.status(400).json({
         message: "Selected campus does not exist",
@@ -380,11 +452,12 @@ export const createHostel = async (req, res) => {
 
     const id = uuidv4();
 
+    const status = req.user.role === "campus_hostel" ? "pending_campus" : "pending_admin";
     await query(
       `INSERT INTO hostels
        (id, owner_uid, name, hostel_type, campus_id,
         address, lat, lng, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         req.user.id,
@@ -394,13 +467,14 @@ export const createHostel = async (req, res) => {
         data.address || null,
         data.lat == null ? null : Number(data.lat),
         data.lng == null ? null : Number(data.lng),
+        status,
       ]
     );
 
     const hostel = await getOwnedHostel(id, req.user.id);
 
     return res.status(201).json({
-      message: "Hostel draft created successfully",
+      message: "Hostel registration created and submitted for approval",
       hostel,
     });
   } catch (err) {
@@ -413,11 +487,13 @@ export const createHostel = async (req, res) => {
 export const getMyHostels = async (req, res) => {
   try {
     const hostels = await query(
-      `SELECT h.*,
+      `SELECT h.*, c.name AS campus_name, d.gender, d.contact_phone,
               (SELECT ha.reason FROM hostel_approvals ha
                WHERE ha.hostel_id = h.id AND ha.decision = 'rejected'
                ORDER BY ha.reviewed_at DESC LIMIT 1) AS review_reason
        FROM hostels h
+       LEFT JOIN campuses c ON c.id = h.campus_id
+       LEFT JOIN hostel_listing_details d ON d.hostel_id = h.id
        WHERE h.owner_uid = ?
        ORDER BY h.created_at DESC`,
       [req.user.id]
@@ -444,6 +520,10 @@ export const getMyHostelById = async (req, res) => {
       });
     }
 
+    if (!ownedByRole(hostel, req.user.role)) {
+      return res.status(403).json({ message: "This hostel does not belong to your account type." });
+    }
+
     return res.json({ hostel });
   } catch (err) {
     console.error("Get hostel error:", err);
@@ -465,10 +545,8 @@ export const updateHostel = async (req, res) => {
       });
     }
 
-    if (existing.status !== "draft") {
-      return res.status(409).json({
-        message: "Only draft hostels can be edited",
-      });
+    if (!ownedByRole(existing, req.user.role)) {
+      return res.status(403).json({ message: "This hostel does not belong to your account type." });
     }
 
     const body = req.body || {};
@@ -507,11 +585,11 @@ export const updateHostel = async (req, res) => {
       });
     }
 
-    const result = await query(
+    await query(
       `UPDATE hostels
        SET name = ?, hostel_type = ?, campus_id = ?,
            address = ?, lat = ?, lng = ?
-       WHERE id = ? AND owner_uid = ? AND status = 'draft'`,
+       WHERE id = ? AND owner_uid = ?`,
       [
         data.name.trim(),
         data.hostel_type,
@@ -523,12 +601,6 @@ export const updateHostel = async (req, res) => {
         req.user.id,
       ]
     );
-
-    if (!result.affectedRows) {
-      return res.status(409).json({
-        message: "Hostel is no longer editable",
-      });
-    }
 
     const hostel = await getOwnedHostel(
       req.params.id,
@@ -548,20 +620,28 @@ export const updateHostel = async (req, res) => {
 // DELETE /api/hostels/:id
 export const deleteHostel = async (req, res) => {
   try {
+    const hostel = await getOwnedHostel(req.params.id, req.user.id);
+    if (!hostel) {
+      return res.status(404).json({ message: "Hostel not found" });
+    }
+    if (!ownedByRole(hostel, req.user.role)) {
+      return res.status(403).json({ message: "This hostel does not belong to your account type." });
+    }
+
     const result = await query(
       `DELETE FROM hostels
-       WHERE id = ? AND owner_uid = ? AND status = 'draft'`,
+       WHERE id = ? AND owner_uid = ?`,
       [req.params.id, req.user.id]
     );
 
     if (!result.affectedRows) {
       return res.status(404).json({
-        message: "Draft hostel not found",
+        message: "Hostel not found",
       });
     }
 
     return res.json({
-      message: "Hostel draft deleted successfully",
+      message: "Hostel deleted successfully",
     });
   } catch (err) {
     console.error("Delete hostel error:", err);

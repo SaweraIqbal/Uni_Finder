@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import HostelOwnerLayout, {
@@ -11,14 +11,19 @@ import ProfileSection from "../../components/hostelOwner/ProfileSection";
 import ListingSection from "../../components/hostelOwner/ListingSection";
 import StatusSection from "../../components/hostelOwner/StatusSection";
 
-import {
-  mockOwner,
-  mockOverview,
-  mockProfile,
-  mockCampuses,
-} from "../../components/hostelOwner/mockData";
-
 const API = "http://localhost:5000";
+const emptyOverview = {
+  status: "under_review",
+  roomsListed: 0,
+  roomTypes: 0,
+  seatsAvailable: 0,
+  totalSeats: 0,
+  setup: [
+    { id: "profile", label: "Hostel profile details", done: false, nav: "profile" },
+    { id: "rooms", label: "Room inventory and pricing", done: false, nav: "listing" },
+    { id: "location", label: "Hostel location", done: false, nav: "profile" },
+  ],
+};
 
 export default function HostelOwnerDashboard() {
   const [active, setActive] = useState("overview");
@@ -26,13 +31,17 @@ export default function HostelOwnerDashboard() {
   const [selectedHostelId, setSelectedHostelId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [lockedStatus, setLockedStatus] = useState(null);
+  const [overview, setOverview] = useState(emptyOverview);
+  const [campuses, setCampuses] = useState([]);
+  const [ownerName, setOwnerName] = useState("Hostel Owner");
 
   const navigate = useNavigate();
-  let registrationRole = "hostel";
-  try {
-    registrationRole = JSON.parse(sessionStorage.getItem("user") || "{}").role || registrationRole;
-  } catch { /* use the independent-hostel default */ }
+  const user = useMemo(() => {
+    try { return JSON.parse(sessionStorage.getItem("user") || "{}"); }
+    catch { return {}; }
+  }, []);
+  const registrationRole = user.role === "campus_hostel" ? "campus_hostel" : "hostel";
+  const campusHostel = registrationRole === "campus_hostel";
 
   const title =
     NAV_ITEMS.find((n) => n.id === active)?.label ?? "Overview";
@@ -66,16 +75,10 @@ export default function HostelOwnerDashboard() {
         const allHostels = Array.isArray(data.hostels)
           ? data.hostels
           : [];
-        const list = allHostels.filter((hostel) => hostel.status === "approved");
-
-        if (list.length === 0) {
-          setLockedStatus(allHostels[0] || { status: "not_submitted" });
-          setHostels([]);
-          setLoading(false);
-          return;
-        }
-
-        setLockedStatus(null);
+        const roleHostels = allHostels.filter((hostel) =>
+          campusHostel ? hostel.hostel_type === "university" : hostel.hostel_type === "private"
+        );
+        const list = roleHostels;
         setHostels(list);
 
         setSelectedHostelId((previousId) => {
@@ -94,33 +97,71 @@ export default function HostelOwnerDashboard() {
       }
     };
 
-  if (!loading && !error && lockedStatus) {
-    const statusMessage = lockedStatus.status === "rejected"
-      ? `Your registration was rejected.${lockedStatus.review_reason ? ` Reason: ${lockedStatus.review_reason}` : " Contact the reviewer before submitting again."}`
-      : lockedStatus.status === "pending_campus"
-        ? "Your campus hostel request is waiting for the campus admin's review. Dashboard access will be enabled after approval."
-        : lockedStatus.status === "pending_admin"
-          ? "Your hostel request is waiting for the super admin's review. Dashboard access will be enabled after approval."
-          : "Submit a hostel registration before opening the dashboard.";
-    return (
-      <main className="min-h-screen bg-slate-50 p-6">
-        <section className="mx-auto mt-16 max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-bold text-slate-800">Hostel dashboard locked</h1>
-          <p className="mt-3 text-sm text-slate-600">{statusMessage}</p>
-          <button onClick={() => navigate(`/hostel/register/${registrationRole}`)} className="mt-6 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">
-            View registration
-          </button>
-        </section>
-      </main>
-    );
-  }
-
     loadHostels();
-  }, []);
+    fetch(`${API}/api/campuses`).then((res) => res.json()).then((data) => {
+      setCampuses(Array.isArray(data) ? data : data.campuses || []);
+    }).catch(() => {});
+  }, [campusHostel]);
 
   const selectedHostel = hostels.find(
     (hostel) => hostel.id === selectedHostelId
   );
+
+  useEffect(() => {
+    if (!selectedHostel) return;
+    let cancelled = false;
+    const token = sessionStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
+    Promise.all([
+      fetch(`${API}/api/hostels/${selectedHostel.id}/profile`, { headers }).then((res) => res.json()),
+      fetch(`${API}/api/hostels/${selectedHostel.id}/rooms`, { headers }).then((res) => res.json()),
+    ]).then(([profileData, roomsData]) => {
+      if (cancelled) return;
+      const profile = profileData.profile || {};
+      const rooms = Array.isArray(roomsData.rooms) ? roomsData.rooms : [];
+      const totalRooms = rooms.reduce((sum, room) => sum + Number(room.total_rooms || 0), 0);
+      const totalSeats = rooms.reduce((sum, room) => sum + Number(room.total_rooms || 0) * Number(room.beds_per_room || 0), 0);
+      const profileFields = [
+        profile.name,
+        profile.about,
+        profile.gender,
+        profile.address,
+        profile.nearby_distance,
+        profile.lat != null && profile.lng != null,
+        profile.floors,
+        profile.owner_name,
+        profile.owner_contact,
+        profile.warden_name,
+        profile.warden_contact,
+        ...(campusHostel ? [profile.campus_id] : []),
+      ];
+      const filledProfileFields = profileFields.filter((value) =>
+        typeof value === "boolean" ? value : String(value ?? "").trim() !== ""
+      ).length;
+      const profileCompleteness = Math.round((filledProfileFields / profileFields.length) * 100);
+      setOwnerName(profile.owner_name || user.name || user.full_name || "Hostel Owner");
+      setOverview({
+        status: selectedHostel.status === "rejected"
+          ? "rejected"
+          : selectedHostel.status === "approved" ? "approved" : "under_review",
+        reviewerLabel: campusHostel
+          ? `the campus admin of ${selectedHostel.campus_name || "your campus"}`
+          : "the UniFinder super admin",
+        rejectionReason: selectedHostel.review_reason || "",
+        completeness: profileCompleteness,
+        roomsListed: totalRooms,
+        roomTypes: new Set(rooms.map((room) => room.room_type)).size,
+        seatsAvailable: rooms.reduce((sum, room) => sum + Number(room.available_beds || 0), 0),
+        totalSeats,
+        setup: [
+          { id: "profile", label: "Hostel profile details", done: profileCompleteness === 100, nav: "profile" },
+          { id: "rooms", label: "Room inventory and pricing", done: rooms.length > 0, nav: "listing" },
+          { id: "location", label: "Hostel location", done: Boolean(profile.address && profile.lat != null && profile.lng != null), nav: "profile" },
+        ],
+      });
+    }).catch((err) => setError(err.message || "Could not load dashboard details."));
+    return () => { cancelled = true; };
+  }, [active, campusHostel, selectedHostel, user]);
 
   const handleSignOut = () => {
     sessionStorage.removeItem("token");
@@ -132,8 +173,8 @@ export default function HostelOwnerDashboard() {
       active={active}
       onNavigate={setActive}
       onSignOut={handleSignOut}
-      owner={mockOwner}
-      title={title}
+      owner={{ name: ownerName, hostelName: selectedHostel?.name || (campusHostel ? "Campus Hostel" : "Independent Hostel") }}
+      title={`${campusHostel ? "Campus Hostel" : "Independent Hostel"} · ${title}`}
     >
       {loading && (
         <p className="mb-4 text-sm text-slate-500">
@@ -147,7 +188,22 @@ export default function HostelOwnerDashboard() {
         </p>
       )}
 
-      {!loading && !error && (
+      {!loading && !error && !selectedHostel && (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-sm text-slate-600">
+            This account has no hostel yet. Register one to start listing rooms, photos and amenities.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate(`/hostel/register/${registrationRole}`, { replace: true })}
+            className="rounded-xl bg-[#ff6a00] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e65f00]"
+          >
+            Register hostel
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && selectedHostel && (
         <>
           {hostels.length > 0 && (
             <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4">
@@ -171,7 +227,7 @@ export default function HostelOwnerDashboard() {
                     key={hostel.id}
                     value={hostel.id}
                   >
-                    {hostel.name} ({hostel.status})
+                    {hostel.name}
                   </option>
                 ))}
               </select>
@@ -180,7 +236,7 @@ export default function HostelOwnerDashboard() {
 
           {active === "overview" ? (
             <OverviewSection
-              data={mockOverview}
+              data={overview}
               onNavigate={setActive}
             />
           ) : active === "profile" ? (
@@ -188,12 +244,13 @@ export default function HostelOwnerDashboard() {
               <ProfileSection
                 key={selectedHostel.id}
                 hostelId={selectedHostel.id}
-                initial={mockProfile}
-                campuses={mockCampuses}
+                initial={{ verification: "approved", gender: "boys", ownership: campusHostel ? "campus" : "private", campusId: "", owner: {}, warden: {} }}
+                campuses={campuses}
+                hostelRole={registrationRole}
               />
             ) : (
               <p className="rounded-xl bg-amber-50 p-4 text-amber-800">
-                No hostel found. Create a hostel first.
+                No hostel records found for this account.
               </p>
             )
           ) : active === "listing" ? (
@@ -204,11 +261,20 @@ export default function HostelOwnerDashboard() {
               />
             ) : (
               <p className="rounded-xl bg-amber-50 p-4 text-amber-800">
-                No hostel found. Create a hostel first.
+                No hostel records found for this account.
               </p>
             )
           ) : (
-            <StatusSection />
+            <StatusSection
+              data={{
+                applicationId: selectedHostel?.id || "—",
+                status: selectedHostel?.status === "approved" ? "live" : selectedHostel?.status === "rejected" ? "rejected" : "pending",
+                currentStep: selectedHostel?.status === "approved" ? 3 : 1,
+                typeChanged: false,
+                rejectionNote: selectedHostel?.review_reason || "",
+              }}
+              initialType={campusHostel ? "campus" : "private"}
+            />
           )}
         </>
       )}

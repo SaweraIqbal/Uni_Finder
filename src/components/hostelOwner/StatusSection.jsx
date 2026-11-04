@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Check, Clock, CheckCircle2, XCircle } from 'lucide-react';
 
 // Temporary data - replace with API response later
@@ -17,7 +16,7 @@ const FLOWS = {
 
 const TYPE_INFO = {
   campus: { label: 'Campus Hostel', reviewer: 'Campus Admin' },
-  private: { label: 'Private Hostel', reviewer: 'Super Admin' },
+  private: { label: 'Independent Hostel', reviewer: 'Super Admin' },
 };
 
 const BANNERS = {
@@ -86,7 +85,7 @@ function Stepper({ steps, current, status }) {
 }
 
 export default function StatusSection({ data = DEFAULT_STATUS, initialType = 'campus' }) {
-  const [type, setType] = useState(initialType);
+  const type = initialType;
   const steps = FLOWS[type];
   const banner = BANNERS[data.status] ?? BANNERS.pending;
   const BannerIcon = banner.icon;
@@ -96,22 +95,9 @@ export default function StatusSection({ data = DEFAULT_STATUS, initialType = 'ca
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <div role="radiogroup" aria-label="Hostel type" className="flex rounded-xl bg-slate-100 p-1">
-          {Object.entries(TYPE_INFO).map(([key, info]) => (
-            <button
-              key={key}
-              type="button"
-              role="radio"
-              aria-checked={type === key}
-              onClick={() => setType(key)}
-              className={`rounded-lg px-5 py-2.5 text-sm font-medium ${
-                type === key ? 'bg-white text-[#ff6a00] shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {info.label}
-            </button>
-          ))}
-        </div>
+        <span className="rounded-full bg-orange-50 px-4 py-2 text-sm font-medium text-orange-700">
+          {TYPE_INFO[type].label}
+        </span>
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">

@@ -15,10 +15,10 @@ import {
   registerHostel,
   getHostelReviewQueue,
   reviewHostelRegistration,
+  resubmitHostelRegistration,
   downloadHostelReviewDocument,
 } from "../controllers/hostel_controller/hostelController.js";
 import hostelRegistrationUpload from "../middleware/hostelRegistrationUpload.js";
-import requireApprovedHostel from "../middleware/requireApprovedHostel.js";
 
 const router = express.Router();
 
@@ -31,7 +31,7 @@ router.use(verifyToken, authorizeRoles("hostel", "campus_hostel"));
 
 router.post("/register", hostelRegistrationUpload, registerHostel);
 router.get("/mine", getMyHostels);
-router.use(requireApprovedHostel);
+router.post("/:id/resubmit", resubmitHostelRegistration);
 router.post("/", createHostel);
 router.get("/:id", getMyHostelById);
 router.patch("/:id", updateHostel);

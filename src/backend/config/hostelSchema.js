@@ -1,7 +1,7 @@
 
-const query = (db, sql) =>
+const query = (db, sql, params = []) =>
   new Promise((resolve, reject) => {
-    db.query(sql, (err, result) => {
+    db.query(sql, params, (err, result) => {
       if (err) return reject(err);
       resolve(result);
     });
@@ -17,9 +17,15 @@ const createHostelSchema = async (db) => {
       hostel_type ENUM('private', 'university') NOT NULL,
       campus_id VARCHAR(255) NULL,
       address TEXT NULL,
+      nearby_distance VARCHAR(255) NULL,
+      floors INT NULL,
+      owner_name VARCHAR(150) NULL,
+      owner_contact VARCHAR(50) NULL,
+      warden_name VARCHAR(150) NULL,
+      warden_contact VARCHAR(50) NULL,
       lat DECIMAL(10,8) NULL,
       lng DECIMAL(11,8) NULL,
-      status VARCHAR(30) NOT NULL DEFAULT 'draft',
+      status VARCHAR(30) NOT NULL DEFAULT 'pending_admin',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
@@ -177,6 +183,34 @@ const createHostelSchema = async (db) => {
     } catch (err) {
       console.error("Hostel schema error:", err.message);
       throw err;
+    }
+  }
+
+  await query(db, "ALTER TABLE hostels MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'pending_admin'");
+  await query(db, `UPDATE hostels
+    SET status = CASE
+      WHEN hostel_type = 'university' THEN 'pending_campus'
+      ELSE 'pending_admin'
+    END
+    WHERE status = 'draft'`);
+
+  const hostelColumns = [
+    ["nearby_distance", "VARCHAR(255) NULL"],
+    ["floors", "INT NULL"],
+    ["owner_name", "VARCHAR(150) NULL"],
+    ["owner_contact", "VARCHAR(50) NULL"],
+    ["warden_name", "VARCHAR(150) NULL"],
+    ["warden_contact", "VARCHAR(50) NULL"],
+  ];
+  for (const [column, definition] of hostelColumns) {
+    const rows = await query(
+      db,
+      `SELECT COUNT(*) AS count FROM information_schema.COLUMNS
+       WHERE table_schema = DATABASE() AND table_name = 'hostels' AND column_name = ?`,
+      [column]
+    );
+    if (rows[0].count === 0) {
+      await query(db, `ALTER TABLE hostels ADD COLUMN \`${column}\` ${definition}`);
     }
   }
 

@@ -5,7 +5,6 @@ import {
   verifyToken,
   authorizeRoles
 } from "../middleware/authMiddleware.js";
-import requireApprovedHostel from "../middleware/requireApprovedHostel.js";
 
 import {
   getHostelProfile,
@@ -15,7 +14,6 @@ import {
 const router = Router();
 
 router.use(verifyToken, authorizeRoles("hostel", "campus_hostel"));
-router.use(requireApprovedHostel);
 
 router.get("/:id/profile", getHostelProfile);
 router.patch("/:id/profile", updateHostelProfile);

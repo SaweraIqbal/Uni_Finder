@@ -683,7 +683,7 @@ const ensureCampusTables = async (db) => {
   // These are already in the CREATE TABLE above, so this only runs on existing installs
   const cpCols = [
     ["details", "JSON NULL"],
-    ["status", "VARCHAR(20) NOT NULL DEFAULT 'draft'"],
+    ["status", "VARCHAR(20) NOT NULL DEFAULT "],
     ["shifts", "VARCHAR(100) NULL"],
   ];
   for (const [col, def] of cpCols) {

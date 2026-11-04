@@ -38,6 +38,7 @@ export default function HostelRegistrationPage() {
     campus_id: "",
     name: "",
     address: "",
+    gps: "",
     gender: "boys",
     contact_phone: "",
   });
@@ -71,10 +72,30 @@ export default function HostelRegistrationPage() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Current location is not supported by this browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => setForm((current) => ({
+        ...current,
+        gps: `${coords.latitude.toFixed(7)}, ${coords.longitude.toFixed(7)}`,
+      })),
+      (error) => toast.error(error.message || "Could not get your current location."),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     if (campusHostel && !form.campus_id) {
       toast.error("Select the campus first.");
+      return;
+    }
+    const coordinates = form.gps.split(",").map((value) => Number(value.trim()));
+    if (coordinates.length !== 2 || !coordinates.every(Number.isFinite) || coordinates[0] < -90 || coordinates[0] > 90 || coordinates[1] < -180 || coordinates[1] > 180) {
+      toast.error("Enter valid GPS coordinates as latitude, longitude, or use your current location.");
       return;
     }
     if (!form.name.trim() || !form.contact_phone.trim()) {
@@ -100,6 +121,8 @@ export default function HostelRegistrationPage() {
       body.append("name", form.name.trim());
       body.append("gender", form.gender);
       body.append("contact_phone", form.contact_phone.trim());
+      body.append("lat", String(coordinates[0]));
+      body.append("lng", String(coordinates[1]));
       if (campusHostel) {
         body.append("campus_id", form.campus_id);
         body.append("campus_authorization", documents.campus_authorization._file);
@@ -118,7 +141,7 @@ export default function HostelRegistrationPage() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || "Hostel registration failed.");
 
-      toast.success("Hostel registration submitted for verification.");
+      toast.success("Hostel registration submitted for review.");
       navigate("/hostel/registration-status", { replace: true, state: { hostelId: data.hostelId } });
     } catch (error) {
       toast.error(error.message || "Could not submit hostel registration.");
@@ -201,6 +224,17 @@ export default function HostelRegistrationPage() {
               <label className={labelClass} htmlFor="contact_phone">Contact number</label>
               <input id="contact_phone" name="contact_phone" type="tel" value={form.contact_phone} onChange={setField} className={inputClass} maxLength={50} required />
             </div>
+          </div>
+        </Section>
+
+        <Section title="Hostel location">
+          <div className="space-y-2">
+            <label className={labelClass} htmlFor="gps">GPS coordinates (latitude, longitude)</label>
+            <input id="gps" name="gps" value={form.gps} onChange={setField} className={inputClass} placeholder="31.5204, 74.3587" required />
+            <button type="button" onClick={useCurrentLocation} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              Use current location
+            </button>
+            <p className="text-xs text-slate-500">You can enter coordinates manually or allow the browser to share this device's location.</p>
           </div>
         </Section>
 

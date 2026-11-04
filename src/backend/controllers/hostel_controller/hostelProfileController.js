@@ -28,6 +28,12 @@ const owned = async (req, res) => {
     return null;
   }
 
+  const expectedType = req.user.role === "campus_hostel" ? "university" : "private";
+  if (rows[0].hostel_type !== expectedType) {
+    res.status(403).json({ message: "This hostel does not belong to your account type." });
+    return null;
+  }
+
   return rows[0];
 };
 
@@ -35,17 +41,7 @@ export const getHostelProfile = async (req, res) => {
   try {
     const hostel = await owned(req, res);
     if (!hostel) return;
-
-    const documents = await query(
-      `SELECT id, document_type, original_name,
-              verification_status, uploaded_at
-       FROM hostel_documents
-       WHERE hostel_id = ?
-       ORDER BY uploaded_at DESC`,
-      [req.params.id]
-    );
-
-    return res.json({ profile: hostel, documents });
+    return res.json({ profile: hostel });
   } catch (err) {
     return serverError(res, err);
   }
@@ -53,6 +49,7 @@ export const getHostelProfile = async (req, res) => {
 
 const allowed = new Set([
   "name", "hostel_type", "campus_id", "address",
+  "nearby_distance",
   "lat", "lng", "floors",
   "owner_name", "owner_contact",
   "warden_name", "warden_contact",
@@ -60,13 +57,14 @@ const allowed = new Set([
 ]);
 
 const textFields = new Set([
-  "name", "address", "owner_name", "owner_contact",
+  "name", "address", "nearby_distance", "owner_name", "owner_contact",
   "warden_name", "warden_contact", "about", "contact_phone"
 ]);
 
 const lengthLimits = {
   name: 255,
   address: 2000,
+  nearby_distance: 255,
   owner_name: 150,
   owner_contact: 50,
   warden_name: 150,
@@ -79,12 +77,6 @@ export const updateHostelProfile = async (req, res) => {
   try {
     const hostel = await owned(req, res);
     if (!hostel) return;
-
-    if (hostel.status !== "draft") {
-      return res.status(409).json({
-        message: "Only draft hostels can be edited"
-      });
-    }
 
     const data = req.body || {};
     const keys = Object.keys(data);
@@ -109,7 +101,7 @@ export const updateHostelProfile = async (req, res) => {
 
       if (
         key === "hostel_type" &&
-        !["private", "campus"].includes(v)
+        !["private", "university"].includes(v)
       ) {
         return res.status(400).json({
           message: "Invalid hostel type"
@@ -168,12 +160,18 @@ export const updateHostelProfile = async (req, res) => {
     }
 
     const nextType = data.hostel_type ?? hostel.hostel_type;
+    if (nextType !== hostel.hostel_type) {
+      return res.status(400).json({ message: "Hostel category cannot be changed" });
+    }
 
     const nextCampus = Object.hasOwn(data, "campus_id")
       ? data.campus_id
       : hostel.campus_id;
+    if (nextCampus !== hostel.campus_id) {
+      return res.status(400).json({ message: "Hostel campus cannot be changed" });
+    }
 
-    if (nextType === "campus" && !nextCampus) {
+    if (nextType === "university" && !nextCampus) {
       return res.status(400).json({
         message: "Campus hostel requires campus_id"
       });
@@ -185,7 +183,7 @@ export const updateHostelProfile = async (req, res) => {
       data.campus_id !== null
     ) {
       return res.status(400).json({
-        message: "Private hostel campus_id must be null"
+          message: "Independent hostel campus_id must be null"
       });
     }
 
@@ -214,7 +212,7 @@ export const updateHostelProfile = async (req, res) => {
       await query(
         `UPDATE hostels
          SET ${hostelKeys.map(k => `\`${k}\` = ?`).join(", ")}
-         WHERE id = ? AND owner_uid = ? AND status = 'draft'`,
+         WHERE id = ? AND owner_uid = ?`,
         [
           ...hostelKeys.map(k => data[k]),
           req.params.id,

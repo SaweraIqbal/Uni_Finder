@@ -23,9 +23,9 @@ const serverError = (res, err) => {
   return res.status(500).json({ message: "Server error" });
 };
 
-const checkOwner = async (req, res, editable = false) => {
+const checkOwner = async (req, res) => {
   const rows = await query(
-    `SELECT id, status FROM hostels
+    `SELECT id, status, hostel_type FROM hostels
      WHERE id = ? AND owner_uid = ? LIMIT 1`,
     [req.params.id, req.user.id]
   );
@@ -35,10 +35,9 @@ const checkOwner = async (req, res, editable = false) => {
     return false;
   }
 
-  if (editable && rows[0].status !== "draft") {
-    res.status(409).json({
-      message: "Only draft hostels can be edited",
-    });
+  const expectedType = req.user.role === "campus_hostel" ? "university" : "private";
+  if (rows[0].hostel_type !== expectedType) {
+    res.status(403).json({ message: "This hostel does not belong to your account type." });
     return false;
   }
 
@@ -133,7 +132,7 @@ const roomFields = [
 
 export const addRoom = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) return;
+    if (!(await checkOwner(req, res))) return;
 
     const data = req.body || {};
     const error = validateRoom(data);
@@ -180,7 +179,7 @@ export const getRooms = async (req, res) => {
 
 export const updateRoom = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) return;
+    if (!(await checkOwner(req, res))) return;
 
     const rows = await query(
       `SELECT * FROM hostel_rooms
@@ -224,7 +223,7 @@ export const updateRoom = async (req, res) => {
 
 export const deleteRoom = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) return;
+    if (!(await checkOwner(req, res))) return;
 
     const result = await query(
       "DELETE FROM hostel_rooms WHERE id = ? AND hostel_id = ?",
@@ -294,7 +293,7 @@ export const getListing = async (req, res) => {
 
 export const saveListing = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) return;
+    if (!(await checkOwner(req, res))) return;
 
     const body = req.body || {};
     const keys = Object.keys(body);
@@ -364,7 +363,7 @@ export const saveListing = async (req, res) => {
 
 export const addPhoto = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) {
+    if (!(await checkOwner(req, res))) {
       await removeFile(req.file?.path);
       return;
     }
@@ -442,7 +441,7 @@ export const getPhotos = async (req, res) => {
 
 export const deletePhoto = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) return;
+    if (!(await checkOwner(req, res))) return;
 
     const rows = await query(
       `SELECT image_url FROM hostel_photos
@@ -484,7 +483,7 @@ const documentTypes = [
 
 export const addDocument = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) {
+    if (!(await checkOwner(req, res))) {
       await removeFile(req.file?.path);
       return;
     }
@@ -552,7 +551,7 @@ export const getDocuments = async (req, res) => {
 
 export const deleteDocument = async (req, res) => {
   try {
-    if (!(await checkOwner(req, res, true))) return;
+    if (!(await checkOwner(req, res))) return;
 
     const rows = await query(
       `SELECT file_path FROM hostel_documents

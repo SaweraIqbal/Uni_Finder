@@ -53,6 +53,47 @@ const photosOf = (h) =>
     .map((p) => p?.image_url)
     .filter(Boolean);
 
+const shortRent = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n < 1000) return String(Math.round(n));
+  const k = n / 1000;
+  return `${k % 1 === 0 ? k : k.toFixed(1)}k`;
+};
+
+const rentLabel = (h) => {
+  const min = shortRent(h.rent_min);
+  const max = shortRent(h.rent_max);
+  if (!min && !max) return null;
+  if (!min || !max || min === max) return min || max;
+  return `${min} – ${max}`;
+};
+
+function GenderBadge({ gender }) {
+  const girls = gender === "girls";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-lg ${
+        girls ? "bg-orange-500" : "bg-gray-800"
+      }`}
+    >
+      {girls ? (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="8" r="5" />
+          <path d="M12 13v8" />
+          <path d="M9 18h6" />
+        </svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="7" r="4" />
+          <path d="M5.5 21v-2a6 6 0 0 1 13 0v2" />
+        </svg>
+      )}
+      {TYPE_LABEL[gender] || "Hostel"}
+    </span>
+  );
+}
+
 function HostelGallery({ hostel }) {
   const photos = photosOf(hostel);
   const [index, setIndex] = useState(0);
@@ -151,8 +192,9 @@ export default function NearbyHostels({ campusId }) {
   const isLoggedIn = !!user;
 
   const [hostels, setHostels] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadedCampusId, setLoadedCampusId] = useState("");
   const [error, setError] = useState("");
+  const loading = Boolean(campusId && loadedCampusId !== campusId);
 
   const [genderFilter, setGenderFilter] = useState("all");
   const [distanceFilter, setDistanceFilter] = useState("all");
@@ -160,14 +202,8 @@ export default function NearbyHostels({ campusId }) {
   const [details, setDetails] = useState(null);
 
   useEffect(() => {
-    if (!campusId) {
-      setHostels([]);
-      setLoading(false);
-      return;
-    }
+    if (!campusId) return;
     let cancelled = false;
-    setLoading(true);
-    setError("");
     fetch(`${API}/api/campuses/${encodeURIComponent(campusId)}/hostels`)
       .then(async (r) => {
         if (!r.ok) {
@@ -184,13 +220,16 @@ export default function NearbyHostels({ campusId }) {
         return r.json();
       })
       .then((rows) => {
-        if (!cancelled) setHostels(Array.isArray(rows) ? rows : []);
+        if (!cancelled) {
+          setHostels(Array.isArray(rows) ? rows : []);
+          setError("");
+        }
       })
       .catch((e) => {
         if (!cancelled) setError(e.message || "Could not load hostels.");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoadedCampusId(campusId);
       });
     return () => {
       cancelled = true;
@@ -253,7 +292,9 @@ export default function NearbyHostels({ campusId }) {
         )}
       </div>
 
-      {loading ? (
+      {!campusId ? (
+        <div className="text-center py-14 text-sm text-gray-400">Campus details are unavailable.</div>
+      ) : loading ? (
         <div className="text-center py-14 text-sm text-gray-400">Loading hostels…</div>
       ) : error ? (
         <div className="text-center py-14 text-sm text-red-500">{error}</div>
@@ -266,80 +307,90 @@ export default function NearbyHostels({ campusId }) {
           No hostels match the selected filters.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {list.map((h) => {
             const liked = !!saved[h.id];
+            const amenities = Array.isArray(h.amenities) ? h.amenities : [];
+            const rent = rentLabel(h);
             return (
               <article
                 key={h.id}
-                className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col sm:flex-row hover:shadow-md hover:border-orange-100 hover:-translate-y-0.5 transition-all duration-300"
+                className="group flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-100/50"
               >
-                <div className="relative sm:w-[34%] min-h-[120px] flex-shrink-0 overflow-hidden bg-gradient-to-br from-orange-50 to-slate-100 flex items-center justify-center">
+                <div className="relative h-44 overflow-hidden bg-slate-100">
                   {h.cover_url ? (
                     <img
                       src={fileUrl(h.cover_url)}
                       alt={h.name}
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
                   ) : (
-                    <Building2 size={40} className="text-orange-300" />
+                    <div className="grid h-full w-full place-items-center bg-gradient-to-br from-orange-50 to-slate-100">
+                      <Building2 size={40} className="text-orange-300" />
+                    </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/25 to-transparent" />
+                  <div className="absolute bottom-2.5 left-2.5">
+                    <GenderBadge gender={h.gender} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onHeart(h.id)}
+                    aria-label={liked ? "Unsave hostel" : "Save hostel"}
+                    className="absolute right-2.5 top-2.5 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-slate-500 shadow-sm hover:text-orange-500"
+                  >
+                    <Heart size={16} className={liked ? "fill-orange-500 text-orange-500" : ""} />
+                  </button>
                   {photosOf(h).length > 0 && (
-                    <span className="absolute bottom-2.5 right-2.5 rounded-full bg-slate-900/60 px-2 py-0.5 text-[10px] font-bold text-white">
+                    <span className="absolute right-2.5 bottom-2.5 rounded-full bg-slate-900/60 px-2.5 py-1 text-[10px] font-bold text-white">
                       {photosOf(h).length} photos
                     </span>
                   )}
-                  <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm ${typeClass(h.gender)}`}
-                    >
-                      {TYPE_LABEL[h.gender] || "Hostel"}
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm bg-emerald-600 text-white">
-                      {h.ownership}
-                    </span>
-                  </div>
                 </div>
 
-                <div className="flex-1 p-4 flex flex-col min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-gray-800 truncate">{h.name}</h3>
-                      {h.address && (
-                        <p className="flex items-start gap-1 text-xs text-slate-400 mt-1">
-                          <MapPin size={11} className="text-orange-400 mt-0.5 flex-shrink-0" />
-                          <span className="line-clamp-2">{h.address}</span>
-                        </p>
-                      )}
-                      {h.distance_km != null && (
-                        <p className="text-xs text-slate-400 mt-1">{h.distance_km} km from campus</p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onHeart(h.id)}
-                      aria-label={liked ? "Unsave hostel" : "Save hostel"}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-orange-50 flex-shrink-0"
-                    >
-                      <Heart
-                        size={16}
-                        className={liked ? "text-orange-500 fill-orange-500" : "text-slate-400"}
-                      />
-                    </button>
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-gray-800 transition-colors group-hover:text-orange-600">
+                    {h.name}
+                  </h3>
+
+                  {h.address && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs text-gray-500">
+                      <MapPin size={12} className="flex-shrink-0 text-orange-400" />
+                      <span className="line-clamp-1">{h.address}</span>
+                    </p>
+                  )}
+
+                  {rent && (
+                    <p className="mt-2 text-lg font-extrabold text-orange-600">
+                      Rs {rent}
+                      <span className="text-[10px] font-normal text-gray-400">/mo</span>
+                    </p>
+                  )}
+
+                  <div className="mt-2 flex min-h-7 flex-wrap gap-1">
+                    {amenities.slice(0, 2).map((amenity, index) => (
+                      <span
+                        key={`${amenity}-${index}`}
+                        className="inline-flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-600 transition-colors group-hover:border-orange-100 group-hover:bg-orange-50/50"
+                      >
+                        <ShieldCheck size={10} className="text-orange-500" />
+                        {amenity}
+                      </span>
+                    ))}
+                    {amenities.length > 2 && (
+                      <span className="rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                        +{amenities.length - 2}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="mt-auto pt-3 flex items-end justify-between gap-3">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
-                      <ShieldCheck size={12} /> Listed by campus
-                    </span>
+                  <div className="mt-auto pt-3">
                     <button
                       type="button"
                       onClick={() => setDetails(h)}
-                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg border-2 border-orange-500 text-sm font-semibold text-orange-500 hover:bg-orange-500 hover:text-white transition-colors"
+                      className="w-full cursor-pointer rounded-lg border-2 border-orange-500 py-2.5 text-sm font-semibold text-orange-500 transition-all duration-200 hover:bg-orange-500 hover:text-white hover:shadow-md active:scale-95"
                     >
-                      View Details <span aria-hidden="true">›</span>
+                      View Details
                     </button>
                   </div>
                 </div>
@@ -356,7 +407,7 @@ export default function NearbyHostels({ campusId }) {
           onClick={() => setDetails(null)}
         >
           <div
-            className="relative bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
+            className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <HostelGallery key={details.id} hostel={details} />
@@ -397,11 +448,45 @@ export default function NearbyHostels({ campusId }) {
                   ) : null}
                   {details.rent_min ? (
                     <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                      <Wallet size={13} className="text-orange-400" /> From Rs.{" "}
-                      {Number(details.rent_min).toLocaleString("en-PK")}/month
+                      <Wallet size={13} className="text-orange-400" /> Rs.{" "}
+                      {Number(details.rent_min).toLocaleString("en-PK")}
+                      {details.rent_max != null && details.rent_max !== details.rent_min
+                        ? ` – ${Number(details.rent_max).toLocaleString("en-PK")}`
+                        : ""}/month
                     </span>
                   ) : null}
                 </div>
+              )}
+              {details.about && <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">{details.about}</p>}
+              {(details.floors || details.nearby_distance || details.check_in_time || details.check_out_time) && (
+                <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-sm">
+                  {details.floors && <p><span className="text-slate-500">Floors</span><br /><strong>{details.floors}</strong></p>}
+                  {details.nearby_distance && <p><span className="text-slate-500">Nearby campus</span><br /><strong>{details.nearby_distance}</strong></p>}
+                  {details.check_in_time && <p><span className="text-slate-500">Check-in</span><br /><strong>{details.check_in_time}</strong></p>}
+                  {details.check_out_time && <p><span className="text-slate-500">Check-out</span><br /><strong>{details.check_out_time}</strong></p>}
+                </div>
+              )}
+              {Array.isArray(details.room_details) && details.room_details.length > 0 && (
+                <section className="mt-5">
+                  <h4 className="font-semibold text-slate-800">Rooms & pricing</h4>
+                  <div className="mt-2 overflow-x-auto rounded-xl border border-slate-100">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500">
+                        <tr><th className="p-2.5">Room</th><th className="p-2.5">Rooms</th><th className="p-2.5">Available beds</th><th className="p-2.5">Monthly rent</th></tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {details.room_details.map((room) => (
+                          <tr key={room.id}>
+                            <td className="p-2.5 font-medium">{room.room_type}</td>
+                            <td className="p-2.5">{room.total_rooms}</td>
+                            <td className="p-2.5">{room.available_beds}</td>
+                            <td className="p-2.5">Rs. {Number(room.monthly_rent || 0).toLocaleString("en-PK")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
               )}
               {Array.isArray(details.amenities) && details.amenities.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
@@ -411,6 +496,43 @@ export default function NearbyHostels({ campusId }) {
                     </span>
                   ))}
                 </div>
+              )}
+              {Array.isArray(details.facilities) && details.facilities.length > 0 && (
+                <section className="mt-4">
+                  <h4 className="text-sm font-semibold text-slate-800">Facilities & charges</h4>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {details.facilities.map((facility, index) => (
+                      <span key={`${facility?.name || facility}-${index}`} className="rounded-full bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+                        {typeof facility === "string" ? facility : `${facility.name}${facility.amount ? ` · Rs. ${facility.amount}` : ""}`}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {Array.isArray(details.hostel_rules) && details.hostel_rules.length > 0 && (
+                <section className="mt-4">
+                  <h4 className="text-sm font-semibold text-slate-800">Hostel rules</h4>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                    {details.hostel_rules.map((rule, index) => (
+                      <li key={index}>{typeof rule === "string" ? rule : [rule.category, rule.text].filter(Boolean).join(": ")}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {(details.owner_name || details.owner_contact || details.warden_name || details.warden_contact) && (
+                <div className="mt-4 rounded-xl border border-slate-100 p-4 text-sm">
+                  <h4 className="font-semibold text-slate-800">Contact details</h4>
+                  {details.owner_name && <p className="mt-2 text-slate-600">Owner / Manager: {details.owner_name}</p>}
+                  {details.owner_contact && <a className="mt-1 block text-orange-600" href={`tel:${details.owner_contact}`}>Owner: {details.owner_contact}</a>}
+                  {details.warden_name && <p className="mt-2 text-slate-600">Warden: {details.warden_name}</p>}
+                  {details.warden_contact && <a className="mt-1 block text-orange-600" href={`tel:${details.warden_contact}`}>Warden: {details.warden_contact}</a>}
+                </div>
+              )}
+              {(details.mess_details && Object.keys(details.mess_details).length > 0 || details.additional_fees && Object.keys(details.additional_fees).length > 0) && (
+                <details className="mt-4 rounded-xl border border-slate-100 p-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-slate-800">Mess, security & additional charges</summary>
+                  <pre className="mt-3 whitespace-pre-wrap break-words text-xs text-slate-600">{JSON.stringify({ mess: details.mess_details, charges: details.additional_fees }, null, 2)}</pre>
+                </details>
               )}
               {details.phone && (
                 <a
