@@ -11,12 +11,174 @@ import googleIcon from "../assets/google.png";
 import { setFlash } from "../utils/flash";
 import { resendVerificationEmail, signup as signupApi } from "../api/client";
 
+// ── Role picker — shown when /signup is visited without a role segment ────────
+const ROLE_OPTIONS = [
+  {
+    role: "student",
+    emoji: "🎓",
+    label: "Student",
+    sub: "Search universities, compare programs & find hostels",
+    accent: "from-orange-400 to-amber-400",
+  },
+  {
+    role: "university",
+    emoji: "🏫",
+    label: "University",
+    sub: "Register & manage your university profile",
+    accent: "from-sky-400 to-blue-500",
+  },
+  {
+    role: "campus",
+    emoji: "🏛️",
+    label: "Campus",
+    sub: "Register and manage a university campus",
+    accent: "from-violet-400 to-purple-500",
+  },
+  {
+    role: "hostel",
+    emoji: "🏠",
+    label: "Independent Hostel",
+    sub: "List and manage your own hostel for students",
+    accent: "from-emerald-400 to-green-500",
+  },
+  {
+    role: "campus_hostel",
+    emoji: "🏘️",
+    label: "Campus Hostel",
+    sub: "Register a hostel affiliated with a university campus",
+    accent: "from-teal-400 to-cyan-500",
+  },
+];
+
+function RolePicker() {
+  const navigate = useNavigate();
+  const [hovered, setHovered] = useState(null);
+
+  return (
+    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center bg-gray-100 p-4">
+      <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
+
+        {/* Left image panel */}
+        <div className="relative w-1/2 hidden md:block overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80"
+            alt="University students"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30" />
+          {/* Overlay text on the image */}
+          <div className="absolute inset-0 flex flex-col justify-end p-10">
+            <h2 className="text-3xl font-bold text-white drop-shadow-md leading-snug">
+              Pakistan's smartest<br />university platform
+            </h2>
+            <p className="text-white/80 text-sm mt-2 drop-shadow">
+              Compare, explore & connect — all in one place.
+            </p>
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div className="relative w-full md:w-1/2 flex flex-col bg-white z-[20]">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-8 sm:px-8 md:px-[50px] md:py-[40px] [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+
+            {/* Logo */}
+            <div className="flex items-center gap-2 mb-5">
+              <img src={logo} alt="Logo" className="w-8" />
+              <h2 className="text-xl font-semibold text-gray-700">
+                Uni <span className="text-orange-500">Finder</span>
+              </h2>
+            </div>
+
+            {/* Heading */}
+            <h1 className="text-2xl md:text-[26px] font-bold text-gray-800 mb-1">
+              Create Account
+            </h1>
+            <p className="text-gray-500 text-sm mb-6">
+              Who are you signing up as?
+            </p>
+
+            {/* Role cards */}
+            <div className="space-y-3">
+              {ROLE_OPTIONS.map(({ role, emoji, label, sub, accent }) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => navigate(`/signup/${role}`)}
+                  onMouseEnter={() => setHovered(role)}
+                  onMouseLeave={() => setHovered(null)}
+                  className={`
+                    w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl border-2 text-left
+                    transition-all duration-200 cursor-pointer
+                    ${hovered === role
+                      ? "border-orange-400 bg-orange-50 -translate-y-[1px] shadow-md"
+                      : "border-gray-200 bg-white hover:border-orange-200"
+                    }
+                  `}
+                >
+                  {/* Emoji badge */}
+                  <span
+                    className={`
+                      w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0
+                      bg-gradient-to-br ${accent} shadow-sm
+                    `}
+                  >
+                    {emoji}
+                  </span>
+
+                  {/* Text */}
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-semibold text-gray-800">
+                      {label}
+                    </span>
+                    <span className="block text-xs text-gray-400 mt-0.5 leading-snug">
+                      {sub}
+                    </span>
+                  </span>
+
+                  {/* Arrow */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`w-4 h-4 flex-shrink-0 transition-colors duration-200 ${
+                      hovered === role ? "text-orange-500" : "text-gray-300"
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            {/* Login link */}
+            <p className="text-center text-sm text-gray-500 mt-6">
+              Already have an account?{" "}
+              <span
+                onClick={() => navigate("/login")}
+                className="text-orange-500 font-semibold cursor-pointer hover:underline"
+              >
+                Log In
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Signup() {
   const navigate = useNavigate();
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const { role } = useParams();
 
+  // ALL hooks must be declared before any conditional return
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -30,6 +192,14 @@ function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+
+  const allowedRoles = ["student", "university", "hostel", "campus", "campus_hostel"];
+  const roleIsValid = role && allowedRoles.includes(role);
+
+  // If no valid role in URL, render the picker (all hooks already called above)
+  if (!roleIsValid) {
+    return <RolePicker />;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,9 +239,8 @@ function Signup() {
 
     if (!validate()) return;
 
-    const allowedRoles = ["student", "university", "hostel", "campus", "campus_hostel"];
-
-    if (!role || !allowedRoles.includes(role)) {
+    // role is already validated above (roleIsValid guard), this is a safety net
+    if (!roleIsValid) {
       toast.error("Invalid role in URL");
       return;
     }
@@ -173,7 +342,7 @@ function Signup() {
   return (
     <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center bg-gray-100 p-4 ">
       <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
-      
+        {/* Left Image - Hidden on Mobile */}
         <div className="relative w-1/2 hidden md:block overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80"
