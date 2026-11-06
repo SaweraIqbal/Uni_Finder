@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { listUniversities, searchProgramCatalog } from "../../api/university";
-import { PAKISTAN_CITIES } from "../../data/pakistan_cities";
+import { listUniversities, searchDistinctPrograms } from "../../api/university";
+import { PAKISTAN_CITIES, FEATURED_CITIES } from "../../data/pakistan_cities";
 
 /* --- Shared icons ---------------------------------------------------------- */
 const ChevronIcon = ({ isOpen }) => (
@@ -61,6 +61,119 @@ function OptionList({ options, selected, onSelect }) {
   );
 }
 
+function ProgramAutocomplete({
+  id,
+  value,
+  options,
+  loading,
+  error,
+  isOpen,
+  onChange,
+  onOpen,
+  onSelect,
+  mobile = false,
+}) {
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const listId = `${id}-list`;
+
+  const highlightedIndex =
+    activeIndex >= 0 && activeIndex < options.length ? activeIndex : options.length ? 0 : -1;
+
+  const handleKeyDown = (event) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!options.length) return;
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setActiveIndex((current) => {
+        const base = current >= 0 && current < options.length ? current : 0;
+        return (base + direction + options.length) % options.length;
+      });
+    } else if (event.key === "Enter" && isOpen && highlightedIndex >= 0 && options[highlightedIndex]) {
+      event.preventDefault();
+      onSelect(options[highlightedIndex]);
+    } else if (event.key === "Escape" && isOpen) {
+      event.preventDefault();
+      onOpen(false);
+    }
+  };
+
+  const dropdownClasses = mobile
+    ? "relative max-h-56 overflow-y-auto border-t border-gray-100 bg-white"
+    : "absolute left-0 top-[calc(100%+0.25rem)] z-50 max-h-64 w-full min-w-[260px] overflow-y-auto rounded-2xl border border-gray-100 bg-white shadow-2xl";
+
+  return (
+    <div className="relative w-full">
+      <input
+        id={id}
+        type="text"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={isOpen}
+        aria-controls={listId}
+        aria-activedescendant={isOpen && highlightedIndex >= 0 ? `${id}-option-${highlightedIndex}` : undefined}
+        autoComplete="off"
+        value={value}
+        onChange={(event) => {
+          setActiveIndex(0);
+          onChange(event.target.value);
+        }}
+        onFocus={() => {
+          setActiveIndex(0);
+          onOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+        placeholder="Search programs…"
+        className="w-full text-sm text-gray-900 placeholder:text-gray-400 bg-transparent outline-none"
+      />
+      {isOpen && (
+        <>
+          {!mobile && <div className="absolute top-full left-0 right-0 h-2 z-10" />}
+          <ul id={listId} role="listbox" className={dropdownClasses}>
+            {loading && (
+              <li role="presentation" className="px-5 py-3 text-sm text-gray-400">
+                Searching programs…
+              </li>
+            )}
+            {!loading && error && (
+              <li role="presentation" className="px-5 py-3 text-sm text-red-600">
+                {error}
+              </li>
+            )}
+            {!loading && !error && options.length === 0 && (
+              <li role="presentation" className="px-5 py-3 text-sm text-gray-400 text-center">
+                No programs found
+              </li>
+            )}
+            {!loading && !error && options.map((option, index) => (
+              <li
+                id={`${id}-option-${index}`}
+                key={`${option.label}-${option.level}`}
+                role="option"
+                aria-selected={index === highlightedIndex}
+                onMouseEnter={() => setActiveIndex(index)}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  onSelect(option);
+                }}
+                className={`px-5 py-2.5 cursor-pointer text-sm border-b border-gray-50 last:border-0 transition-colors ${
+                  index === highlightedIndex
+                    ? "bg-orange-50 text-orange-600"
+                    : "text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                }`}
+              >
+                <span>{option.label}</span>
+                <span className="ml-2 text-xs text-gray-400">
+                  {option.level}{option.campus_count ? ` · ${option.campus_count} campuses` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* --- Desktop City field — direct type-to-filter input --------------------- */
 function CityField({ value, onChange, setActiveDropdown, isOpen, onOpen, borderClass }) {
   const inputRef = useRef(null);
@@ -69,7 +182,7 @@ function CityField({ value, onChange, setActiveDropdown, isOpen, onOpen, borderC
   const q = value.trim().toLowerCase();
   const filtered = q
     ? PAKISTAN_CITIES.filter((c) => c.toLowerCase().includes(q))
-    : PAKISTAN_CITIES;
+    : FEATURED_CITIES;
 
   const handleSelect = (city) => {
     onChange(city);
@@ -100,7 +213,7 @@ function CityField({ value, onChange, setActiveDropdown, isOpen, onOpen, borderC
               onOpen();           // open dropdown as user types
             }}
             onFocus={onOpen}
-            placeholder="Select City…"
+            placeholder="Select / Type City…"
             className="flex-1 text-sm text-gray-900 placeholder:text-gray-400 bg-transparent outline-none min-w-0"
           />
           {value ? (
@@ -121,6 +234,11 @@ function CityField({ value, onChange, setActiveDropdown, isOpen, onOpen, borderC
         <>
           <div className="absolute top-full left-0 right-0 h-2 z-10" />
           <div className="absolute w-[260px] left-0 top-[calc(100%+0.25rem)] bg-white border border-gray-100 rounded-2xl shadow-2xl shadow-black/10 z-50 overflow-hidden">
+            {!q && (
+              <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/70 border-b border-gray-100">
+                Popular Cities
+              </div>
+            )}
             <OptionList options={filtered} selected={value} onSelect={handleSelect} />
           </div>
         </>
@@ -136,7 +254,7 @@ function MobileCityField({ value, onChange, setActiveDropdown, isOpen, onOpen, h
   const q = value.trim().toLowerCase();
   const filtered = q
     ? PAKISTAN_CITIES.filter((c) => c.toLowerCase().includes(q))
-    : PAKISTAN_CITIES;
+    : FEATURED_CITIES;
 
   const handleSelect = (city) => {
     onChange(city);
@@ -174,6 +292,11 @@ function MobileCityField({ value, onChange, setActiveDropdown, isOpen, onOpen, h
       {/* Inline expanding list */}
       {isOpen && filtered.length > 0 && (
         <div className="border-t border-gray-100">
+          {!q && (
+            <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/70 border-b border-gray-100">
+              Popular Cities
+            </div>
+          )}
           <OptionList options={filtered} selected={value} onSelect={handleSelect} />
         </div>
       )}
@@ -271,7 +394,7 @@ function MobileDropdownField({ label, value, options, isOpen, onToggle, onSelect
 }
 
 /* --- Main SearchBar -------------------------------------------------------- */
-function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, resultsPath = "/homepage" }) {
+function SearchBar({ searchValues, onSearchChange, resultsPath = "/homepage" }) {
   const navigate = useNavigate();
   const { program, city, university } = searchValues;
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -279,7 +402,9 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
   const [universities, setUniversities] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [programLoading, setProgramLoading] = useState(false);
+  const [programError, setProgramError] = useState("");
   const programDebounceRef = useRef(null);
+  const programRequestRef = useRef(0);
 
   // Fetch university names on mount
   useEffect(() => {
@@ -298,25 +423,30 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
   // Debounced program catalog search
   const fetchPrograms = useCallback((q) => {
     if (programDebounceRef.current) clearTimeout(programDebounceRef.current);
+    const requestId = ++programRequestRef.current;
+    setProgramError("");
+    setPrograms([]);
     programDebounceRef.current = setTimeout(async () => {
       setProgramLoading(true);
       try {
-        const data = await searchProgramCatalog({ q: q.trim(), limit: 12 });
-        const results = (data.results || []).map((r) => ({
-          label: r.name,
-          level: r.level || "",
-          count: r.university_count || 1,
-        }));
-        setPrograms(results);
-      } catch { setPrograms([]); }
-      finally { setProgramLoading(false); }
-    }, 250);
+        const results = await searchDistinctPrograms({ q: q.trim(), limit: 10 });
+        if (requestId === programRequestRef.current) setPrograms(results);
+      } catch (error) {
+        if (requestId === programRequestRef.current && error.name !== "AbortError") {
+          setPrograms([]);
+          setProgramError(error.message || "Could not load program suggestions.");
+          console.error("Failed to load program suggestions:", error);
+        }
+      } finally {
+        if (requestId === programRequestRef.current) setProgramLoading(false);
+      }
+    }, 200);
   }, []);
 
-  // Load popular programs on mount (empty query = top by university_count)
-  useEffect(() => {
-    fetchPrograms("");
-  }, [fetchPrograms]);
+  useEffect(() => () => {
+    if (programDebounceRef.current) clearTimeout(programDebounceRef.current);
+    programRequestRef.current += 1;
+  }, []);
 
   // Close all dropdowns on outside click
   useEffect(() => {
@@ -333,6 +463,23 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
     navigate(resultsPath, { state: { program, city, university } });
   };
 
+  const handleProgramSelect = (option) => {
+    const params = new URLSearchParams({ program: option.label });
+    params.set("level", option.level || "");
+    navigate(`/search?${params.toString()}`);
+  };
+
+  const handleProgramFocus = (dropdownName) => (open) => {
+    setActiveDropdown(open ? dropdownName : null);
+    if (open) fetchPrograms(program);
+  };
+
+  const handleProgramChange = (dropdownName) => (value) => {
+    onSearchChange((prev) => ({ ...prev, program: value }));
+    fetchPrograms(value);
+    setActiveDropdown(dropdownName);
+  };
+
   const toggleDropdown = (name) =>
     setActiveDropdown(activeDropdown === name ? null : name);
 
@@ -345,50 +492,19 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
         {/* Program — live search */}
         <div className="flex-1 relative border-r border-gray-100">
           <div className="w-full h-full px-5 py-2.5 flex flex-col items-start justify-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider mb-0.5 text-gray-400">Program</span>
-            <input
-              type="text"
+            <label htmlFor="program-input" className="text-[10px] font-bold uppercase tracking-wider mb-0.5 text-gray-400">Program</label>
+            <ProgramAutocomplete
+              id="program-input"
               value={program}
-              onChange={(e) => {
-                onSearchChange((prev) => ({ ...prev, program: e.target.value }));
-                fetchPrograms(e.target.value);
-                setActiveDropdown("program");
-              }}
-              onFocus={() => setActiveDropdown("program")}
-              placeholder="Search programs…"
-              className="w-full text-sm text-gray-900 placeholder:text-gray-400 bg-transparent outline-none"
+              options={programs}
+              loading={programLoading}
+              error={programError}
+              isOpen={activeDropdown === "program"}
+              onChange={handleProgramChange("program")}
+              onOpen={handleProgramFocus("program")}
+              onSelect={handleProgramSelect}
             />
           </div>
-          {activeDropdown === "program" && (
-            <>
-              <div className="absolute top-full left-0 right-0 h-2 z-10" />
-              <ul className="absolute w-full min-w-[260px] left-0 top-[calc(100%+0.25rem)] bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-64 overflow-y-auto">
-                {programLoading && (
-                  <li className="px-5 py-3 text-sm text-gray-400 flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 animate-spin text-orange-400" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
-                    Searching…
-                  </li>
-                )}
-                {!programLoading && programs.length === 0 && (
-                  <li className="px-5 py-3 text-sm text-gray-400 text-center">No programs found</li>
-                )}
-                {!programLoading && programs.map((opt, i) => (
-                  <li key={i}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      onSearchChange((prev) => ({ ...prev, program: opt.label }));
-                      setActiveDropdown(null);
-                    }}
-                    className="px-5 py-2.5 cursor-pointer text-sm border-b border-gray-50 last:border-0 hover:bg-orange-50 hover:text-orange-600 transition-colors">
-                    {opt.label}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
         </div>
 
         {/* City — type-to-filter from 127 Pakistan cities */}
@@ -426,47 +542,20 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
         {/* Program */}
         <div className="border-b border-gray-100 relative">
           <div className="w-full px-4 py-3.5 flex flex-col items-start">
-            <span className="text-[10px] font-bold uppercase tracking-wider mb-1 text-gray-400">Program</span>
-            <input
-              type="text"
+            <label htmlFor="program-input-mobile" className="text-[10px] font-bold uppercase tracking-wider mb-1 text-gray-400">Program</label>
+            <ProgramAutocomplete
+              id="program-input-mobile"
               value={program}
-              onChange={(e) => {
-                onSearchChange((prev) => ({ ...prev, program: e.target.value }));
-                fetchPrograms(e.target.value);
-                setActiveDropdown("program-mobile");
-              }}
-              onFocus={() => setActiveDropdown("program-mobile")}
-              placeholder="Search programs…"
-              className="w-full text-sm text-gray-900 placeholder:text-gray-400 bg-transparent outline-none"
+              options={programs}
+              loading={programLoading}
+              error={programError}
+              isOpen={activeDropdown === "program-mobile"}
+              onChange={handleProgramChange("program-mobile")}
+              onOpen={handleProgramFocus("program-mobile")}
+              onSelect={handleProgramSelect}
+              mobile
             />
           </div>
-          {activeDropdown === "program-mobile" && (
-            <ul className="bg-white border-t border-gray-100 max-h-48 overflow-y-auto">
-              {programLoading && (
-                <li className="px-5 py-3 text-sm text-gray-400 flex items-center gap-2">
-                  <svg className="w-3.5 h-3.5 animate-spin text-orange-400" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  Searching…
-                </li>
-              )}
-              {!programLoading && programs.length === 0 && (
-                <li className="px-5 py-3 text-sm text-gray-400 text-center">No programs found</li>
-              )}
-              {!programLoading && programs.map((opt, i) => (
-                <li key={i}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onSearchChange((prev) => ({ ...prev, program: opt.label }));
-                    setActiveDropdown(null);
-                  }}
-                  className="px-5 py-2.5 cursor-pointer text-sm border-b border-gray-100 last:border-0 hover:bg-orange-50 hover:text-orange-600 transition-colors">
-                  {opt.label}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
 
         {/* City — mobile type-to-filter */}
@@ -505,4 +594,3 @@ function SearchBar({ onShowAdvancedFilters, searchValues, onSearchChange, result
 }
 
 export default SearchBar;
-

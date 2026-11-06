@@ -8,6 +8,7 @@ import google from "../assets/google.png";
 // import facebook from "../assets/facebook.png";
 import { useAuth } from "../context/AuthContext";
 import { setFlash } from "../utils/flash";
+import { API, forgotPassword as forgotPasswordApi } from "../api/client";
 
 function Login() {
   const navigate = useNavigate();
@@ -15,6 +16,10 @@ function Login() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -64,7 +69,7 @@ function Login() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${API}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -131,6 +136,35 @@ function Login() {
       toast.error("Server error ");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!forgotEmail) {
+      toast.error("Email is required");
+      return;
+    }
+    if (!emailRegex.test(forgotEmail)) {
+      toast.error("Invalid email format");
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await fetch(`${API}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await res.json();
+      setForgotSent(true);
+      toast.success(data.message || "If that email exists, a reset link has been sent.");
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error("Server error");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -210,12 +244,13 @@ function Login() {
             </div>
 
             <div className="text-right">
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={() => setShowForgot(true)}
                 className="text-sm text-orange-500 font-medium hover:underline"
               >
                 Forgot Password?
-              </a>
+              </button>
             </div>
 
             <button
@@ -265,6 +300,65 @@ function Login() {
           />
           <div className="absolute inset-0 bg-gradient-to-l from-transparent to-white/30" />
         </div>
+
+        {/* Forgot Password Modal */}
+        {showForgot && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 rounded-[40px]">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+              {forgotSent ? (
+                <>
+                  <h2 className="text-xl font-bold text-gray-800 mb-3">Check your email</h2>
+                  <p className="text-sm text-gray-500 mb-5">
+                    If an account exists for <span className="font-medium text-gray-700">{forgotEmail}</span>,
+                    you will receive a password reset link shortly. The link expires in 1 hour.
+                  </p>
+                  <button
+                    onClick={() => { setShowForgot(false); setForgotSent(false); setForgotEmail(""); }}
+                    className="w-full py-3 rounded-2xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition"
+                  >
+                    Back to Login
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">Forgot Password?</h2>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                  <form onSubmit={handleForgotPassword} className="space-y-3">
+                    <div className="flex items-center gap-3 border-2 border-gray-200 rounded-2xl px-4 py-3 focus-within:border-orange-500">
+                      <img src={emailIcon} alt="" className="w-5 h-5 opacity-70" />
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        className="border-none outline-none w-full text-[15px] bg-transparent"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgot(false)}
+                        className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={forgotLoading}
+                        className="flex-1 py-3 rounded-2xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition disabled:opacity-60"
+                      >
+                        {forgotLoading ? "Sending…" : "Send Reset Link"}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

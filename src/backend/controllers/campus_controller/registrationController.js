@@ -13,14 +13,13 @@
  *   uni_tier1_approved_by  VARCHAR(255) NULL
  */
 import db, { createTransactionConnection } from "../../config/db.js";
+import { sendEmail } from "../../utils/emailService.js";
 
-// ── promise wrapper ──────────────────────────────────────────────────────────
 const query = (sql, values = []) =>
   new Promise((resolve, reject) =>
     db.query(sql, values, (err, rows) => (err ? reject(err) : resolve(rows)))
   );
 
-// ── CMP-XXXXXX generator ─────────────────────────────────────────────────────
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const genPublicId = () => {
   let s = "CMP-";
@@ -28,7 +27,14 @@ const genPublicId = () => {
   return s;
 };
 
-// ── phone normaliser ─────────────────────────────────────────────────────────
+const getUserInfo = async (userId) => {
+  const rows = await query(
+    "SELECT email, name FROM Student_signup WHERE id = ? LIMIT 1",
+    [userId]
+  ).catch(() => []);
+  return rows[0] || { email: null, name: "Admin" };
+};
+
 const normalisePhone = (raw) => {
   if (!raw) return null;
   const s = raw.replace(/[\s\-()]/g, "");
@@ -38,7 +44,6 @@ const normalisePhone = (raw) => {
   return null;
 };
 
-// ── shape a DB row for the frontend ──────────────────────────────────────────
 const shapeRow = (reg) => {
   const safe = (v) => {
     if (!v) return null;
@@ -76,9 +81,7 @@ const shapeRow = (reg) => {
   };
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // 1. GET /api/universities/approved   (public)
-// ════════════════════════════════════════════════════════════════════════════
 export const getApprovedUniversities = async (_req, res) => {
   try {
     const rows = await query(
@@ -92,7 +95,6 @@ export const getApprovedUniversities = async (_req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // 2. POST /api/campus-registrations   (auth: campus role)
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -246,6 +248,27 @@ export const submitRegistration = async (req, res) => {
 
     await connection.commit();
 
+    const userInfo = await getUserInfo(userId);
+    if (userInfo.email) {
+      sendEmail({
+        to: userInfo.email,
+        subject: `Campus Registration Submitted (${publicId})`,
+        text:
+          `Hello ${userInfo.name || "Campus Admin"},\n\n` +
+          `Your campus registration for "${officialName.trim()}" has been submitted successfully.\n` +
+          `Reference ID: ${publicId}\n\n` +
+          `Your application will be reviewed first by the university admin, then by the Super Admin.\n` +
+          `You will be notified at each stage of the review.\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Hello ${userInfo.name || "Campus Admin"},</p>` +
+          `<p>Your campus registration for <strong>"${officialName.trim()}"</strong> has been submitted successfully.</p>` +
+          `<p>Reference ID: <strong>${publicId}</strong></p>` +
+          `<p>Your application will be reviewed first by the university admin, then by the Super Admin. You will be notified at each stage of the review.</p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Campus registration submit email failed (non-fatal):", e.message));
+    }
+
     return res.status(201).json({
       message: "Campus registration submitted successfully.",
       data: {
@@ -281,7 +304,6 @@ export const submitRegistration = async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════════════════
 // 3. GET /api/campus-registrations/mine   (auth: campus role)
-// ════════════════════════════════════════════════════════════════════════════
 export const getMyRegistration = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -302,9 +324,7 @@ export const getMyRegistration = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // 4. POST /api/campus-registrations/:id/resubmit   (auth: campus, owner only)
-// ════════════════════════════════════════════════════════════════════════════
 export const resubmitRegistration = async (req, res) => {
   const userId = req.user.id;
   const { id } = req.params;
@@ -379,14 +399,28 @@ export const resubmitRegistration = async (req, res) => {
     params
   );
 
+  const resubmitInfo = await getUserInfo(userId);
+  if (resubmitInfo.email) {
+    sendEmail({
+      to: resubmitInfo.email,
+      subject: `Campus Registration Resubmitted (${reg.publicId})`,
+      text:
+        `Hello ${resubmitInfo.name || "Campus Admin"},\n\n` +
+        `Your campus registration for "${officialName.trim()}" has been resubmitted and is back in the review queue.\n\n` +
+        `Regards,\nUni Finder Team`,
+      html:
+        `<p>Hello ${resubmitInfo.name || "Campus Admin"},</p>` +
+        `<p>Your campus registration for <strong>"${officialName.trim()}"</strong> has been resubmitted and is back in the review queue.</p>` +
+        `<p>Regards,<br>Uni Finder Team</p>`,
+    }).catch((e) => console.error("Resubmit email failed (non-fatal):", e.message));
+  }
+
   res.json({ data: { publicId: reg.publicId } });
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // 5. GET /api/campus-registrations   (auth: university role — tier-1 reviewer)
 //    Returns all registrations addressed to this university admin's university.
 //    query: ?status=  ?q=  ?page=  ?limit=
-// ════════════════════════════════════════════════════════════════════════════
 export const getUniversityCampusRegistrations = async (req, res) => {
   // University ID comes from the JWT claim set by verifyToken middleware
   const universityId = req.user?.university_id;
@@ -471,13 +505,11 @@ export const getUniversityCampusRegistrations = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // 6. PATCH /api/campus-registrations/:id/tier1   (auth: university role — tier-1)
 //    University admin's tier-1 review: approve / reject / request_resubmission.
 //    Must only act on registrations belonging to their university.
 //    On tier-1 approve: sets uni_tier1_approved=1 but does NOT change status
 //    (stays 'pending' — final 'approved' only from super admin).
-// ════════════════════════════════════════════════════════════════════════════
 export const uniUpdateRegistrationStatus = async (req, res) => {
   const universityId = req.user?.university_id;
   if (!universityId) {
@@ -513,6 +545,24 @@ export const uniUpdateRegistrationStatus = async (req, res) => {
        WHERE id=?`,
       [reviewerId, JSON.stringify(history), id]
     );
+    // Notify campus admin
+    const info = await getUserInfo(reg.registrantUserId);
+    if (info.email) {
+      sendEmail({
+        to: info.email,
+        subject: `Campus Application — University Admin Approved (${reg.publicId})`,
+        text:
+          `Hello ${info.name || "Campus Admin"},\n\n` +
+          `Your campus application for "${reg.officialName}" has been approved by the university admin.\n` +
+          `It is now awaiting final approval from the Super Admin.\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Hello ${info.name || "Campus Admin"},</p>` +
+          `<p>Your campus application for <strong>"${reg.officialName}"</strong> has been approved by the university admin.</p>` +
+          `<p>It is now awaiting final approval from the Super Admin.</p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Tier-1 approve email failed (non-fatal):", e.message));
+    }
     return res.json({ message: "Tier-1 approval recorded. Awaiting Super Admin final approval." });
 
   } else if (action === "reject") {
@@ -527,6 +577,26 @@ export const uniUpdateRegistrationStatus = async (req, res) => {
        WHERE id=?`,
       [reason.trim(), note?.trim() || null, JSON.stringify(history), id]
     );
+    // Notify campus admin
+    const info = await getUserInfo(reg.registrantUserId);
+    if (info.email) {
+      sendEmail({
+        to: info.email,
+        subject: `Campus Application Rejected by University (${reg.publicId})`,
+        text:
+          `Hello ${info.name || "Campus Admin"},\n\n` +
+          `Your campus application for "${reg.officialName}" was not approved by the university admin.\n\n` +
+          `Reason: ${reason.trim()}${note ? `\nNote: ${note.trim()}` : ""}\n\n` +
+          `Please review the feedback and submit a new application when ready.\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Hello ${info.name || "Campus Admin"},</p>` +
+          `<p>Your campus application for <strong>"${reg.officialName}"</strong> was not approved by the university admin.</p>` +
+          `<p><strong>Reason:</strong> ${reason.trim()}${note ? `<br><strong>Note:</strong> ${note.trim()}` : ""}</p>` +
+          `<p>Please review the feedback and submit a new application when ready.</p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Tier-1 reject email failed (non-fatal):", e.message));
+    }
     return res.json({ message: "Campus registration rejected." });
 
   } else if (action === "request_resubmission") {
@@ -543,6 +613,30 @@ export const uniUpdateRegistrationStatus = async (req, res) => {
        WHERE id=?`,
       [JSON.stringify(docs), note?.trim() || null, JSON.stringify(history), id]
     );
+    // Notify campus admin
+    const info = await getUserInfo(reg.registrantUserId);
+    if (info.email) {
+      const docList = docs.map((d) => `• ${d}`).join("\n");
+      sendEmail({
+        to: info.email,
+        subject: `Resubmission Required — Campus Application (${reg.publicId})`,
+        text:
+          `Hello ${info.name || "Campus Admin"},\n\n` +
+          `The university admin has requested that you resubmit your campus application for "${reg.officialName}".\n\n` +
+          `Please provide the following:\n${docList}\n\n` +
+          `${note ? `Additional note: ${note.trim()}\n\n` : ""}` +
+          `You can resubmit your application from your dashboard.\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Hello ${info.name || "Campus Admin"},</p>` +
+          `<p>The university admin has requested that you resubmit your campus application for <strong>"${reg.officialName}"</strong>.</p>` +
+          `<p><strong>Please provide the following:</strong></p>` +
+          `<ul>${docs.map((d) => `<li>${d}</li>`).join("")}</ul>` +
+          `${note ? `<p><strong>Additional note:</strong> ${note.trim()}</p>` : ""}` +
+          `<p>You can resubmit your application from your dashboard.</p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Tier-1 resubmission email failed (non-fatal):", e.message));
+    }
     return res.json({ message: "Resubmission requested from campus admin." });
 
   } else {
@@ -550,11 +644,9 @@ export const uniUpdateRegistrationStatus = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // 7. PATCH /api/campus-registrations/:id/status   (auth: super admin)
 //    Final approval — only allowed when tier-1 (university) has already approved.
 //    Kept for backward compat; adminController wraps this for the super-admin UI.
-// ════════════════════════════════════════════════════════════════════════════
 export const updateRegistrationStatus = async (req, res) => {
   const { id } = req.params;
   const { action, reason, note, requiredDocs } = req.body;
@@ -609,6 +701,27 @@ export const updateRegistrationStatus = async (req, res) => {
       console.warn("Auto-insert campus record error (non-fatal):", insertErr.message);
     }
 
+    // Notify campus admin of final approval
+    const info = await getUserInfo(reg.registrantUserId);
+    if (info.email) {
+      sendEmail({
+        to: info.email,
+        subject: `Campus Registration Approved ✅ (${reg.publicId})`,
+        text:
+          `Dear ${info.name || "Campus Admin"},\n\n` +
+          `Congratulations! Your campus "${reg.officialName}" has been fully approved.\n` +
+          `You can now log in and start adding your campus details (history, programs, facilities, photos, hostels).\n\n` +
+          `Sign in here: ${process.env.CLIENT_URL || "http://localhost:5173"}/login\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Dear ${info.name || "Campus Admin"},</p>` +
+          `<p>Congratulations! Your campus <strong>"${reg.officialName}"</strong> has been fully approved.</p>` +
+          `<p>You can now log in and start adding your campus details (history, programs, facilities, photos, hostels).</p>` +
+          `<p><a href="${process.env.CLIENT_URL || "http://localhost:5173"}/login">Sign in here</a></p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Final approval email failed (non-fatal):", e.message));
+    }
+
   } else if (action === "reject") {
     if (!reason || !reason.trim())
       return res.status(400).json({ errors: { reason: "Rejection reason is required." } });
@@ -620,6 +733,26 @@ export const updateRegistrationStatus = async (req, res) => {
        WHERE id=?`,
       [reason.trim(), note?.trim() || null, JSON.stringify(history), id]
     );
+    // Notify campus admin
+    const info = await getUserInfo(reg.registrantUserId);
+    if (info.email) {
+      sendEmail({
+        to: info.email,
+        subject: `Campus Registration Rejected ❌ (${reg.publicId})`,
+        text:
+          `Dear ${info.name || "Campus Admin"},\n\n` +
+          `Your campus registration for "${reg.officialName}" was not approved.\n\n` +
+          `Reason: ${reason.trim()}${note ? `\nNote: ${note.trim()}` : ""}\n\n` +
+          `Please review the feedback and submit a new application when ready.\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Dear ${info.name || "Campus Admin"},</p>` +
+          `<p>Your campus registration for <strong>"${reg.officialName}"</strong> was not approved.</p>` +
+          `<p><strong>Reason:</strong> ${reason.trim()}${note ? `<br><strong>Note:</strong> ${note.trim()}` : ""}</p>` +
+          `<p>Please review the feedback and submit a new application when ready.</p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Final rejection email failed (non-fatal):", e.message));
+    }
 
   } else if (action === "request_resubmission") {
     const docs = Array.isArray(requiredDocs) ? requiredDocs.filter(Boolean) : [];
@@ -635,6 +768,30 @@ export const updateRegistrationStatus = async (req, res) => {
        WHERE id=?`,
       [JSON.stringify(docs), note?.trim() || null, JSON.stringify(history), id]
     );
+    // Notify campus admin
+    const info = await getUserInfo(reg.registrantUserId);
+    if (info.email) {
+      const docList = docs.map((d) => `• ${d}`).join("\n");
+      sendEmail({
+        to: info.email,
+        subject: `Resubmission Required — Campus Registration (${reg.publicId})`,
+        text:
+          `Dear ${info.name || "Campus Admin"},\n\n` +
+          `The Super Admin has requested that you resubmit your campus registration for "${reg.officialName}".\n\n` +
+          `Please provide the following:\n${docList}\n\n` +
+          `${note ? `Additional note: ${note.trim()}\n\n` : ""}` +
+          `You can resubmit from your dashboard.\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Dear ${info.name || "Campus Admin"},</p>` +
+          `<p>The Super Admin has requested that you resubmit your campus registration for <strong>"${reg.officialName}"</strong>.</p>` +
+          `<p><strong>Please provide the following:</strong></p>` +
+          `<ul>${docs.map((d) => `<li>${d}</li>`).join("")}</ul>` +
+          `${note ? `<p><strong>Additional note:</strong> ${note.trim()}</p>` : ""}` +
+          `<p>You can resubmit from your dashboard.</p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Final resubmission email failed (non-fatal):", e.message));
+    }
 
   } else {
     return res.status(400).json({ message: `Unknown action '${action}'.` });

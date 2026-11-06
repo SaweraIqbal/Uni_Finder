@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getUniversities, submitUniversityVerification } from "../../api/verification";
+import UniversityNotFoundModal from "./UniversityNotFoundModal";
 
 const DESIGNATIONS = [
   "Vice Chancellor / Rector",
@@ -128,6 +129,7 @@ export default function UniversityVerificationForm({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [receipt, setReceipt] = useState(null);
   const [loadError, setLoadError] = useState("");
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -408,6 +410,7 @@ export default function UniversityVerificationForm({
   );
 
   return (
+    <>
     <form
       noValidate
       onSubmit={handleSubmit}
@@ -575,9 +578,13 @@ export default function UniversityVerificationForm({
             ⚠️ This university was previously rejected — an authorization letter is mandatory.
           </p>
         )}
-        <a href="mailto:support@unifinder.pk" className="mt-2 inline-block text-xs text-orange-700 underline">
+        <button
+          type="button"
+          onClick={() => setContactModalOpen(true)}
+          className="mt-2 inline-block text-xs text-orange-700 underline hover:text-orange-900 transition-colors focus:outline-none focus:ring-2 focus:ring-[#c88410]/40 rounded"
+        >
           Can&apos;t find your university? Contact us
-        </a>
+        </button>
       </Field>
 
       <Field label="Official Email" required error={fieldError("official_email")}>
@@ -741,6 +748,16 @@ export default function UniversityVerificationForm({
         </button>
       </div>
     </form>
+
+    {/* ── University Not Found Modal ─────────────────────────────────────── */}
+    <UniversityNotFoundModal
+      isOpen={contactModalOpen}
+      onClose={() => setContactModalOpen(false)}
+      defaultName={fullName}
+      defaultEmail={officialEmail}
+      searchQuery={search}
+    />
+  </>
   );
 }
 

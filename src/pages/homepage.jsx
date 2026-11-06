@@ -1,29 +1,114 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import heroVideo from "../assets/video1.mp4";
 import SearchBar from "../components/shared/SearchBar";
-import { formatPKR } from "../data/campuses";
 import { API } from "../api/client";
+import { getProgramHierarchy } from "../api/university";
 
-// Normalise a live API campus row to the shape CampusCard / filters expect
+const RIPHAH_CAMPUS_IMAGES = [
+  {
+    match: /\bi\s*14\b|hajj complex/,
+    image: "https://riphah.edu.pk/islamabad/i14/images/visual-01.jpg",
+  },
+  {
+    match: /al mizan|almizan|rawalpindi|peshawar road/,
+    image: "https://riphah.edu.pk/islamabad/al-mizan/images/visual-01.jpg",
+  },
+  {
+    match: /\bg\s*7\b|7th avenue/,
+    image: "https://riphah.edu.pk/islamabad/g7/images/visual-01.jpg",
+  },
+  {
+    match: /gulberg green/,
+    image: "https://riphah.edu.pk/islamabad/gulberg-green/images/visual-01.jpg",
+  },
+  {
+    match: /raiwind/,
+    image: "https://riphah.edu.pk/lahore/raiwind/images/visual-01.jpg",
+  },
+  {
+    match: /gulberg/,
+    image: "https://riphah.edu.pk/lahore/gulberg/images/visual-01.jpg",
+  },
+  {
+    match: /\bqie\b|quaid e azam industrial/,
+    image: "https://riphah.edu.pk/lahore/qie/images/visual-01.jpg",
+  },
+  {
+    match: /malakand|kanju|swat/,
+    image: "https://riphah.edu.pk/malakand/images/visual-01.jpg",
+  },
+  {
+    match: /faisalabad|satiana/,
+    image:
+      "https://riphahfsd.edu.pk/wp-content/uploads/2025/08/RIUF-Hero-Section-Image-V1.1.png",
+  },
+  {
+    match: /sahiwal|multan bypass/,
+    image:
+      "https://riphahsahiwal.edu.pk/wp-content/uploads/2026/10/Neoclassical-Red-Brick-Building-and-Gardens-1.png",
+  },
+  {
+    match: /peshawar|warsak/,
+    image: "https://riphahpsh.edu.pk/assets/images/slider/hero-slide-1.webp",
+  },
+  {
+    match: /gujranwala|gondalwala/,
+    image: "https://riphahgrw.edu.pk/assets/img/about/about-thumb2-1.jpg",
+  },
+  {
+    match: /\bislamabad\b/,
+    image: "https://riphah.edu.pk/islamabad/i14/images/visual-01.jpg",
+  },
+  {
+    match: /\blahore\b/,
+    image: "https://riphah.edu.pk/lahore/raiwind/images/visual-01.jpg",
+  },
+];
+
+function getRiphahCampusImage(campus) {
+  const campusName = `${campus.name || campus.campusName || ""} ${campus.city || ""}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+  return RIPHAH_CAMPUS_IMAGES.find(({ match }) => match.test(campusName))?.image || null;
+}
+
+// normalizeLiveCampus
+// Maps a raw API campus row -> the shape CampusCard and all filters expect.
+// The listing endpoint now returns a `programs` array of objects:
+//   { name, level, degree_type, fee_numeric, shift_label }
 function normalizeLiveCampus(c) {
-  const type = (c.campus_type || "").toLowerCase();
+  const rawType = (c.campus_type || "").trim();
   const isMain =
     c.is_main === 1 || c.is_main === true ||
-    type === "main" || type === "main campus";
+    rawType.toLowerCase() === "main" ||
+    rawType.toLowerCase() === "main campus";
 
-  // Resolve cover image â€” prefix API base for relative paths
-  let coverImg = c.cover_image || c.university_banner || null;
+  const normaliseCampusType = (t) => {
+    const lower = t.toLowerCase();
+    if (lower.includes("main"))     return "Main Campus";
+    if (lower.includes("sub"))      return "Sub Campus";
+    if (lower.includes("regional")) return "Regional Campus";
+    if (lower.includes("city"))     return "City Campus";
+    return t || "City Campus";
+  };
+
+  const universityName = c.university_name || c.universityName || "";
+  const riphahImage = universityName.toLowerCase().includes("riphah")
+    ? getRiphahCampusImage(c)
+    : null;
+  let coverImg = c.cover_image || riphahImage || c.university_banner || null;
   if (coverImg && !/^https?:\/\//i.test(coverImg)) {
     coverImg = `${API}${coverImg}`;
   }
 
-  // Admission status
   let admissionStatus = "unknown";
   if (c.admission_status_override) {
     admissionStatus = c.admission_status_override;
   } else if (c.admission_open && c.admission_close) {
-    const now = new Date();
+    const now   = new Date();
     const open  = new Date(c.admission_open);
     const close = new Date(c.admission_close);
     if (now >= open && now <= close) {
@@ -36,37 +121,160 @@ function normalizeLiveCampus(c) {
     }
   }
 
+  // API returns [{name, level, degree_type, fee_numeric}] or plain strings.
+  const rawPrograms = Array.isArray(c.programs) ? c.programs : [];
+  const programObjects = rawPrograms.map((p) =>
+    typeof p === "string"
+      ? { name: p, level: "", degree_type: "", fee_numeric: 0 }
+      : { name: p.name || "", level: p.level || "", degree_type: p.degree_type || "", fee_numeric: p.fee_numeric || 0 }
+  );
+  // Plain name array for hero search text matching
+  const programNames = programObjects.map((p) => p.name).filter(Boolean);
+
+  const feeMin = Number(c.fee_min) || 0;
+  const feeMax = Number(c.fee_max) || feeMin;
+
+  let shifts = [];
+  if (Array.isArray(c.shifts) && c.shifts.length) {
+    shifts = c.shifts;
+  } else {
+    if (c.shift_morning) shifts.push("Morning");
+    if (c.shift_evening) shifts.push("Evening");
+    if (c.shift_weekend) shifts.push("Weekend");
+  }
+
+  const universityType = c.sector || c.university_type || c.universityType || "";
+
   return {
     ...c,
-    id:              c.id,
-    campusName:      c.name || c.campusName || "Campus",
-    universityName:  c.university_name || c.universityName || "",
-    universityId:    c.university_id   || c.universityId   || "",
-    city:            c.city            || "",
-    province:        c.province        || "",
-    area:            c.area            || "",
-    coverImage:      coverImg,
-    cover_image:     coverImg,
-    universityType:  c.sector          || c.university_type || c.universityType || "",
-    campusCategory:  isMain ? "Main Campus" : (c.campus_type || "City Campus"),
+    id:               c.id,
+    campusName:       c.name           || c.campusName    || "Campus",
+    universityName:   c.university_name || c.universityName || "",
+    universityId:     c.university_id   || c.universityId   || "",
+    city:             c.city            || "",
+    province:         c.province        || "",
+    area:             c.area            || "",
+    coverImage:       coverImg,
+    cover_image:      coverImg,
+    universityType,
+    campusCategory:   isMain ? "Main Campus" : normaliseCampusType(rawType),
     admissionStatus,
-    genderType:      c.gender_policy   || c.genderType      || "",
-    programs:        Array.isArray(c.programs)
-      ? c.programs.map((p) => (typeof p === "string" ? p : p.name || ""))
-      : [],
-    feePerSemester:  c.fee             || c.feePerSemester  || 0,
-    fee_min:         c.fee_min         || 0,
-    fee_max:         c.fee_max         || c.fee             || 0,
-    hostelAvailable: !!c.hostel_available,
-    scholarshipAvailable: !!c.scholarship_available,
-    entryTests:      c.entry_tests     || c.entryTests      || [],
-    minMarksRequired: c.min_marks      || c.minMarksRequired || 40,
-    students:        c.students        || null,
-    is_main:         isMain,
+    genderType:       c.gender_policy   || c.genderType   || "",
+    programObjects,   // [{name, level, degree_type, fee_numeric}] -- used by level/program filters
+    programs:         programNames,    // plain strings -- used by hero search text match
+    feePerSemester:   feeMin,
+    fee_min:          feeMin,
+    fee_max:          feeMax,
+    hostelAvailable:  !!c.hostel_available,
+    scholarshipAvailable: !!(c.scholarship_available || c.scholarships_available),
+    shifts,
+    entryTests:       Array.isArray(c.entry_tests) ? c.entry_tests : [],
+    minMarksRequired: c.min_marks || c.minMarksRequired || 40,
+    students:         c.students  || null,
+    is_main:          isMain,
   };
 }
 
-// ----------- Design tokens / lookup maps -----------
+// programMatchesLevel
+// Maps a sidebar Level button label to a DB programs.level / degree_type value.
+function programMatchesLevel(prog, lvl) {
+  const dbLevel    = (prog.level        || "").toLowerCase().trim();
+  const degreeType = (prog.degree_type  || "").toLowerCase().trim();
+  const name       = (prog.name         || "").toLowerCase().trim();
+
+  if (lvl === "Undergraduate") {
+    if (["undergraduate", "ug"].includes(dbLevel)) return true;
+    const ugDegrees = ["bs", "bba", "be", "b.sc", "bsc", "llb", "pharm-d", "pharmd", "dpt", "mbbs", "bds", "dvm", "b.arch", "bscn", "bsn"];
+    if (ugDegrees.includes(degreeType)) return true;
+    if (ugDegrees.some(d => name.startsWith(d + " "))) return true;
+    if (name.includes("bachelor")) return true;
+    return false;
+  }
+  if (lvl === "MS / MPhil") {
+    if (["ms", "mphil", "ms_mphil"].includes(dbLevel)) return true;
+    const msDegrees = ["ms", "mphil", "mba", "m.sc", "msc", "llm", "mph", "m.ed", "m.arch"];
+    if (msDegrees.includes(degreeType)) return true;
+    if (msDegrees.some(d => name.startsWith(d + " "))) return true;
+    if (name.includes("master") || name === "mba") return true;
+    return false;
+  }
+  if (lvl === "PhD") {
+    if (dbLevel === "phd") return true;
+    if (degreeType === "phd") return true;
+    if (name.startsWith("phd ") || name === "phd" || name.includes("doctor of philosophy")) return true;
+    return false;
+  }
+  if (lvl === "Associate Degree") {
+    if (dbLevel.includes("associate")) return true;
+    if (name.includes("associate degree")) return true;
+    return false;
+  }
+  if (lvl === "Diploma") {
+    if (dbLevel.includes("diploma")) return true;
+    if (name.includes("diploma")) return true;
+    return false;
+  }
+  return false;
+}
+
+// programMatchesToolbarLabel
+// Fuzzy-matches a DB program object against a canonical backend program label.
+// DB stores: { name:"Computer Science", degree_type:"BS", level:"Undergraduate" }
+// Label:     "BS Computer Science (BSCS)"
+function programSelectionKey(selection) {
+  if (typeof selection === "string") return selection.toLowerCase();
+  return [
+    selection.category || selection.level || "",
+    selection.degree_type || "",
+    selection.label || "",
+  ].join("|").toLowerCase();
+}
+
+function programCategory(program) {
+  const degreeType = (program.degree_type || "").trim().toLowerCase();
+  const name = (program.name || "").trim().toLowerCase();
+  if (["adp", "ad", "associate degree"].includes(degreeType) || /^adp(?:\s|$)/.test(name)) {
+    return "adp";
+  }
+  return (program.level || "Other").trim().toLowerCase();
+}
+
+function programMatchesToolbarLabel(prog, selection) {
+  const dbName     = (prog.name        || "").toLowerCase();
+  const degType    = (prog.degree_type || "").toLowerCase();
+  const dbLevel    = (prog.level       || "").toLowerCase();
+  const selectedProgram = typeof selection === "string"
+    ? { label: selection }
+    : selection;
+  const selectedDegreeType = (selectedProgram.degree_type || "").toLowerCase();
+  const selectedCategory = (selectedProgram.category || selectedProgram.level || "").toLowerCase();
+  if (selectedDegreeType && degType !== selectedDegreeType) return false;
+  if (selectedCategory && programCategory(prog) !== selectedCategory) return false;
+
+  const label = selectedProgram.label;
+  const labelLower = label.toLowerCase();
+
+  // 1. Label contains the db name (e.g. "bs computer science" contains "computer science")
+  if (dbName.length > 3 && labelLower.includes(dbName)) return true;
+
+  // 2. Strip degree-type prefix + abbreviation from label, then compare
+  const stripped = labelLower
+    .replace(/^\s*(bs|ms|phd|bba|be|mba|b\.sc|m\.sc|llm|llb|dpt|adp|pharmd|pharm-d|mphil|m\.phil|m\.ed)\s+/i, "")
+    .replace(/\s*\([^)]*\)\s*/g, "")
+    .trim();
+  if (stripped.length > 3 && dbName.includes(stripped)) return true;
+  if (stripped.length > 3 && stripped.includes(dbName)) return true;
+
+  // 3. Degree-type prefix match
+  const firstWord = labelLower.split(/\s+/)[0];
+  if (firstWord === degType && labelLower.includes(dbName)) return true;
+
+  // 4. Level-aware PhD / MS fallback
+  if (dbLevel === "phd" && labelLower.startsWith("phd") && labelLower.includes(dbName)) return true;
+  if (["ms", "mphil"].includes(dbLevel) && (labelLower.startsWith("ms ") || labelLower.startsWith("ms\t")) && labelLower.includes(dbName)) return true;
+
+  return false;
+}
 const ADMISSION_STYLE = {
   open: "bg-green-100 text-green-800",
   closed: "bg-slate-100 text-slate-600",
@@ -84,297 +292,6 @@ const SORT_OPTIONS = [
   { id: "fee-high", label: "Fee: High to Low" },
 ];
 
-// ----------- Program taxonomy (HEC-aligned, deduplicated) -----------
-const PROGRAM_TREE = [
-  {
-    label: "Undergraduate Degrees (4-Year)",
-    children: [
-      {
-        label: "Associate Degrees (AD, 2-Year)",
-        children: [
-          "Associate Degree in Computing",
-          "Associate Degree in Business & Management",
-          "Associate Degree in Arts & Humanities",
-          "Associate Degree in Social Sciences",
-          "Associate Degree in Natural Sciences",
-          "Associate Degree in Engineering Technology",
-          "Associate Degree in Allied Health Sciences",
-          "Associate Degree in Agriculture",
-          "Associate Degree in Education",
-        ],
-      },
-      {
-        label: "Bachelor of Science / Bachelor of Studies (BS, 4-Year)",
-        children: [
-          // Computing & IT
-          "BS Computer Science (BSCS)",
-          "BS Software Engineering (BSSE)",
-          "BS Information Technology (BSIT)",
-          "BS Data Science (BSDS)",
-          "BS Artificial Intelligence (BSAI)",
-          "BS Cyber Security (BSCY)",
-          "BS Computer Engineering",
-          "BS Information Systems",
-          // Basic & Applied Sciences
-          "BS Physics",
-          "BS Chemistry",
-          "BS Mathematics",
-          "BS Statistics",
-          "BS Biology",
-          "BS Zoology",
-          "BS Botany",
-          "BS Biochemistry",
-          "BS Microbiology",
-          "BS Biotechnology",
-          "BS Environmental Science",
-          "BS Geology",
-          "BS Geography",
-          "BS Psychology",
-          "BS Sociology",
-          "BS Economics",
-          "BS Political Science",
-          "BS International Relations",
-          "BS Media & Communication Studies",
-          "BS Islamic Studies",
-          "BS Pakistan Studies",
-          "BS English",
-          "BS Urdu",
-          "BS Education",
-          "BS Commerce",
-          "BS Accounting & Finance",
-          "BS Business & Management",
-          "BS Public Administration",
-          "BS Social Work",
-          "BS Library & Information Science",
-          "BS Health & Physical Education",
-          "BS Sports Sciences",
-          "BS Nutrition & Dietetics",
-          "BS Food Science & Technology",
-          "BS Agriculture",
-          "BS Agricultural Sciences",
-          "BS Forestry",
-          "BS Remote Sensing & GIS",
-          "BS Disaster Management",
-          "BS Gender Studies",
-          "BS History",
-          "BS Archaeology",
-          "BS Fine Arts",
-          "BS Fashion Design",
-          "BS Home Economics",
-          // Health & Allied (4-year where applicable)
-          "BS Nursing (BSN)",
-          "BS Allied Health Sciences",
-          "BS Medical Lab Technology",
-          "BS Radiology & Imaging Technology",
-          "BS Physiotherapy (if offered as BS track)",
-          "BS Pharmacy (if offered as BS track)",
-        ],
-      },
-      {
-        label: "Bachelor of Business Administration (BBA, 4-Year)",
-        children: [
-          "BBA (General)",
-          "BBA with specialization in Finance",
-          "BBA with specialization in Marketing",
-          "BBA with specialization in HRM",
-          "BBA with specialization in Supply Chain & Operations",
-          "BBA with specialization in Entrepreneurship",
-          "BBA with specialization in Islamic Banking & Finance",
-          "BBA with specialization in Business Analytics",
-          "BBA with specialization in Digital Business & E-Commerce",
-        ],
-      },
-      {
-        label: "Bachelor of Education (B.Ed, 4-Year)",
-        children: ["B.Ed (General)", "B.Ed (Honors)"],
-      },
-      {
-        label: "Bachelor of Engineering / B.Sc Engineering (4-Year)",
-        children: [
-          "BE / B.Sc Electrical Engineering",
-          "BE / B.Sc Mechanical Engineering",
-          "BE / B.Sc Civil Engineering",
-          "BE / B.Sc Chemical Engineering",
-          "BE / B.Sc Industrial Engineering",
-          "BE / B.Sc Metallurgy & Materials Engineering",
-          "BE / B.Sc Mining Engineering",
-          "BE / B.Sc Petroleum & Gas Engineering",
-          "BE / B.Sc Environmental Engineering",
-          "BE / B.Sc Biomedical Engineering",
-          "BE / B.Sc Textile Engineering",
-          "BE / B.Sc Food Engineering",
-          "BE / B.Sc Agricultural Engineering",
-          "BE / B.Sc Energy Systems Engineering",
-          "BE / B.Sc Mechatronics Engineering",
-          "BE / B.Sc Telecommunication Engineering",
-          "BE / B.Sc Computer Engineering (Engineering Track)",
-          "BE / B.Sc Software Engineering (Engineering Track)",
-          "BE / B.Sc Aerospace Engineering",
-          "BE / B.Sc City & Regional Planning",
-        ],
-      },
-      {
-        label: "5-Year Professional Undergraduate Degrees",
-        children: [
-          "Doctor of Physical Therapy (DPT)",
-          "Doctor of Pharmacy (Pharm.D)",
-          "Bachelor of Laws (LLB)",
-          "Bachelor of Medicine, Bachelor of Surgery (MBBS)",
-          "Bachelor of Dental Surgery (BDS)",
-          "Doctor of Veterinary Medicine (DVM)",
-          "Bachelor of Architecture (B.Arch)",
-          "Bachelor of Nursing (BSN, 5-Year where applicable)",
-        ],
-      },
-    ],
-  },
-  {
-    label: "Graduate & Postgraduate Degrees",
-    children: [
-      {
-        label: "Master of Science (MS) / Master of Philosophy (MPhil)",
-        children: [
-          "MS Computer Science",
-          "MS Software Engineering",
-          "MS Information Technology",
-          "MS Data Science",
-          "MS Artificial Intelligence",
-          "MS Cyber Security",
-          "MS Physics",
-          "MS Chemistry",
-          "MS Mathematics",
-          "MS Statistics",
-          "MS Biology",
-          "MS Zoology",
-          "MS Botany",
-          "MS Biochemistry",
-          "MS Microbiology",
-          "MS Biotechnology",
-          "MS Environmental Science",
-          "MS Geology",
-          "MS Geography",
-          "MS Psychology",
-          "MS Sociology",
-          "MS Economics",
-          "MS Political Science",
-          "MS International Relations",
-          "MS Media & Communication Studies",
-          "MS Islamic Studies",
-          "MS Pakistan Studies",
-          "MS English",
-          "MS Urdu",
-          "MS Education",
-          "MS Commerce",
-          "MS Business & Management",
-          "MS Public Administration",
-          "MS Social Work",
-          "MS Library & Information Science",
-          "MS Nutrition & Dietetics",
-          "MS Food Science & Technology",
-          "MS Agriculture",
-          "MS Forestry",
-          "MS Remote Sensing & GIS",
-          "MS Disaster Management",
-          "MS Gender Studies",
-          "MS History",
-          "MS Archaeology",
-          "MS Fine Arts",
-          "MS Fashion Design",
-          "MS Home Economics",
-          "MS Nursing",
-          "MS Allied Health Sciences",
-          "MS Women, Development & Seerah Studies",
-          "MS Women, Entrepreneurship & Seerah Studies",
-          "MS Women, Leadership & Seerah Studies",
-        ],
-      },
-      {
-        label: "Master of Business Administration (MBA)",
-        children: [
-          "MBA (General)",
-          "MBA (Executive / EMBA)",
-          "MBA with specialization in Finance",
-          "MBA with specialization in Marketing",
-          "MBA with specialization in HRM",
-          "MBA with specialization in Supply Chain & Operations",
-          "MBA with specialization in Entrepreneurship",
-          "MBA with specialization in Islamic Finance",
-          "MBA with specialization in Business Analytics",
-          "MBA with specialization in Fintech",
-          "MBA with specialization in Digital Marketing",
-        ],
-      },
-      {
-        label: "Other MasterÃ¢â‚¬â„¢s Degrees",
-        children: [
-          "Master of Education (M.Ed)",
-          "Master of Laws (LLM)",
-          "Master of Architecture (M.Arch)",
-          "Master of Public Health (MPH)",
-          "Master of Philosophy (MPhil) Ã¢â‚¬â€œ General",
-        ],
-      },
-    ],
-  },
-  {
-    label: "Doctor of Philosophy (PhD)",
-    children: [
-      "PhD Computer Science",
-      "PhD Software Engineering",
-      "PhD Information Technology",
-      "PhD Data Science",
-      "PhD Artificial Intelligence",
-      "PhD Cyber Security",
-      "PhD Physics",
-      "PhD Chemistry",
-      "PhD Mathematics",
-      "PhD Statistics",
-      "PhD Biology",
-      "PhD Zoology",
-      "PhD Botany",
-      "PhD Biochemistry",
-      "PhD Microbiology",
-      "PhD Biotechnology",
-      "PhD Environmental Science",
-      "PhD Geology",
-      "PhD Geography",
-      "PhD Psychology",
-      "PhD Sociology",
-      "PhD Economics",
-      "PhD Political Science",
-      "PhD International Relations",
-      "PhD Media & Communication Studies",
-      "PhD Islamic Studies",
-      "PhD Pakistan Studies",
-      "PhD English",
-      "PhD Urdu",
-      "PhD Education",
-      "PhD Commerce",
-      "PhD Business & Management",
-      "PhD Public Administration",
-      "PhD Social Work",
-      "PhD Library & Information Science",
-      "PhD Nutrition & Dietetics",
-      "PhD Food Science & Technology",
-      "PhD Agriculture",
-      "PhD Forestry",
-      "PhD Remote Sensing & GIS",
-      "PhD Disaster Management",
-      "PhD Gender Studies",
-      "PhD History",
-      "PhD Archaeology",
-      "PhD Fine Arts",
-      "PhD Fashion Design",
-      "PhD Home Economics",
-      "PhD Nursing",
-      "PhD Allied Health Sciences",
-      "PhD Engineering (all disciplines)",
-      "PhD Law",
-      "PhD Architecture",
-    ],
-  },
-];
-// ----------- Fee presets -----------
 const FEE_MIN_BOUND = 15000;
 const FEE_MAX_BOUND = 500000;
 const FEE_PRESETS = [
@@ -400,7 +317,6 @@ function matchesQuery(node, query) {
   return false;
 }
 
-// ----------- TreeNode -----------
 function TreeNode({ node, depth, selected, onSelect, query }) {
   const isLeaf = typeof node === "string";
   const label = isLeaf ? node : node.label;
@@ -412,10 +328,13 @@ function TreeNode({ node, depth, selected, onSelect, query }) {
   if (query && !matchesQuery(node, query)) return null;
 
   if (isSelectableLeaf) {
-    const isSelected = selected.includes(label);
+    const selection = isLeaf ? { label } : node;
+    const isSelected = selected.some(
+      (item) => programSelectionKey(item) === programSelectionKey(selection),
+    );
     return (
       <button
-        onClick={() => onSelect(label)}
+        onClick={() => onSelect(selection)}
         className={`w-full text-left py-1.5 rounded-lg text-sm transition flex items-center justify-between ${
           isSelected
             ? "bg-orange-50 text-orange-600 font-medium"
@@ -481,10 +400,14 @@ function TreeNode({ node, depth, selected, onSelect, query }) {
   );
 }
 
-// ----------- ProgramPicker -----------
 function ProgramPicker({ selected, onToggle }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [programTree, setProgramTree] = useState([]);
+  const [hasLoadedPrograms, setHasLoadedPrograms] = useState(false);
+  const [loadingPrograms, setLoadingPrograms] = useState(false);
+  const [programLoadError, setProgramLoadError] = useState("");
+  const programRequestInFlight = useRef(false);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -494,6 +417,29 @@ function ProgramPicker({ selected, onToggle }) {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, []);
+
+  const loadPrograms = () => {
+    if (hasLoadedPrograms || programRequestInFlight.current) return;
+    programRequestInFlight.current = true;
+    setLoadingPrograms(true);
+    setProgramLoadError("");
+
+    getProgramHierarchy()
+      .then((groups) => {
+        if (!Array.isArray(groups)) {
+          throw new Error("The program hierarchy response was invalid.");
+        }
+        setProgramTree(groups);
+        setHasLoadedPrograms(true);
+      })
+      .catch((error) => {
+        setProgramLoadError(error.message || "Could not load programs.");
+      })
+      .finally(() => {
+        programRequestInFlight.current = false;
+        setLoadingPrograms(false);
+      });
+  };
 
   const triggerLabel =
     selected.length === 0
@@ -507,7 +453,11 @@ function ProgramPicker({ selected, onToggle }) {
       {/* Trigger Ã¢â‚¬â€ same height/border/radius as other toolbar buttons */}
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          const willOpen = !open;
+          setOpen(willOpen);
+          if (willOpen) loadPrograms();
+        }}
         className={`flex items-center gap-1.5 px-32 py-2 text-sm font-medium rounded-lg border transition-all whitespace-nowrap flex-1 ${
           selected.length > 0
             ? "bg-orange-50 text-orange-600 border-orange-200 shadow-sm"
@@ -575,9 +525,27 @@ function ProgramPicker({ selected, onToggle }) {
           </div>
           {/* Tree Ã¢â‚¬â€ scrollable */}
           <div className="max-h-72 overflow-y-auto p-2">
-            {PROGRAM_TREE.map((node, i) => (
+            {loadingPrograms && (
+              <p className="px-3 py-4 text-sm text-gray-500">Loading programs...</p>
+            )}
+            {programLoadError && (
+              <div className="px-3 py-4 text-sm text-red-600">
+                <p>{programLoadError}</p>
+                <button
+                  type="button"
+                  onClick={loadPrograms}
+                  className="mt-2 font-semibold text-orange-600"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+            {!loadingPrograms && !programLoadError && programTree.length === 0 && (
+              <p className="px-3 py-4 text-sm text-gray-500">No programs are currently available.</p>
+            )}
+            {programTree.map((node, i) => (
               <TreeNode
-                key={i}
+                key={node.label || i}
                 node={node}
                 depth={0}
                 selected={selected}
@@ -604,7 +572,6 @@ function ProgramPicker({ selected, onToggle }) {
   );
 }
 
-// ----------- ProgramChip -----------
 function ProgramChip({ label, onRemove }) {
   return (
     <span className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-700 text-xs font-medium pl-3 pr-2 py-1.5 rounded-full border border-orange-100">
@@ -632,7 +599,6 @@ function ProgramChip({ label, onRemove }) {
   );
 }
 
-// ----------- AdvancedFilters (sidebar) -----------
 const ALL_CITIES_LIST = [
   { name: "Lahore", count: 8, province: "Punjab" },
   { name: "Karachi", count: 4, province: "Sindh" },
@@ -975,7 +941,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll, matchCount = 19 }) {
             <span>100%</span>
           </div>
           <p className="text-xs text-green-700 font-medium mt-1.5 flex items-center gap-1">
-            <span>ðŸŽ“</span>
             <span>{minMarksValue === 40 ? "All 19 campuses match" : `${matchCount} campuses match`}</span>
           </p>
         </div>
@@ -985,57 +950,56 @@ function AdvancedFilters({ filters, setFilters, onResetAll, matchCount = 19 }) {
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">
             Tuition Fee / Semester (PKR)
           </span>
-          <p className="text-xs text-slate-400 mb-2">Any fee</p>
+          <p className={`text-xs mb-2 ${(!filters.minFee && !filters.maxFee) ? "text-slate-400" : "text-orange-500 font-medium"}`}>
+            {(!filters.minFee && !filters.maxFee)
+              ? "Any fee"
+              : `${filters.minFee ? "From PKR " + Number(filters.minFee).toLocaleString() : "Up to"} \u2013 ${filters.maxFee ? "PKR " + Number(filters.maxFee).toLocaleString() : "any"}`}
+          </p>
           <div className="grid grid-cols-2 gap-2">
+            {/* Min Fee */}
             <div className="relative">
               <select
                 value={filters.minFee || ""}
-                onChange={(e) =>
-                  setFilters((p) => ({ ...p, minFee: e.target.value }))
-                }
+                onChange={(e) => setFilters((p) => ({ ...p, minFee: e.target.value }))}
                 className={`w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 pr-6 text-xs transition cursor-pointer focus:outline-none focus:border-orange-500 ${
                   !filters.minFee ? "text-slate-400" : "text-slate-700 font-medium"
                 }`}
               >
                 <option value="">Min fee</option>
+                <option value="20000">20k</option>
+                <option value="30000">30k</option>
                 <option value="50000">50k</option>
+                <option value="75000">75k</option>
                 <option value="100000">1 Lakh</option>
                 <option value="150000">1.5 Lakh</option>
+                <option value="200000">2 Lakh</option>
+                <option value="300000">3 Lakh</option>
               </select>
-              <svg
-                className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
+              <svg className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
 
+            {/* Max Fee */}
             <div className="relative">
               <select
                 value={filters.maxFee || ""}
-                onChange={(e) =>
-                  setFilters((p) => ({ ...p, maxFee: e.target.value }))
-                }
+                onChange={(e) => setFilters((p) => ({ ...p, maxFee: e.target.value }))}
                 className={`w-full appearance-none bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 pr-6 text-xs transition cursor-pointer focus:outline-none focus:border-orange-500 ${
                   !filters.maxFee ? "text-slate-400" : "text-slate-700 font-medium"
                 }`}
               >
                 <option value="">Max fee</option>
+                <option value="30000">30k</option>
                 <option value="50000">50k</option>
+                <option value="75000">75k</option>
                 <option value="100000">1 Lakh</option>
                 <option value="150000">1.5 Lakh</option>
-                <option value="200000">2 Lakh+</option>
+                <option value="200000">2 Lakh</option>
+                <option value="300000">3 Lakh</option>
+                <option value="500000">5 Lakh</option>
               </select>
-              <svg
-                className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
+              <svg className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
@@ -1131,7 +1095,6 @@ function AdvancedFilters({ filters, setFilters, onResetAll, matchCount = 19 }) {
 
 const MobileFilters = AdvancedFilters;
 
-// ----------- HomePage -----------
 const INITIAL_FILTERS = {
   provinces: [],
   cities: [],
@@ -1165,13 +1128,17 @@ function HomePage() {
     university: locationState.university || "",
   });
 
-  const handleProgramToggle = (label) =>
+  const handleProgramToggle = (selection) =>
     setSelectedPrograms((prev) =>
-      prev.includes(label) ? prev.filter((p) => p !== label) : [...prev, label],
+      prev.some((item) => programSelectionKey(item) === programSelectionKey(selection))
+        ? prev.filter((item) => programSelectionKey(item) !== programSelectionKey(selection))
+        : [...prev, selection],
     );
 
-  const handleProgramRemove = (label) =>
-    setSelectedPrograms((prev) => prev.filter((p) => p !== label));
+  const handleProgramRemove = (selection) =>
+    setSelectedPrograms((prev) =>
+      prev.filter((item) => programSelectionKey(item) !== programSelectionKey(selection)),
+    );
 
   const handleResetAll = () => {
     setFilters(INITIAL_FILTERS);
@@ -1295,7 +1262,6 @@ function HomePage() {
   );
 }
 
-// ----------- Loading skeleton -----------
 function CampusCardSkeleton() {
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden animate-pulse flex flex-col h-full">
@@ -1310,7 +1276,6 @@ function CampusCardSkeleton() {
   );
 }
 
-// ----------- CampusGrid -----------
 function CampusGrid({
   filters,
   setFilters,
@@ -1332,7 +1297,6 @@ function CampusGrid({
   const [selectedIds, setSelectedIds] = useState([]);
   const MAX_SELECT = 3;
 
-  // ---- Live campus data from API ----
   const [liveCampuses, setLiveCampuses] = useState([]);
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
@@ -1375,31 +1339,36 @@ function CampusGrid({
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  // ---- Real filtering ----
+  // All comparisons run against the normalised campus objects produced by
+  // normalizeLiveCampus().  Program-level checks use `c.programObjects`
+  // (array of {name, level, degree_type, fee_numeric}) rather than the plain
+  // `c.programs` string array so level, degree type and fees are reliable.
   const filtered = useMemo(() => {
-        return campuses.filter((c) => {
-       if (!c) return false;
-       // Hero search filters
-if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
+    return campuses.filter((c) => {
+      if (!c) return false;
+
+      // ── Hero search re-filters (server already pre-filtered, but we verify
+      //    client-side to handle any edge cases with partial matches) ──────────
+
+      if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
         return false;
+
       if (
         searchUniversity &&
-        !c.universityName
-          .toLowerCase()
-          .includes(searchUniversity.toLowerCase()) &&
+        !c.universityName.toLowerCase().includes(searchUniversity.toLowerCase()) &&
         !c.campusName.toLowerCase().includes(searchUniversity.toLowerCase())
       )
         return false;
+
+      // Hero program search: match against plain program names
       if (
         searchProgram &&
         !(c.programs || []).some((p) =>
-          p.toLowerCase().includes(searchProgram.toLowerCase()),
+          p.toLowerCase().includes(searchProgram.toLowerCase())
         )
       )
         return false;
 
-      // Sidebar filters
-      // 1. Location - Provinces
       if (filters.provinces && filters.provinces.length > 0) {
         const prov =
           c.province ||
@@ -1413,124 +1382,92 @@ if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
         if (!filters.provinces.includes(prov)) return false;
       }
 
-      // 1. Location - Cities
       if (filters.cities && filters.cities.length > 0) {
         if (!filters.cities.includes(c.city)) return false;
       }
 
-      // LEVEL ("Undergraduate", "MS / MPhil", "PhD", "Associate Degree", "Diploma")
+      // Uses programObjects so we match against the DB level / degree_type,
+      // not a fragile substring on the program name string.
       if (filters.level) {
-        const lvl = filters.level;
-        const matchesLevel = (c.programs || []).some((p) => {
-          const pl = p.toLowerCase();
-          if (lvl === "Undergraduate") {
-            return (
-              pl.includes("bachelor") ||
-              pl.includes("bs") ||
-              pl.includes("bba") ||
-              pl.includes("llb") ||
-              pl.includes("pharm-d") ||
-              pl.includes("dpt") ||
-              pl.includes("be ") ||
-              pl.includes("b.sc")
-            );
-          }
-          if (lvl === "MS / MPhil") {
-            return (
-              pl.includes("ms ") ||
-              pl.includes("ms-") ||
-              pl.includes("mphil") ||
-              pl.includes("master") ||
-              pl.includes("mba") ||
-              pl.includes("m.sc")
-            );
-          }
-          if (lvl === "PhD") {
-            return pl.includes("phd") || pl.includes("doctor of philosophy");
-          }
-          if (lvl === "Associate Degree") {
-            return pl.includes("associate degree") || pl.includes("ad ");
-          }
-          if (lvl === "Diploma") {
-            return pl.includes("diploma") || pl.includes("postgraduate diploma");
-          }
-          return false;
-        });
-        if (!matchesLevel) return false;
+        const hasLevel = (c.programObjects || []).some((p) =>
+          programMatchesLevel(p, filters.level)
+        );
+        if (!hasLevel) return false;
       }
 
-      // 2. University Type ("Public", "Private")
       if (filters.universityType && filters.universityType.length > 0) {
-        const matchesType = filters.universityType.some((t) => {
-          if (t === "Public") return c.universityType === "Govt." || c.universityType === "Public";
-          if (t === "Private") return c.universityType === "Pvt." || c.universityType === "Private";
-          return c.universityType === t;
+        const t = c.universityType;
+        const matchesType = filters.universityType.some((selected) => {
+          if (selected === "Public")  return t === "Govt."  || t === "Public"  || t === "Semi-Govt.";
+          if (selected === "Private") return t === "Pvt."   || t === "Private";
+          return t === selected;
         });
         if (!matchesType) return false;
       }
 
-      // 3. Campus Category ("Main Campus", "Sub Campus", "Regional Campus", "City Campus")
       if (filters.campusType && filters.campusType.length > 0) {
         if (!filters.campusType.includes(c.campusCategory)) return false;
       }
 
-      // 4. Admission Status ("Any", "Open", "Closing Soon", "Closed", "Unknown")
       if (filters.admissionStatus && filters.admissionStatus !== "any") {
-        if (filters.admissionStatus === "closing_soon") {
-          if (c.admissionStatus !== "closing_soon") return false;
-        } else if (c.admissionStatus !== filters.admissionStatus) {
-          return false;
-        }
+        if (c.admissionStatus !== filters.admissionStatus) return false;
       }
 
-      // 5. Gender Policy ("Any", "Co-Education", "Women Only", "Men Only")
       if (filters.genderPolicy && filters.genderPolicy !== "any") {
         if (c.genderType !== filters.genderPolicy) return false;
       }
 
-      // 6. Shift ("Morning", "Evening", "Weekend")
       if (filters.shifts && filters.shifts.length > 0) {
-        if (c.shifts && !c.shifts.some((s) => filters.shifts.includes(s))) return false;
-      }
-
-      // 7. My Marks
-      if (filters.minMarks && filters.minMarks > 40) {
-        if ((c.minMarksRequired || 40) > filters.minMarks) return false;
-      }
-
-      // 8. Tuition Fee
-      if (filters.minFee) {
-        if (c.feePerSemester < Number(filters.minFee)) return false;
-      }
-      if (filters.maxFee) {
-        if (c.feePerSemester > Number(filters.maxFee)) return false;
-      }
-
-      // 9. Entry Test
-      if (filters.entryTests && filters.entryTests.length > 0) {
-        const matchesTest = (c.entryTests || []).some((test) => {
-          if (filters.entryTests.includes(test)) return true;
-          if (test === "University Own Test" && filters.entryTests.includes("University's Own")) return true;
-          if ((test === "NTS" || test === "NAT") && filters.entryTests.includes("NTS/NAT")) return true;
+        if (!c.shifts || !c.shifts.some((s) => filters.shifts.includes(s)))
           return false;
-        });
-        if (!matchesTest) return false;
       }
 
-      // 10. Hostel ("Any", "Boys Hostel", "Girls Hostel")
+      // Show campuses whose minimum required marks <= student's marks.
+      if (filters.minMarks && filters.minMarks > 40) {
+        if ((c.minMarksRequired || 0) > filters.minMarks) return false;
+      }
+
+      // fee_min is the cheapest program fee at this campus.
+      // fee_max is the most expensive program fee at this campus.
+      // A campus is included if ANY of its programs falls within the range.
+      if (filters.minFee && Number(filters.minFee) > 0) {
+        // exclude campuses whose most expensive program is still below the minimum
+        if (c.fee_max < Number(filters.minFee)) return false;
+      }
+      if (filters.maxFee && Number(filters.maxFee) > 0) {
+        // exclude campuses whose cheapest program already exceeds the maximum
+        if (c.fee_min > Number(filters.maxFee)) return false;
+      }
+
+      if (filters.entryTests && filters.entryTests.length > 0) {
+        if (c.entryTests && c.entryTests.length > 0) {
+          const matchesTest = c.entryTests.some((test) => {
+            if (filters.entryTests.includes(test)) return true;
+            if (test === "University Own Test" && filters.entryTests.includes("University's Own")) return true;
+            if ((test === "NTS" || test === "NAT") && filters.entryTests.includes("NTS/NAT")) return true;
+            return false;
+          });
+          if (!matchesTest) return false;
+        }
+        // If campus has no entry_tests data yet, don't exclude it
+      }
+
       if (filters.hostel && filters.hostel !== "any") {
         if (!c.hostelAvailable) return false;
       }
 
-      // 11. Scholarship
-      if (filters.scholarshipAvailable && !c.scholarshipAvailable) return false;
+      if (filters.scholarshipAvailable) {
+        if (!c.scholarshipAvailable) return false;
+      }
 
-      // Toolbar program filter
-      if (
-        selectedPrograms.length > 0 &&
-        !(c.programs || []).some((p) => selectedPrograms.includes(p))
-      )
-        return false;
+      // Uses fuzzy label matching via programMatchesToolbarLabel() instead of
+      // exact equality so "BS Computer Science (BSCS)" matches DB name "Computer Science".
+      if (selectedPrograms.length > 0) {
+        const hasProgram = (c.programObjects || []).some((prog) =>
+          selectedPrograms.some((selection) => programMatchesToolbarLabel(prog, selection))
+        );
+        if (!hasProgram) return false;
+      }
 
       return true;
     });
@@ -1541,9 +1478,9 @@ if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
     if (sortBy === "alpha")
       list.sort((a, b) => a.campusName.localeCompare(b.campusName));
     if (sortBy === "fee-low")
-      list.sort((a, b) => (a.feePerSemester || 0) - (b.feePerSemester || 0));
+      list.sort((a, b) => (a.fee_min || 0) - (b.fee_min || 0));
     if (sortBy === "fee-high")
-      list.sort((a, b) => (b.feePerSemester || 0) - (a.feePerSemester || 0));
+      list.sort((a, b) => (b.fee_min || 0) - (a.fee_min || 0));
     return list;
   }, [filtered, sortBy]);
 
@@ -1764,8 +1701,8 @@ if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
         <div className="flex flex-wrap gap-2 mb-4">
           {selectedPrograms.map((p) => (
             <ProgramChip
-              key={p}
-              label={p}
+              key={programSelectionKey(p)}
+              label={p.label || p}
               onRemove={() => onProgramRemove(p)}
             />
           ))}
@@ -1923,7 +1860,6 @@ if (searchCity && c.city?.toLowerCase() !== searchCity.toLowerCase())
   );
 }
 
-// ----------- CampusCard -----------
 function CampusCard({ campus, selectMode, isSelected, isDisabled, onSelect }) {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
@@ -2094,4 +2030,3 @@ function CampusCard({ campus, selectMode, isSelected, isDisabled, onSelect }) {
 }
 
 export default HomePage;
-

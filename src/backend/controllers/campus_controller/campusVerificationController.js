@@ -2,7 +2,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import db from "../../config/db.js";
-import { sendNotification } from "../../utils/notify.js";
+import { sendNotification, sendEmail } from "../../utils/emailService.js";
 
 export const submitCampusRequest = (req, res) => {
   const { campus_admin_uid, university_id, campus_name, city, address, contact_no } = req.body;
@@ -19,6 +19,60 @@ export const submitCampusRequest = (req, res) => {
     [id, campus_admin_uid, university_id, campus_name, city || null, address || null, contact_no || null],
     (err) => {
       if (err) return res.status(500).json({ message: "DB error", error: err.message });
+
+      // Notify the campus admin that their request was received
+      db.query(
+        "SELECT email, name FROM Student_signup WHERE id = ? LIMIT 1",
+        [campus_admin_uid],
+        (userErr, userRows) => {
+          if (!userErr && userRows.length) {
+            const adminEmail = userRows[0].email;
+            const adminName = userRows[0].name || "Admin";
+            sendEmail({
+              to: adminEmail,
+              subject: "Campus Registration Request Received",
+              text:
+                `Dear ${adminName},\n\n` +
+                `Your campus registration request for "${campus_name}" has been received and is now pending review by the university admin.\n\n` +
+                `We will notify you once a decision is made.\n\n` +
+                `Regards,\nUni Finder Team`,
+              html:
+                `<p>Dear ${adminName},</p>` +
+                `<p>Your campus registration request for <strong>"${campus_name}"</strong> has been received and is now pending review by the university admin.</p>` +
+                `<p>We will notify you once a decision is made.</p>` +
+                `<p>Regards,<br>Uni Finder Team</p>`,
+            }).catch((e) => console.error("Campus submit email failed (non-fatal):", e.message));
+
+            // Notify university admin(s)
+            db.query(
+              `SELECT s.email, s.name FROM Student_signup s
+               JOIN universities u ON u.owner_uid = s.id
+               WHERE u.id = ? LIMIT 1`,
+              [university_id],
+              (uniErr, uniRows) => {
+                if (!uniErr && uniRows.length) {
+                  sendEmail({
+                    to: uniRows[0].email,
+                    subject: "New Campus Registration Request",
+                    text:
+                      `Hello ${uniRows[0].name || "University Admin"},\n\n` +
+                      `A new campus registration request has been submitted:\n\n` +
+                      `Campus: ${campus_name}\n` +
+                      `City: ${city || "—"}\n\n` +
+                      `Please review it in your dashboard.`,
+                    html:
+                      `<p>Hello ${uniRows[0].name || "University Admin"},</p>` +
+                      `<p>A new campus registration request has been submitted:</p>` +
+                      `<p>Campus: <strong>${campus_name}</strong><br>City: ${city || "—"}</p>` +
+                      `<p>Please review it in your dashboard.</p>`,
+                  }).catch((e) => console.error("Uni admin notify email failed (non-fatal):", e.message));
+                }
+              },
+            );
+          }
+        },
+      );
+
       return res.status(201).json({
         message: "Request submitted. Waiting for the university admin's approval.",
         id,

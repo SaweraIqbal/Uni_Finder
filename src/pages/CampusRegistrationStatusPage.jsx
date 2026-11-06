@@ -164,7 +164,6 @@ export default function CampusRegistrationStatusPage() {
   const renderCard = () => {
     if (loading || !reg) return <Skeleton />;
 
-    // ── PENDING ──────────────────────────────────────────────────────────
     if (status === STATUSES.PENDING) {
       return (
         <StatusCard
@@ -198,7 +197,6 @@ export default function CampusRegistrationStatusPage() {
       );
     }
 
-    // ── REJECTED ─────────────────────────────────────────────────────────
     if (status === STATUSES.REJECTED) {
       const rej = reg.rejection || {};
       return (
@@ -242,7 +240,6 @@ export default function CampusRegistrationStatusPage() {
       );
     }
 
-    // ── RESUBMISSION REQUESTED ────────────────────────────────────────────
     if (status === STATUSES.RESUBMISSION_REQUESTED) {
       const docs = reg.resubmission?.requiredDocs || [];
       return (
@@ -286,7 +283,6 @@ export default function CampusRegistrationStatusPage() {
       );
     }
 
-    // ── APPROVED ─────────────────────────────────────────────────────────
     if (status === STATUSES.APPROVED) {
       return (
         <StatusCard

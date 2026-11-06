@@ -40,7 +40,6 @@ const CAT_MAP = {
   "fine arts":                       "Cultural",
 };
 
-// ── helpers ──────────────────────────────────────────────────────────────────
 const query = (sql, values = []) =>
   new Promise((resolve, reject) =>
     db.query(sql, values, (err, rows) => (err ? reject(err) : resolve(rows))),
@@ -79,7 +78,6 @@ const fit = (val, max, warn, label) => {
   return String(val).slice(0, max);
 };
 
-// ── main ─────────────────────────────────────────────────────────────────────
 const run = async () => {
   await dbReady;
 

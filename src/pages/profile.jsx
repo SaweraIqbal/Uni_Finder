@@ -19,7 +19,6 @@ export default function Profile() {
   const avatarInputRef = useRef(null);
 
 
-
   const avatarSrc = avatar
     ? avatar.startsWith("http")
       ? avatar

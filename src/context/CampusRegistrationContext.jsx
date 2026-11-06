@@ -38,7 +38,6 @@ export function CampusRegistrationProvider({ children }) {
 
   const fetchedRef = useRef(false);
 
-  // ── Load /mine on mount ───────────────────────────────────────────────────
   const fetchMine = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
@@ -76,7 +75,6 @@ export function CampusRegistrationProvider({ children }) {
     fetchMine();
   }, [fetchMine]);
 
-  // ── Auto-route once status is known ───────────────────────────────────────
   // We wait until loading is done to avoid premature redirects.
   // Exception: when the user is already on /campus/register in resubmission
   // mode (they clicked "Resubmit" from the status page), we leave them there.
@@ -104,7 +102,6 @@ export function CampusRegistrationProvider({ children }) {
     }
   }, [loading, status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── After submit: refresh /mine so status page shows real data ────────────
   const refresh = useCallback(() => {
     fetchedRef.current = false;
     fetchMine();

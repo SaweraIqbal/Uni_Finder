@@ -75,7 +75,6 @@ export default function ProgramDetailPage({ program, onBack }) {
   // Section 6 — Fee Structure
   const [fees, setFees] = useState(EMPTY_FEES);
 
-  // ── Load from API on mount ──────────────────────────────────────────────
   useEffect(() => {
     if (!program?.id) { setLoading(false); return; }
     getCampusProgramDetail(program.id)
@@ -111,7 +110,6 @@ export default function ProgramDetailPage({ program, onBack }) {
       .finally(() => setLoading(false));
   }, [program?.id]);
 
-  // ── Save to API ─────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!program?.id) return;
     setBusy(true);
@@ -182,9 +180,6 @@ export default function ProgramDetailPage({ program, onBack }) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-slate-800">{program?.name || "Program"} — Offering Details</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          <SaveButton onClick={handleSave} busy={busy} saved={saved} />
         </div>
       </div>
 

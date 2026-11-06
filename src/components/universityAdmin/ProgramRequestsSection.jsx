@@ -24,7 +24,6 @@ function fmt(iso) {
   return new Date(iso).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-// ── API helpers ───────────────────────────────────────────────────────────────
 async function apiSubmitRequest(payload) {
   const res = await fetch(`${API}/api/universities/me/program-requests`, {
     method: "POST",
@@ -45,7 +44,6 @@ async function apiFetchRequests({ status = "", page = 1, limit = 20 } = {}) {
   return { ok: res.ok, data };
 }
 
-// ── Submit form component ─────────────────────────────────────────────────────
 function RequestForm({ onSubmitted, onCancel, addToast }) {
   const [form, setForm] = useState({ name: "", level: "", degree_type: "", specialization: "", track: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -151,7 +149,6 @@ function RequestForm({ onSubmitted, onCancel, addToast }) {
   );
 }
 
-// ── Main section ──────────────────────────────────────────────────────────────
 export default function ProgramRequestsSection() {
   const { addToast, refetch } = useUniversityAdmin();
   const [showForm,  setShowForm]  = useState(false);

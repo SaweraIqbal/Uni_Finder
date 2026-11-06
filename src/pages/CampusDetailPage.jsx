@@ -1379,4 +1379,3 @@ export default function CampusDetailPage() {
   );
 }
 
-

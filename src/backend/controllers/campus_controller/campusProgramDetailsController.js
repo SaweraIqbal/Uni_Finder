@@ -10,10 +10,8 @@ const safe = (v) => {
   try { return JSON.parse(v); } catch { return null; }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // GET /api/campus/programs/:id/detail
 // Returns the full rich detail object for one campus_programs row
-// ════════════════════════════════════════════════════════════════════════════
 export const getProgramDetail = async (req, res) => {
   try {
     const rows = await q(
@@ -31,11 +29,9 @@ export const getProgramDetail = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // PUT /api/campus/programs/:id/detail
 // Saves rich JSON detail (eligibility, merit, fees, scholarships, dates…)
 // Also updates shifts and status on the campus_programs row
-// ════════════════════════════════════════════════════════════════════════════
 export const saveProgramDetail = async (req, res) => {
   const { id } = req.params;
   const { details, shifts, status, duration } = req.body;
@@ -60,9 +56,7 @@ export const saveProgramDetail = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // PUT /api/campus/programs/:id/publish   /  unpublish
-// ════════════════════════════════════════════════════════════════════════════
 export const publishProgram = async (req, res) => {
   try {
     await q("UPDATE campus_programs SET status='published', updated_at=NOW() WHERE id=?", [req.params.id]);
@@ -81,9 +75,7 @@ export const unpublishProgram = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // GET /api/campus/:campusId/program-requests
-// ════════════════════════════════════════════════════════════════════════════
 export const listProgramRequests = async (req, res) => {
   try {
     const rows = await q(
@@ -98,10 +90,8 @@ export const listProgramRequests = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // POST /api/campus/program-requests
 // Campus admin submits a request for a new program not yet in the university list
-// ════════════════════════════════════════════════════════════════════════════
 export const submitProgramRequest = async (req, res) => {
   const { campus_id, program_name, level, justification } = req.body;
   if (!campus_id || !program_name?.trim())

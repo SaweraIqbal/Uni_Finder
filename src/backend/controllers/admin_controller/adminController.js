@@ -14,11 +14,18 @@
 
 import { v4 as uuidv4 } from "uuid";
 import db from "../../config/db.js";
+import { sendEmail } from "../../utils/emailService.js";
 
 const q = (sql, values = []) =>
   new Promise((resolve, reject) => {
     db.query(sql, values, (err, rows) => (err ? reject(err) : resolve(rows)));
   });
+
+// Fetch user email + name by ID (for email notifications)
+const getUserInfo = async (userId) => {
+  const rows = await q("SELECT email, name FROM Student_signup WHERE id = ? LIMIT 1", [userId]).catch(() => []);
+  return rows[0] || { email: null, name: "Admin" };
+};
 
 const err400 = (res, msg) => res.status(400).json({ error: { code: "BAD_REQUEST",  message: msg } });
 const err404 = (res, msg) => res.status(404).json({ error: { code: "NOT_FOUND",    message: msg } });
@@ -41,7 +48,6 @@ const logActivity = (universityId, actorUserId, actorName, action, description, 
   ).catch((e) => console.error("[activity_log]", e.message));
 };
 
-// ── GET /api/admin/universities ───────────────────────────────────────────────
 // Real university list: name, hec_rank, type, oric_domain, campus_count,
 // program_count (LEFT JOIN aggregate), claim/verification state, focal person.
 
@@ -169,9 +175,16 @@ export const adminListUniversities = async (req, res) => {
     ]);
 
     // Build public logo & banner URLs
+    // External URLs (seeded imports) pass through unchanged; only local
+    // file paths get the API origin prefix.
     const fileToUrl = (p) => {
       if (!p) return null;
-      const rel = p.replace(/\\/g, "/").replace(/^.*\/uploads\//, "/uploads/");
+      if (/^https?:\/\//i.test(p)) return p;
+      const norm = p.replace(/\\/g, "/");
+      const idx  = norm.indexOf("/uploads/");
+      const rel  = idx !== -1
+        ? norm.substring(idx)
+        : (norm.startsWith("/") ? norm : `/${norm}`);
       return `${process.env.API_URL || "http://localhost:5000"}${rel}`;
     };
 
@@ -205,7 +218,6 @@ export const adminListUniversities = async (req, res) => {
   }
 };
 
-// ── GET /api/admin/programs ───────────────────────────────────────────────────
 // All programs across all universities, paginated, with university name.
 
 export const adminListPrograms = async (req, res) => {
@@ -260,7 +272,6 @@ export const adminListPrograms = async (req, res) => {
   }
 };
 
-// ── GET /api/admin/program-requests ──────────────────────────────────────────
 // Pending program requests across all universities (created_via='admin_request').
 
 export const adminListProgramRequests = async (req, res) => {
@@ -303,7 +314,6 @@ export const adminListProgramRequests = async (req, res) => {
   }
 };
 
-// ── PUT /api/admin/program-requests/:id/approve ───────────────────────────────
 
 export const adminApproveProgramRequest = async (req, res) => {
   try {
@@ -357,7 +367,6 @@ export const adminApproveProgramRequest = async (req, res) => {
   }
 };
 
-// ── PUT /api/admin/program-requests/:id/reject ────────────────────────────────
 
 export const adminRejectProgramRequest = async (req, res) => {
   try {
@@ -402,7 +411,6 @@ export const adminRejectProgramRequest = async (req, res) => {
   }
 };
 
-// ── GET /api/admin/activity ───────────────────────────────────────────────────
 // Full activity log across all universities, paginated, newest first.
 
 export const adminListActivity = async (req, res) => {
@@ -445,12 +453,10 @@ export const adminListActivity = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
 // GET /api/admin/campus-registrations
 // List all campus registrations for the super-admin, with university name,
 // registrant info, status. Supports ?status= filter and ?q= search.
 // Returns stats (pending / approved / total) for the header cards.
-// ═══════════════════════════════════════════════════════════════════════════
 export const adminListCampusRegistrations = async (req, res) => {
   try {
     const statusFilter = req.query.status || "";   // "pending"|"approved"|"rejected"|"" (all)
@@ -563,12 +569,9 @@ export const adminListCampusRegistrations = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
 // PATCH /api/admin/campus-registrations/:id/status
 // Super-admin approves, rejects, or requests resubmission on a campus registration.
 // Body: { action: "approve"|"reject"|"request_resubmission", reason?, note?, requiredDocs? }
-// ═══════════════════════════════════════════════════════════════════════════
-
 export const adminUpdateCampusRegistrationStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -693,17 +696,28 @@ export const adminUpdateCampusRegistrationStatus = async (req, res) => {
         );
       }
 
-      return res.json({
-        message: "Campus registration approved.",
-      });
+      // Notify campus admin of final approval
+      const appInfo = await getUserInfo(reg.registrantUserId);
+      if (appInfo.email) {
+        sendEmail({
+          to: appInfo.email,
+          subject: `Campus Registration Approved ✅ (${reg.publicId})`,
+          text:
+            `Dear ${appInfo.name || "Campus Admin"},\n\n` +
+            `Congratulations! Your campus "${reg.officialName}" has been fully approved.\n` +
+            `You can now log in and start adding your campus details (history, programs, facilities, photos, hostels).\n\n` +
+            `Regards,\nUni Finder Team`,
+          html:
+            `<p>Dear ${appInfo.name || "Campus Admin"},</p>` +
+            `<p>Congratulations! Your campus <strong>"${reg.officialName}"</strong> has been fully approved.</p>` +
+            `<p>You can now log in and start adding your campus details.</p>` +
+            `<p>Regards,<br>Uni Finder Team</p>`,
+        }).catch((e) => console.error("Admin approval email failed (non-fatal):", e.message));
+      }
 
-    }
+      return res.json({ message: "Campus registration approved." });
 
-    // ==========================================
-    // REJECTION
-    // ==========================================
-    else if (action === "reject") {
-
+    } else if (action === "reject") {
       if (!reason || !reason.trim()) {
         return err400(res, "Rejection reason is required.");
       }
@@ -732,10 +746,26 @@ export const adminUpdateCampusRegistrationStatus = async (req, res) => {
           id,
         ]
       );
-
-      return res.json({
-        message: "Campus registration rejected.",
-      });
+      // Notify campus admin
+      const rejInfo = await getUserInfo(reg.registrantUserId);
+      if (rejInfo.email) {
+        sendEmail({
+          to: rejInfo.email,
+          subject: `Campus Registration Rejected ❌ (${reg.publicId})`,
+          text:
+            `Dear ${rejInfo.name || "Campus Admin"},\n\n` +
+            `Your campus registration for "${reg.officialName}" was not approved.\n\n` +
+            `Reason: ${reason.trim()}${note ? `\nNote: ${note.trim()}` : ""}\n\n` +
+            `Please review the feedback and submit a new application when ready.\n\n` +
+            `Regards,\nUni Finder Team`,
+          html:
+            `<p>Dear ${rejInfo.name || "Campus Admin"},</p>` +
+            `<p>Your campus registration for <strong>"${reg.officialName}"</strong> was not approved.</p>` +
+            `<p><strong>Reason:</strong> ${reason.trim()}${note ? `<br><strong>Note:</strong> ${note.trim()}` : ""}</p>` +
+            `<p>Regards,<br>Uni Finder Team</p>`,
+        }).catch((e) => console.error("Admin rejection email failed (non-fatal):", e.message));
+      }
+      return res.json({ message: "Campus registration rejected." });
 
     }
 
@@ -781,6 +811,30 @@ export const adminUpdateCampusRegistrationStatus = async (req, res) => {
           id,
         ]
       );
+      // Notify campus admin
+      const resubInfo = await getUserInfo(reg.registrantUserId);
+      if (resubInfo.email) {
+        const docList = docs.map((d) => `• ${d}`).join("\n");
+        sendEmail({
+          to: resubInfo.email,
+          subject: `Resubmission Required — Campus Registration (${reg.publicId})`,
+          text:
+            `Dear ${resubInfo.name || "Campus Admin"},\n\n` +
+            `The Super Admin has requested that you resubmit your campus registration for "${reg.officialName}".\n\n` +
+            `Please provide the following:\n${docList}\n\n` +
+            `${note ? `Additional note: ${note.trim()}\n\n` : ""}` +
+            `You can resubmit from your dashboard.\n\n` +
+            `Regards,\nUni Finder Team`,
+          html:
+            `<p>Dear ${resubInfo.name || "Campus Admin"},</p>` +
+            `<p>The Super Admin has requested that you resubmit your campus registration for <strong>"${reg.officialName}"</strong>.</p>` +
+            `<p><strong>Please provide the following:</strong></p>` +
+            `<ul>${docs.map((d) => `<li>${d}</li>`).join("")}</ul>` +
+            `${note ? `<p><strong>Additional note:</strong> ${note.trim()}</p>` : ""}` +
+            `<p>Regards,<br>Uni Finder Team</p>`,
+        }).catch((e) => console.error("Admin resubmission email failed (non-fatal):", e.message));
+      }
+      return res.json({ message: "Resubmission requested." });
 
       return res.json({
         message: "Resubmission requested.",

@@ -193,9 +193,7 @@ export const addHostel = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // GET /api/campus/:campusId/hostels
-// ════════════════════════════════════════════════════════════════════════════
 export const listHostels = async (req, res) => {
   try {
     const [hostels, campus] = await Promise.all([
@@ -213,9 +211,7 @@ export const listHostels = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // PUT /api/campus/:campusId/hostel-availability
-// ════════════════════════════════════════════════════════════════════════════
 export const setHostelAvailability = async (req, res) => {
   const available = req.body.hostel_available ? 1 : 0;
   try {

@@ -57,7 +57,6 @@ export default function CampusDashboard() {
       .finally(() => setLoading(false));
   }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Still fetching ────────────────────────────────────────────────────────
   if (loading || request === undefined) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -72,7 +71,6 @@ export default function CampusDashboard() {
     );
   }
 
-  // ── Approved → full 10-page Campus Admin Dashboard ───────────────────────
   if (request?.status === "approved") {
     return (
       <CampusAdminProvider

@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { FileText } from 'lucide-react';
 
-// ---------- Temporary data (replace with API response later) ----------
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const INITIAL_LISTING = {
@@ -58,7 +57,6 @@ export const INITIAL_LISTING = {
   ],
 };
 
-// ---------- Shared bits ----------
 const input =
   'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm placeholder:text-slate-400 focus:border-[#ff6a00] focus:outline-none focus:ring-2 focus:ring-orange-200 disabled:bg-slate-50 disabled:text-slate-400';
 const box = 'rounded-2xl border border-slate-200 bg-white';
@@ -144,7 +142,6 @@ function TextField({ label, id, value, onChange, disabled, type = 'text', inputM
   );
 }
 
-// ---------- B. Security & Fees ----------
 const SECURITY_TYPES = [
   { id: 'biometric', label: 'Biometric' },
   { id: 'guard', label: 'Security Guard' },
@@ -198,7 +195,6 @@ export function SecurityFees({ value, onChange }) {
   );
 }
 
-// ---------- C. Food Delivery / Guard Service ----------
 export function ServiceSection({ value, onChange }) {
   const set = (k, v) => onChange({ ...value, [k]: v });
   const off = !value.available;
@@ -379,7 +375,6 @@ const pickPhoto = async (file) => {
   );
 }
 
-// ---------- E / F. Included-or-priced lists ----------
 function ChargeList({ items, onChange, addLabel, namePlaceholder, children }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -450,7 +445,6 @@ export function FacilitiesSection({ value, onChange }) {
   return <ChargeList items={value} onChange={onChange} addLabel="Add Facility" namePlaceholder="e.g. Laundry" />;
 }
 
-// ---------- G. Other Charges ----------
 export function OtherChargesSection({ value, onChange }) {
   const patch = (id, k, v) => onChange(value.map((c) => (c.id === id ? { ...c, [k]: v } : c)));
   return (
@@ -476,7 +470,6 @@ export function OtherChargesSection({ value, onChange }) {
   );
 }
 
-// ---------- H. Policies & Rules ----------
 const POLICY_CATEGORIES = [
   'Curfew / Gate Timing', 'Visitor Policy', 'Smoking / Alcohol', 'Guest Stay', 'Noise / Quiet Hours', 'Cleanliness', 'Other',
 ];
@@ -536,7 +529,6 @@ export function PoliciesSection({ value, onChange }) {
   );
 }
 
-// ---------- I. Inquiry ----------
 export function InquirySection({ value, onChange }) {
   return (
     <div className="max-w-xl">
@@ -546,7 +538,6 @@ export function InquirySection({ value, onChange }) {
   );
 }
 
-// ---------- J. Photo & Visual Evidence ----------
 function PhotoTile({ photo, onPick }) {
   const ref = useRef(null);
   return (

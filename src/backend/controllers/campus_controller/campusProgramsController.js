@@ -69,7 +69,6 @@ export const addCampusProgram = async (req, res) => {
   }
 };
 
-// ── Remove a program from this campus ────────────────────────────────────────
 export const deleteCampusProgram = (req, res) => {
   db.query("DELETE FROM campus_programs WHERE id = ?", [req.params.id], (err) => {
     if (err) return res.status(500).json({ message: "DB error", error: err.message });

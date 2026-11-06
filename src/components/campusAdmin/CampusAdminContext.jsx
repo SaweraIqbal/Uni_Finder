@@ -37,25 +37,20 @@ export function CampusAdminProvider({
   adminEmail: propAdminEmail = "",
   onLogout,
 }) {
-  // ── Navigation ────────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
-  // ── Data ──────────────────────────────────────────────────────────────────
   const [campus, setCampus] = useState(null);
   const [images, setImages] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [loadingCampus, setLoadingCampus] = useState(true);
   const [hostelRequestCount, setHostelRequestCount] = useState(0);
 
-  // ── Side drawer (shared) ──────────────────────────────────────────────────
   const [drawer, setDrawer] = useState(null); // { title, content }
 
-  // ── Unsaved changes indicator ─────────────────────────────────────────────
   const [isDirty, setIsDirty] = useState(false);
 
-  // ── Toast helper ──────────────────────────────────────────────────────────
   const addToast = useCallback((message, type = "success") => {
     if (type === "error") toast.error(message);
     else if (type === "info") toast.info(message);

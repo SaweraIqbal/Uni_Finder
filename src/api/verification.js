@@ -1,7 +1,6 @@
 import { API, authHeaders } from "./client";
 
 
-
 export async function searchAccount(q) {
   const res = await fetch(
     `${API}/api/admin/search?q=${encodeURIComponent(q)}`,

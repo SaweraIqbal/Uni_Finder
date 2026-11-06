@@ -110,50 +110,41 @@ import {
 const router = express.Router();
 const campusAuth = [verifyToken, authorizeRoles("campus")];
 
-// ── Legacy verification flow ──────────────────────────────────────────────
 router.post("/campus/request",                   submitCampusRequest);
 router.get ("/campus/request/:uid",              getMyCampusRequest);
 router.get ("/campus/requests/owner/:ownerUid",  listCampusRequestsForOwner);
 router.put ("/campus/requests/:id/approve",      verifyToken, authorizeRoles("university"), approveCampusRequest);
 router.put ("/campus/requests/:id/reject",       verifyToken, authorizeRoles("university"), rejectCampusRequest);
 
-// ── Campus profile ────────────────────────────────────────────────────────
 router.get ("/campus/:uid/profile",              getMyCampus);            // public
 router.post("/campus/profile",                   ...campusAuth, saveCampus);
 
-// ── Overview stats + activity ─────────────────────────────────────────────
 router.get("/campus/:campusId/overview-stats",   ...campusAuth, getOverviewStats);
 router.get("/campus/:campusId/activity",         ...campusAuth, getCampusActivity);
 
-// ── Images ────────────────────────────────────────────────────────────────
 router.get   ("/campus/:campusId/images",          listCampusImages);     // public
 router.post  ("/campus/images",                    ...campusAuth, upload.single("image"), addCampusImage);
 router.delete("/campus/images/:imageId",           ...campusAuth, deleteCampusImage);
 router.put   ("/campus/images/:imageId/feature",   ...campusAuth, featureCampusImage);
 
-// ── Programs (basic list + add + delete) ─────────────────────────────────
 router.get   ("/campus/:campusId/programs",               listCampusPrograms);
 router.get   ("/universities/:universityId/programs/approved", listUniversityApprovedPrograms);
 router.post  ("/campus/programs",                         ...campusAuth, addCampusProgram);
 router.delete("/campus/programs/:id",                     ...campusAuth, deleteCampusProgram);
 
-// ── Program detail (rich form save / load) ────────────────────────────────
 router.get("/campus/programs/:id/detail",        ...campusAuth, getProgramDetail);
 router.put("/campus/programs/:id/detail",        ...campusAuth, express.json(), saveProgramDetail);
 router.put("/campus/programs/:id/publish",       ...campusAuth, publishProgram);
 router.put("/campus/programs/:id/unpublish",     ...campusAuth, unpublishProgram);
 
-// ── Program requests ──────────────────────────────────────────────────────
 router.get ("/campus/:campusId/program-requests", ...campusAuth, listProgramRequests);
 router.post("/campus/program-requests",           ...campusAuth, express.json(), submitProgramRequest);
 
-// ── Societies ─────────────────────────────────────────────────────────────
 router.get   ("/campus/:campusId/societies",     ...campusAuth, listSocieties);
 router.post  ("/campus/:campusId/societies",     ...campusAuth, express.json(), addSociety);
 router.put   ("/campus/societies/:id",           ...campusAuth, express.json(), updateSociety);
 router.delete("/campus/societies/:id",           ...campusAuth, deleteSociety);
 
-// ── Facilities ────────────────────────────────────────────────────────────
 router.get("/campus/:campusId/facilities",       ...campusAuth, getFacilities);
 router.put("/campus/:campusId/facilities",       ...campusAuth, express.json(), saveFacilities);
 
@@ -165,7 +156,6 @@ router.post  ("/campus/hostels/:hostelId/photos",      ...campusAuth, campusHost
 router.put   ("/campus/hostels/:hostelId/photos/:photoId/cover", ...campusAuth, setHostelCover);
 router.delete("/campus/hostels/:hostelId/photos/:photoId",       ...campusAuth, deleteHostelPhoto);
 
-// ── Public search / detail ────────────────────────────────────────────────
 router.get("/campuses",                           searchCampuses);
 router.get("/campuses/university/:universityId",  listCampusesByUniversity);
 router.get("/campuses/:id",                       getCampusById);

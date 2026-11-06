@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
 
 
-
     if (parsed?.id) {
       fetch(`http://localhost:5000/api/auth/user/${parsed.id}`)
         .then((r) => r.json())

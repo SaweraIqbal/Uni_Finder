@@ -28,7 +28,6 @@ const UPLOAD_BASE = path.resolve(
     path.join(__dirname, "..", "..", "uploads", "universities"),
 );
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const q = (sql, values = []) =>
   new Promise((resolve, reject) => {
@@ -138,8 +137,12 @@ const saveAsset = async (type, buffer, universityId, res, onSuccess) => {
     return err500(res, "Could not save image path.", e);
   }
 
-  // Delete old file (best-effort)
-  if (onSuccess?.oldPath && onSuccess.oldPath !== filePath) {
+  // Delete old file (best-effort) — only local files; never touch external URLs
+  if (
+    onSuccess?.oldPath &&
+    onSuccess.oldPath !== filePath &&
+    !/^https?:\/\//i.test(onSuccess.oldPath)
+  ) {
     fsp.unlink(onSuccess.oldPath).catch(() => {});
   }
 
@@ -157,7 +160,6 @@ const fileExists = async (filePath) => {
   }
 };
 
-// ── GET /api/universities/me ──────────────────────────────────────────────────
 // Returns HEC read-only fields + verification state + profile
 
 export const getMe = async (req, res) => {
@@ -183,9 +185,16 @@ export const getMe = async (req, res) => {
     const loeOnFile = await fileExists(app?.loe_path || null);
 
     // Build logo/banner public URLs
+    // External URLs (seeded by HEC/phpMyAdmin imports, e.g. https://www.comsats.edu.pk/...)
+    // must pass through unchanged — only local file paths get the API origin prefix.
     const fileToUrl = (p) => {
       if (!p) return null;
-      const rel = p.replace(/\\/g, "/").replace(/^.*\/uploads\//, "/uploads/");
+      if (/^https?:\/\//i.test(p)) return p;
+      const norm = p.replace(/\\/g, "/");
+      const idx  = norm.indexOf("/uploads/");
+      const rel  = idx !== -1
+        ? norm.substring(idx)
+        : (norm.startsWith("/") ? norm : `/${norm}`);
       return `${process.env.API_URL || "http://localhost:5000"}${rel}`;
     };
 
@@ -225,7 +234,6 @@ export const getMe = async (req, res) => {
   }
 };
 
-// ── GET /api/universities/me/stats ───────────────────────────────────────────
 // All counts via SQL aggregates — zero client-side counting.
 // FIX 3: pending_items = union of own pending program requests + own pending application.
 
@@ -293,7 +301,6 @@ export const getMyStats = async (req, res) => {
   }
 };
 
-// ── GET /api/universities/me/programs ────────────────────────────────────────
 // Paginated, filterable by level + free-text search
 
 export const getMyPrograms = async (req, res) => {
@@ -345,7 +352,6 @@ export const getMyPrograms = async (req, res) => {
   }
 };
 
-// ── GET /api/universities/me/activity ────────────────────────────────────────
 
 export const getMyActivity = async (req, res) => {
   try {
@@ -367,7 +373,6 @@ export const getMyActivity = async (req, res) => {
   }
 };
 
-// ── PATCH /api/universities/me/profile ───────────────────────────────────────
 
 export const patchMyProfile = async (req, res) => {
   try {
@@ -420,8 +425,23 @@ export const patchMyProfile = async (req, res) => {
       }
     }
     if (admissions_phone !== undefined) {
-      const phone = String(admissions_phone).trim();
-      updates.admissions_phone = phone === "" ? null : phone.slice(0, 50);
+      const rawPhone = String(admissions_phone).trim();
+      if (rawPhone === "") {
+        updates.admissions_phone = null;
+      } else {
+        // Accept mobile (+92 3XXXXXXXXX) OR landline/UAN (+92 <city> XXXXXXX).
+        // Strip common separators before testing so dashes and spaces are tolerated.
+        const stripped = rawPhone.replace(/[\s\-().]/g, "");
+        const PK_MOBILE_RE   = /^\+923\d{9}$/;
+        const PK_LANDLINE_RE = /^\+92\d{9,12}$/;
+        if (!PK_MOBILE_RE.test(stripped) && !PK_LANDLINE_RE.test(stripped)) {
+          errors.admissions_phone =
+            "admissions_phone must be a valid Pakistani number " +
+            "(mobile: +92 3XXXXXXXXX, landline: +92 <city> XXXXXXX, or UAN: +92 <city> 111-XXX-XXX).";
+        } else {
+          updates.admissions_phone = rawPhone.slice(0, 50);
+        }
+      }
     }
 
     if (Object.keys(errors).length) {
@@ -461,7 +481,6 @@ export const patchMyProfile = async (req, res) => {
   }
 };
 
-// ── POST /api/universities/me/logo ───────────────────────────────────────────
 
 export const uploadLogo = async (req, res) => {
   try {
@@ -489,7 +508,6 @@ export const uploadLogo = async (req, res) => {
   }
 };
 
-// ── POST /api/universities/me/banner ─────────────────────────────────────────
 
 export const uploadBanner = async (req, res) => {
   try {
@@ -516,7 +534,6 @@ export const uploadBanner = async (req, res) => {
   }
 };
 
-// ── GET /api/programs/catalog ─────────────────────────────────────────────────
 // Public — student search. Prefix/LIKE search, paginated.
 // When q is empty, returns the most-common programs (by university_count).
 
@@ -565,7 +582,6 @@ export const getProgramCatalog = async (req, res) => {
   }
 };
 
-// ── POST /api/seed  (admin only — full re-seed) ───────────────────────────────
 
 export const runSeed = async (req, res) => {
   try {
@@ -591,7 +607,6 @@ export const syncHec = async (req, res) => {
   }
 };
 
-// ── GET /api/health ───────────────────────────────────────────────────────────
 
 export const health = async (req, res) => {
   try {

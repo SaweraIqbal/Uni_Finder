@@ -46,7 +46,6 @@ const logActivity = (universityId, actorUserId, actorName, action, description, 
   ).catch((e) => console.error("[activity_log]", e.message));
 };
 
-// ── POST /api/universities/me/program-requests ────────────────────────────────
 // Body: { name, level, degree_type?, specialization?, track? }
 
 export const submitProgramRequest = async (req, res) => {
@@ -109,7 +108,6 @@ export const submitProgramRequest = async (req, res) => {
   }
 };
 
-// ── GET /api/universities/me/program-requests ─────────────────────────────────
 // Returns own requests only, paginated.
 
 export const getMyProgramRequests = async (req, res) => {

@@ -207,7 +207,6 @@ export const submitUniversityAdminApplication = async (req, res) => {
     }
     const university = universities[0];
 
-    // ── PART C guard 1: one active application per user ──────────────────────
     // Check applications table first (new flow)
     const activeUserApp = await query(
       `SELECT a.id, a.status, u.name AS university_name
@@ -243,7 +242,6 @@ export const submitUniversityAdminApplication = async (req, res) => {
       // table doesn't exist yet — skip legacy check
     }
 
-    // ── PART C guard 2 & 3: university claim state ────────────────────────────
     const uniStateRows = await query(
       `SELECT
          CASE
@@ -274,7 +272,6 @@ export const submitUniversityAdminApplication = async (req, res) => {
     const { email, domain } = emailResult;
     const domainState = getDomainState(domain, university.oric_domain);
 
-    // ── PART C LOE required rules ─────────────────────────────────────────────
     // Required when: domain_state !== 'match', designation = 'Other',
     // university previously_rejected, OR user has a rejected app (resubmit)
     const userHasRejected = await query(

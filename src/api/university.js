@@ -1,5 +1,36 @@
 
 import { API } from "./client";
+export async function getProgramHierarchy({ signal } = {}) {
+  const res = await fetch(`${API}/api/programs/hierarchy`, { signal });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.message || "Could not load the program hierarchy.");
+  }
+  return data;
+}
+
+export async function searchDistinctPrograms({ q = "", level = "", limit = 10, signal } = {}) {
+  const params = new URLSearchParams({ q, limit: String(limit) });
+  if (level) params.set("level", level);
+  const res = await fetch(`${API}/api/programs/search?${params}`, { signal });
+  const data = await res.json().catch(() => []);
+  if (!res.ok) {
+    throw new Error(data?.message || "Could not load program suggestions.");
+  }
+  return data;
+}
+
+export async function searchCampusesForProgram({ program, level = "" }) {
+  const params = new URLSearchParams({ program });
+  params.set("level", level);
+  const res = await fetch(`${API}/api/programs/search/results?${params}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.message || "Could not load campuses for this program.");
+  }
+  return data;
+}
+
 export async function getMyUniversity(uid) {
   const res = await fetch(`${API}/api/university/${uid}/profile`);
   return res.json();
@@ -77,7 +108,6 @@ export async function deleteProgram(programId) {
   return { ok: res.ok, data: await res.json() };
 }
 
-// ── /me API (Phase 1) ────────────────────────────────────────────────────────
 import { authHeaders } from "./client";
 
 export async function getMe() {

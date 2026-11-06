@@ -14,22 +14,51 @@ import { useUniversityAdmin } from "./UniversityAdminContext";
 import { Input, PageHeader, StatusChip, Textarea } from "./ui";
 import { patchMeProfile, uploadMeLogo, uploadMeBanner } from "../../api/university";
 
-// ── helpers ───────────────────────────────────────────────────────────────────
 
-/** Accept PNG and JPG only — no SVG, no WebP (per spec) */
-const ACCEPT = "image/png,image/jpeg";
+/** Accept PNG, JPG, and SVG — SVG is rasterized to PNG on the client */
+const ACCEPT = "image/png,image/jpeg,image/svg+xml";
 const MAX_LOGO_MB   = 2;
 const MAX_BANNER_MB = 5;
 
 function validateImageFile(file, maxMb) {
   if (!file) return "No file selected.";
-  const okType = file.type === "image/png" || file.type === "image/jpeg";
-  if (!okType) return "Only PNG and JPG images are accepted. SVG is not allowed.";
+  const okType =
+    file.type === "image/png" ||
+    file.type === "image/jpeg" ||
+    file.type === "image/svg+xml";
+  if (!okType) return "Only PNG, JPG, and SVG images are accepted.";
   if (file.size > maxMb * 1024 * 1024) return `File must be under ${maxMb} MB.`;
   return null;
 }
 
-// ── Stat tile ─────────────────────────────────────────────────────────────────
+/** Convert an SVG file to a rasterized PNG File using the browser Canvas API */
+async function toPngFile(file) {
+  const svgText = await file.text();
+  const blob = new Blob([svgText], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = url;
+  });
+
+  const canvas = document.createElement("canvas");
+  const size = Math.max(img.width, img.height);
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, size, size);
+  ctx.drawImage(img, 0, 0, size, size);
+  URL.revokeObjectURL(url);
+
+  const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  const baseName = file.name.replace(/\.[^.]+$/, "");
+  return new File([pngBlob], `${baseName}.png`, { type: "image/png" });
+}
+
 
 function StatTile({ label, value, Icon, color, bg, loading }) {
   return (
@@ -49,12 +78,17 @@ function StatTile({ label, value, Icon, color, bg, loading }) {
   );
 }
 
-// ── Image upload widget ───────────────────────────────────────────────────────
 
 function ImageUploadWidget({
   label, hint, currentUrl, maxMb, inputRef,
   uploading, uploadError, onFileChange,
 }) {
+  // If the current image can't load (e.g. stale/external URL from a seeded
+  // import), fall back to the "Choose Image" upload box instead of showing
+  // an invisible broken preview. Track which URL failed so a new URL resets it.
+  const [failedUrl, setFailedUrl] = useState(null);
+  const showPreview = Boolean(currentUrl) && failedUrl !== currentUrl;
+
   return (
     <div>
       <p className="text-sm font-medium text-slate-700 mb-2">{label}</p>
@@ -66,14 +100,14 @@ function ImageUploadWidget({
         className="hidden"
         onChange={onFileChange}
       />
-      {currentUrl ? (
+      {showPreview ? (
         <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
           <img
             src={currentUrl}
             alt={label}
             loading="lazy"
             className="w-full object-contain max-h-28"
-            onError={(e) => { e.currentTarget.src = ""; e.currentTarget.style.display = "none"; }}
+            onError={() => setFailedUrl(currentUrl)}
           />
           <button
             type="button"
@@ -99,9 +133,9 @@ function ImageUploadWidget({
           <span className="text-xs font-medium">
             {uploading ? "Uploading…" : "Choose Image"}
           </span>
-          <span className="text-[10px] text-slate-300">
-            PNG or JPG · max {maxMb} MB
-          </span>
+            <span className="text-[10px] text-slate-300">
+             PNG, JPG, or SVG · max {maxMb} MB
+           </span>
         </button>
       )}
       {uploadError && (
@@ -111,7 +145,6 @@ function ImageUploadWidget({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
 
 export default function UniversityProfileSection() {
   const {
@@ -123,7 +156,6 @@ export default function UniversityProfileSection() {
     refetch,
   } = useUniversityAdmin();
 
-  // ── Editable form state (initialised from /me data) ──────────────────────
   const [form, setForm] = useState({
     established_year:  "",
     about_text:        "",
@@ -137,7 +169,6 @@ export default function UniversityProfileSection() {
   const [saving,       setSaving]       = useState(false);
   const [saveError,    setSaveError]    = useState(null);
 
-  // ── Image state ───────────────────────────────────────────────────────────
   const [logoUrl,      setLogoUrl]      = useState(null);
   const [bannerUrl,    setBannerUrl]    = useState(null);
   const [uploadingLogo,   setUploadingLogo]   = useState(false);
@@ -215,7 +246,6 @@ export default function UniversityProfileSection() {
     }
   };
 
-  // ── Logo upload ────────────────────────────────────────────────────────────
   const handleLogoFile = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -223,12 +253,15 @@ export default function UniversityProfileSection() {
     const err = validateImageFile(file, MAX_LOGO_MB);
     if (err) { setLogoError(err); return; }
 
+    const isSvg = file.type === "image/svg+xml";
+    const uploadFile = isSvg ? await toPngFile(file) : file;
+
     // Optimistic preview
-    const previewUrl = URL.createObjectURL(file);
+    const previewUrl = URL.createObjectURL(uploadFile);
     setLogoUrl(previewUrl);
     setUploadingLogo(true);
     try {
-      const { ok, status, data } = await uploadMeLogo(file);
+      const { ok, status, data } = await uploadMeLogo(uploadFile);
       if (status === 415) {
         setLogoUrl(university?.logo_url || null);
         setLogoError("Only PNG and JPG images are accepted. SVG is not allowed.");
@@ -250,7 +283,6 @@ export default function UniversityProfileSection() {
     }
   };
 
-  // ── Banner upload ──────────────────────────────────────────────────────────
   const handleBannerFile = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -258,11 +290,14 @@ export default function UniversityProfileSection() {
     const err = validateImageFile(file, MAX_BANNER_MB);
     if (err) { setBannerError(err); return; }
 
-    const previewUrl = URL.createObjectURL(file);
+    const isSvg = file.type === "image/svg+xml";
+    const uploadFile = isSvg ? await toPngFile(file) : file;
+
+    const previewUrl = URL.createObjectURL(uploadFile);
     setBannerUrl(previewUrl);
     setUploadingBanner(true);
     try {
-      const { ok, status, data } = await uploadMeBanner(file);
+      const { ok, status, data } = await uploadMeBanner(uploadFile);
       if (status === 415) {
         setBannerUrl(university?.banner_url || null);
         setBannerError("Only PNG and JPG images are accepted. SVG is not allowed.");
@@ -284,7 +319,6 @@ export default function UniversityProfileSection() {
     }
   };
 
-  // ── Skeleton while loading ─────────────────────────────────────────────────
   if (loadingMe && !university) {
     return (
       <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
@@ -505,12 +539,12 @@ export default function UniversityProfileSection() {
       <section className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-50">
           <h2 className="text-sm font-semibold text-slate-800">Logo & Banner</h2>
-          <p className="text-xs text-slate-400 mt-0.5">PNG or JPG only. SVG is not accepted.</p>
+          <p className="text-xs text-slate-400 mt-0.5">PNG, JPG, or SVG (SVG converted to PNG). Resized to 512 px.</p>
         </div>
         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <ImageUploadWidget
             label="University Logo"
-            hint={`PNG or JPG · max ${MAX_LOGO_MB} MB · resized to 512 px`}
+            hint={`PNG, JPG, or SVG · max ${MAX_LOGO_MB} MB · SVG converted to PNG`}
             currentUrl={logoUrl}
             maxMb={MAX_LOGO_MB}
             inputRef={logoRef}
@@ -520,7 +554,7 @@ export default function UniversityProfileSection() {
           />
           <ImageUploadWidget
             label="Hero / Banner Image"
-            hint={`PNG or JPG · max ${MAX_BANNER_MB} MB · resized to 1920 px wide`}
+            hint={`PNG, JPG, or SVG · max ${MAX_BANNER_MB} MB · SVG converted to PNG`}
             currentUrl={bannerUrl}
             maxMb={MAX_BANNER_MB}
             inputRef={bannerRef}

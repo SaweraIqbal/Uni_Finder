@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - XAMPP / MariaDB 10.4+ running on port 3306
 - Python 3.8+ (for the program catalog script, optional)
 
@@ -58,6 +58,28 @@ EMAIL_OVERRIDE=       # set to your email in dev to catch all outbound mail
 # URLs (used in email links)
 API_URL=http://localhost:5000
 CLIENT_URL=http://localhost:5173
+```
+
+For production, set `CLIENT_URL` to the public frontend origin and build the frontend with
+`VITE_API_URL` set to the public backend origin. Do not leave either value pointing at
+localhost. Keep SMTP credentials in the backend environment only; for Gmail SMTP, use
+an app password rather than the account password. `EMAIL_OVERRIDE` is for development
+only and is ignored when `NODE_ENV=production`.
+
+All signup roles (student, university, campus, and hostel) normalize email addresses by
+trimming whitespace and lowercasing them. Syntax checks cannot prove a mailbox exists:
+the account stays inactive until the recipient opens the verification link. This verifies
+access to the entered mailbox for any provider; it does not require the address to be Gmail.
+Verification links expire after 24 hours, are one-time use, and can be resent with a
+one-minute cooldown within the original 24-hour signup window. Unverified accounts and
+their expired verification tokens are automatically removed by the backend cleanup task
+(runs at startup and every five minutes). Existing accounts are kept verified during
+the schema migration.
+
+Run the email-address validation cases with:
+
+```bash
+node --test src/backend/utils/emailValidation.test.js
 ```
 
 ---

@@ -181,7 +181,6 @@ export default function FacilitiesPage() {
   const [saved,        setSaved]        = useState(false);
   const [dataLoaded,   setDataLoaded]   = useState(false);
 
-  // ── Load saved data ───────────────────────────────────────────────────────
   useEffect(() => {
     if (!campusId) return;
     (async () => {
