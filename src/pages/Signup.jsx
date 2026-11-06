@@ -9,6 +9,7 @@ import lockIcon from "../assets/password.png";
 import googleIcon from "../assets/google.png";
 // import facebookIcon from "../assets/facebook.png";
 import { setFlash } from "../utils/flash";
+import { resendVerificationEmail, signup as signupApi } from "../api/client";
 
 // ── Role picker — shown when /signup is visited without a role segment ────────
 const ROLE_OPTIONS = [
@@ -179,6 +180,11 @@ function Signup() {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [deliveryFailed, setDeliveryFailed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
   const allowedRoles = ["student", "university", "hostel", "campus"];
   const roleIsValid = role && allowedRoles.includes(role);
@@ -208,8 +214,10 @@ function Signup() {
     } else if (!emailRegex.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
-    if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
@@ -230,81 +238,100 @@ function Signup() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.fullName,
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          role: role,
-        }),
+      const { ok, status, data } = await signupApi({
+        name: formData.fullName,
+        username: formData.username,
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        role,
       });
 
-      const data = await res.json();
+      if (data.verificationRequired) {
+        setPendingEmail(data.email || formData.email.trim().toLowerCase());
+        setDeliveryFailed(Boolean(data.emailDeliveryFailed));
+        return;
+      }
 
-      console.log("ROLE SENT:", role);
-      console.log("BACKEND RESPONSE:", data);
-
-      if (res.ok) {
+      if (ok) {
         setFlash(data.message || "Signup successful");
-        if (data.token) sessionStorage.setItem("token", data.token);
-
-        const userRole = data.user?.role || role;
-
-        if (data.user?.id) {
-          sessionStorage.setItem("userId", data.user.id);
-          sessionStorage.setItem(
-            "user",
-            JSON.stringify({
-              id: data.user.id,
-              email: formData.email,
-              name: formData.fullName,
-              username: formData.username,
-              role: userRole,
-            }),
-          );
-        }
-
-        setTimeout(() => {
-          switch (userRole) {
-            case "student":
-              navigate("/homepage", { replace: true });
-              break;
-
-            case "university":
-              navigate("/university/dashboard", { replace: true });
-              break;
-
-            case "campus":
-              navigate("/campus/dashboard", { replace: true });
-              break;
-
-            case "hostel":
-              navigate("/hostel/dashboard", { replace: true });
-              break;
-
-            case "admin":
-              navigate("/admin/dashboard", { replace: true });
-              break;
-
-            default:
-              toast.error("Invalid role detected");
-              navigate("/login", { replace: true });
-          }
-        }, 500);
+        navigate("/login", { replace: true });
       } else {
-        toast.error(data.message || "Signup failed");
+        // Handle specific error cases
+        if (status === 409) {
+          setErrors({ email: data.message || "An account with this email already exists" });
+        } else if (data.message && data.message.toLowerCase().includes("email")) {
+          setErrors({ email: data.message });
+        } else if (data.message && data.message.toLowerCase().includes("password")) {
+          setErrors({ password: data.message });
+        } else {
+          toast.error(data.message || "Signup failed");
+        }
       }
     } catch (error) {
-      console.log(error);
-      toast.error("Server error");
+      toast.error(error.message || "Could not reach the server. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setResendMessage("");
+    try {
+      const { status, data } = await resendVerificationEmail(pendingEmail);
+      setResendMessage(data.message || "If an unverified account exists, a verification email will be sent.");
+      if (status === 429) setDeliveryFailed(true);
+      else if (status >= 500) setDeliveryFailed(true);
+      else setDeliveryFailed(false);
+    } catch (error) {
+      setResendMessage(error.message || "Could not reach the server. Please try again.");
+      setDeliveryFailed(true);
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  if (pendingEmail) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-gray-100 p-4">
+        <section className="w-full max-w-lg rounded-3xl bg-white p-8 text-center shadow-xl">
+          <img src={logo} alt="Uni Finder" className="mx-auto mb-5 w-12" />
+          <h1 className="text-2xl font-bold text-gray-800">
+            {deliveryFailed ? "Account created — email pending" : "Check your email"}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            {deliveryFailed
+              ? "Your account is not active yet. We could not deliver the verification email. Check your address and SMTP configuration, then try again."
+              : "We sent a verification link to:"}
+          </p>
+          <p className="mt-2 break-all font-semibold text-orange-600">{pendingEmail}</p>
+          <p className="mt-3 text-sm leading-6 text-gray-500">
+            Open the link in that mailbox within 24 hours. You can use Gmail or another email provider; verification confirms access to the mailbox, not that it is specifically a Gmail account. Check spam or junk if it does not arrive.
+          </p>
+          {resendMessage && (
+            <p className="mt-4 text-sm text-gray-600" role="status">{resendMessage}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={isResending}
+            className="mt-6 w-full rounded-xl bg-orange-500 px-4 py-3 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isResending ? "Sending..." : "Resend verification email"}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="mt-4 text-sm font-semibold text-orange-600 hover:underline"
+          >
+            Back to login
+          </button>
+        </section>
+      </div>
+    );
+  }
   return (
     <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center bg-gray-100 p-4 ">
       <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
@@ -414,6 +441,9 @@ function Signup() {
                     value={formData.email}
                     onChange={handleChange}
                     type="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck="false"
                     placeholder="Email address"
                     className="border-none outline-none w-full text-[15px] bg-transparent"
                   />
@@ -494,9 +524,10 @@ function Signup() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-2xl bg-orange-500 text-white text-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-[1px] shadow-lg"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-2xl bg-orange-500 text-white text-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-[1px] shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Create Account
+                {isSubmitting ? "Creating account..." : "Create Account"}
               </button>
             </form>
 

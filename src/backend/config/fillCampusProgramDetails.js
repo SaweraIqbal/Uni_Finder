@@ -29,11 +29,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXCEL = path.join(__dirname, "../data/ucp_scraped_data.xlsx");
 const CAMPUS_ID = "4717a5f7-ffcf-40d8-9eff-7baa8d9d63a8"; // UCP Lahore Campus
 
-// ─────────────────────────────────────────────────────────────────────────────
 // KEY NAMES inside `details` JSON.
 // These are GUESSED from the form labels. If the form shows blank after the
 // test run, only this block needs to change (send me one real saved row).
-// ─────────────────────────────────────────────────────────────────────────────
 // Keys below are CONFIRMED from ProgramsOffered.jsx (the public page reads them):
 //   eligibility[{qualification,minPct,subjects}], entryTest, testBody,
 //   interviewOn, interviewNote, merit[{component,weight}], fees[{head,amount,frequency}]
@@ -66,7 +64,6 @@ const VALUES = {
   freq_once: "One Time",
 };
 
-// ── helpers ──────────────────────────────────────────────────────────────────
 const query = (sql, values = []) =>
   new Promise((resolve, reject) =>
     db.query(sql, values, (err, rows) => (err ? reject(err) : resolve(rows))),
@@ -95,7 +92,6 @@ const safeJson = (v) => {
   try { return JSON.parse(v) || {}; } catch { return {}; }
 };
 
-// ── build the details object for one Excel row ───────────────────────────────
 const buildDetails = (r) => {
   const out = {};
 
@@ -127,7 +123,6 @@ const buildDetails = (r) => {
   return out;
 };
 
-// ── main ─────────────────────────────────────────────────────────────────────
 const run = async () => {
   await dbReady;
 

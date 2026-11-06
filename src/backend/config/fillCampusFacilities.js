@@ -67,7 +67,6 @@ const ID_MAP = {
 
 const APPROXIMATE = new Set(["indoor_sports"]);
 
-// ── helpers ──────────────────────────────────────────────────────────────────
 const query = (sql, values = []) =>
   new Promise((resolve, reject) =>
     db.query(sql, values, (err, rows) => (err ? reject(err) : resolve(rows))),
@@ -92,7 +91,6 @@ const validJsonArray = (s) => {
   try { const j = JSON.parse(s); return Array.isArray(j) ? j : null; } catch { return null; }
 };
 
-// ── main ─────────────────────────────────────────────────────────────────────
 const run = async () => {
   await dbReady;
 

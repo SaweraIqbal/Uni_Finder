@@ -40,7 +40,6 @@ export default function GalleryPage() {
   const [deleteId,    setDeleteId]    = useState(null);
   const [uploadOpen,  setUploadOpen]  = useState(false);
 
-  // ── Load images ──────────────────────────────────────────────────────────
   const loadImages = async () => {
     if (!campusId) return;
     setLoading(true);
@@ -60,7 +59,6 @@ export default function GalleryPage() {
     ? images
     : images.filter((i) => i.category === catFilter);
 
-  // ── Toggle featured (optimistic + real) ──────────────────────────────────
   const toggleFeatured = async (id) => {
     setImages((imgs) => imgs.map((img) => img.id === id ? { ...img, featured: !img.featured } : img));
     try {
@@ -72,7 +70,6 @@ export default function GalleryPage() {
     }
   };
 
-  // ── Delete ────────────────────────────────────────────────────────────────
   const doDelete = async () => {
     try {
       const { ok } = await deleteCampusImage(deleteId);

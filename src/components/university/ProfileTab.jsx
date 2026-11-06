@@ -47,7 +47,12 @@ export default function ProfileTab({ uid }) {
         const stored = JSON.parse(sessionStorage.getItem("user") || "{}");
         sessionStorage.setItem(
           "user",
-          JSON.stringify({ ...stored, name: form.name, username: form.username, email: form.email })
+          JSON.stringify({
+            ...stored,
+            name: form.name,
+            username: form.username,
+            email: (form.email || "").trim().toLowerCase(), // normalize to match DB
+          })
         );
         setForm((f) => ({ ...f, password: "" }));
       } else {

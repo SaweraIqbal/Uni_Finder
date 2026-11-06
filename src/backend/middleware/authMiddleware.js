@@ -33,7 +33,6 @@ export const verifyToken = (req, res, next) => {
 };
 
 
-
 const ROLE_ALIASES = {
   uni: "university",
   university_admin: "university",

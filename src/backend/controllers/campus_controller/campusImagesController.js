@@ -1,9 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import db from "../../config/db.js";
 
-// ════════════════════════════════════════════════════════════════════════════
 // POST /api/campus/images   (multipart: image, campus_id, caption, category)
-// ════════════════════════════════════════════════════════════════════════════
 export const addCampusImage = (req, res) => {
   const { campus_id, caption, category } = req.body;
   if (!campus_id || !req.file)
@@ -23,9 +21,7 @@ export const addCampusImage = (req, res) => {
   );
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // GET /api/campus/:campusId/images
-// ════════════════════════════════════════════════════════════════════════════
 export const listCampusImages = (req, res) => {
   db.query(
     `SELECT id, image_url, caption, category, featured, created_at
@@ -40,9 +36,7 @@ export const listCampusImages = (req, res) => {
   );
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // DELETE /api/campus/images/:imageId
-// ════════════════════════════════════════════════════════════════════════════
 export const deleteCampusImage = (req, res) => {
   db.query("DELETE FROM campus_images WHERE id=?", [req.params.imageId], (err) => {
     if (err) return res.status(500).json({ message: "DB error", error: err.message });
@@ -50,9 +44,7 @@ export const deleteCampusImage = (req, res) => {
   });
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // PUT /api/campus/images/:imageId/feature   —  toggle featured flag
-// ════════════════════════════════════════════════════════════════════════════
 export const featureCampusImage = (req, res) => {
   const { imageId } = req.params;
   // Read current value, flip it

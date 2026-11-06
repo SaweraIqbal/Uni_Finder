@@ -7,12 +7,14 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import universityRoutes from "./routes/universityRoutes.js";
 import campusRoutes from "./routes/campusRoutes.js";
 import registrationRoutes from "./routes/registrationRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 import db, { dbReady } from "./config/db.js";
 import initSchema from "./config/schema.js";
 import seedSuperAdmin from "./config/seedAdmin.js";
 import seedUniversities from "./config/seedUniversities.js";
 import seedPrograms from "./config/seedPrograms.js";
 import backfillAssignedIds from "./config/backfillIds.js";
+import { cleanupUnverifiedAccounts } from "./utils/cleanupUnverifiedAccounts.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -31,10 +33,28 @@ app.use(
   }),
 );
 
-// ── Database: tables + seeding ──────────────────────────────────────────────
 dbReady
   .then(() => {
     initSchema(db, () => {
+      let cleanupInProgress = false;
+      const cleanupExpiredSignups = async () => {
+        if (cleanupInProgress) return;
+        cleanupInProgress = true;
+        try {
+          const deletedCount = await cleanupUnverifiedAccounts(db);
+          if (deletedCount) {
+            console.log(`[email verification] deleted ${deletedCount} expired unverified account(s)`);
+          }
+        } catch (error) {
+          console.error("[email verification] expired-account cleanup failed:", error.message);
+        } finally {
+          cleanupInProgress = false;
+        }
+      };
+      cleanupExpiredSignups();
+      const cleanupTimer = setInterval(cleanupExpiredSignups, 5 * 60 * 1000);
+      cleanupTimer.unref();
+
       seedSuperAdmin()
         .then(() => seedUniversities())
         .then(() => seedPrograms())
@@ -46,14 +66,13 @@ dbReady
     console.error("Database initialization failed:", error.message);
   });
 
-// ── Routes ──────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", registrationRoutes);
 app.use("/api", universityRoutes);
 app.use("/api", campusRoutes);
+app.use("/api", contactRoutes);
 
-// ── Error handler ───────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   if (err) {
     console.log("Request error:", err.message);

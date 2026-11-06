@@ -16,9 +16,7 @@ const shapeHostel = (row) => ({
   rooms_detail: safe(row.rooms_detail) || [],
 });
 
-// ════════════════════════════════════════════════════════════════════════════
 // POST /api/campus/:campusId/hostels  — campus admin adds a new hostel
-// ════════════════════════════════════════════════════════════════════════════
 export const addHostel = async (req, res) => {
   const { campusId } = req.params;
   const {
@@ -53,9 +51,7 @@ export const addHostel = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // GET /api/campus/:campusId/hostels
-// ════════════════════════════════════════════════════════════════════════════
 export const listHostels = async (req, res) => {
   try {
     const [hostels, campus] = await Promise.all([
@@ -72,9 +68,7 @@ export const listHostels = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // PUT /api/campus/:campusId/hostel-availability
-// ════════════════════════════════════════════════════════════════════════════
 export const setHostelAvailability = async (req, res) => {
   const available = req.body.hostel_available ? 1 : 0;
   try {
@@ -88,10 +82,8 @@ export const setHostelAvailability = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // GET /api/campus/:campusId/hostel-approvals
 // Returns only Campus Hostel type entries that are pending/live/rejected
-// ════════════════════════════════════════════════════════════════════════════
 export const listHostelApprovals = async (req, res) => {
   try {
     const rows = await q(
@@ -106,10 +98,8 @@ export const listHostelApprovals = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // PUT /api/campus/hostel-approvals/:id/approve
 // Campus admin approves → status becomes 'pending_super_admin'
-// ════════════════════════════════════════════════════════════════════════════
 export const approveHostel = async (req, res) => {
   try {
     await q(
@@ -122,9 +112,7 @@ export const approveHostel = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════════════
 // PUT /api/campus/hostel-approvals/:id/reject
-// ════════════════════════════════════════════════════════════════════════════
 export const rejectHostel = async (req, res) => {
   const { reason } = req.body;
   if (!reason?.trim())

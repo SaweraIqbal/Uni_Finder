@@ -35,19 +35,16 @@ export function UniversityAdminProvider({
   adminName:      propAdminName      = "",
   adminEmail:     propAdminEmail     = "",
 }) {
-  // ── Navigation & UI ──────────────────────────────────────────────────────
   const [currentPage,      setCurrentPage]      = useState("overview");
   const [sideSheet,        setSideSheet]        = useState(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [sidebarOpen,      setSidebarOpen]      = useState(false);
 
-  // ── API data ─────────────────────────────────────────────────────────────
   const [university,     setUniversity]     = useState(null);
   const [stats,          setStats]          = useState(null);
   const [activityLog,    setActivityLog]    = useState([]);
   const [campusRequests, setCampusRequests] = useState([]);   // real campus registrations
 
-  // ── Loading / error states ───────────────────────────────────────────────
   const [loadingMe,            setLoadingMe]            = useState(true);
   const [loadingStats,         setLoadingStats]         = useState(true);
   const [loadingActivity,      setLoadingActivity]      = useState(true);
@@ -66,7 +63,6 @@ export function UniversityAdminProvider({
   const adminName      = propAdminName  || "";
   const adminEmail     = propAdminEmail || "";
 
-  // ── Fetch /me ─────────────────────────────────────────────────────────────
   const fetchMe = useCallback(async () => {
     if (!sessionStorage.getItem("token")) return;
     setLoadingMe(true);
@@ -81,7 +77,6 @@ export function UniversityAdminProvider({
     }
   }, []);
 
-  // ── Fetch /me/stats ───────────────────────────────────────────────────────
   const fetchStats = useCallback(async () => {
     if (!sessionStorage.getItem("token")) return;
     setLoadingStats(true);
@@ -95,7 +90,6 @@ export function UniversityAdminProvider({
     }
   }, []);
 
-  // ── Fetch /me/activity ────────────────────────────────────────────────────
   const fetchActivity = useCallback(async () => {
     if (!sessionStorage.getItem("token")) return;
     setLoadingActivity(true);
@@ -109,7 +103,6 @@ export function UniversityAdminProvider({
     }
   }, []);
 
-  // ── Fetch campus registrations for this university ────────────────────────
   const fetchCampusRequests = useCallback(async () => {
     if (!sessionStorage.getItem("token")) return;
     setLoadingCampusRequests(true);
@@ -125,7 +118,6 @@ export function UniversityAdminProvider({
     }
   }, []);
 
-  // ── Boot fetch ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
@@ -135,7 +127,6 @@ export function UniversityAdminProvider({
     fetchCampusRequests();
   }, [fetchMe, fetchStats, fetchActivity, fetchCampusRequests]);
 
-  // ── Refetch everything after any mutation ─────────────────────────────────
   const refetch = useCallback(() => {
     fetchMe();
     fetchStats();
@@ -143,25 +134,21 @@ export function UniversityAdminProvider({
     fetchCampusRequests();
   }, [fetchMe, fetchStats, fetchActivity, fetchCampusRequests]);
 
-  // ── Navigation ────────────────────────────────────────────────────────────
   const navigateTo = useCallback((page) => {
     setCurrentPage(page);
     setNotificationOpen(false);
     setSidebarOpen(false);
   }, []);
 
-  // ── Toast helper ──────────────────────────────────────────────────────────
   const addToast = useCallback((message, type = "success") => {
     if (type === "error") toast.error(message);
     else if (type === "info") toast.info(message);
     else toast.success(message);
   }, []);
 
-  // ── Side-sheet ────────────────────────────────────────────────────────────
   const openSideSheet  = useCallback((content) => setSideSheet(content), []);
   const closeSideSheet = useCallback(() => setSideSheet(null), []);
 
-  // ── Context value ─────────────────────────────────────────────────────────
   return (
     <UniversityAdminContext.Provider
       value={{

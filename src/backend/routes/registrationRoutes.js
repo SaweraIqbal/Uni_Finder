@@ -64,10 +64,8 @@ const uploadMiddleware = (req, res, next) =>
 
 const router = express.Router();
 
-// ── Public ────────────────────────────────────────────────────────────────────
 router.get("/universities/approved", getApprovedUniversities);
 
-// ── Campus admin (registrant) ──────────────────────────────────────────────────
 router.post("/campus-registrations",
   verifyToken, authorizeRoles("campus"), uploadMiddleware, submitRegistration);
 
@@ -77,14 +75,12 @@ router.get("/campus-registrations/mine",
 router.post("/campus-registrations/:id/resubmit",
   verifyToken, authorizeRoles("campus"), uploadMiddleware, resubmitRegistration);
 
-// ── University admin (tier-1 reviewer) ────────────────────────────────────────
 router.get("/campus-registrations",
   verifyToken, authorizeRoles("university"), getUniversityCampusRegistrations);
 
 router.patch("/campus-registrations/:id/tier1",
   verifyToken, authorizeRoles("university"), express.json(), uniUpdateRegistrationStatus);
 
-// ── Super admin (tier-2 — gated by tier-1) ────────────────────────────────────
 // Also used indirectly via adminController.adminUpdateCampusRegistrationStatus.
 router.patch("/campus-registrations/:id/status",
   verifyToken, authorizeRoles("admin"), express.json(), updateRegistrationStatus);

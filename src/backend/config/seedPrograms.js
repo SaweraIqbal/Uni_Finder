@@ -31,7 +31,6 @@ const KNOWN_COLS = new Set([
   "shift", "track", // common alternates — also captured explicitly
 ]);
 
-// ── Degree-parsing helpers (LEGACY format) ───────────────────────────────────
 
 const resolveLevel = (sheetLevel) => {
   const val = String(sheetLevel || "").trim();
@@ -108,7 +107,6 @@ const parseRow = (rawName, sheetLevel, specCol, extra) => {
   });
 };
 
-// ── Shared helpers ───────────────────────────────────────────────────────────
 
 const dedupeKey = (universityId, name, level, spec, track) =>
   `${universityId}|${name}|${level ?? ""}|${spec ?? ""}|${track ?? ""}`;
@@ -158,7 +156,6 @@ const upsertProgram = async (universityId, prog) => {
   return result.affectedRows === 1 ? "inserted" : "updated";
 };
 
-// ── Main export ───────────────────────────────────────────────────────────────
 const seedPrograms = async () => {
   let totalInserted = 0;
   let totalUpdated = 0;
@@ -180,7 +177,6 @@ const seedPrograms = async () => {
     console.log(`[seedPrograms] Reading ${fileLabel} (${workbook.worksheets.length} sheet(s))`);
 
     for (const sheet of workbook.worksheets) {
-      // ── Build header map ─────────────────────────────────────────────────
       const headerMap = new Map();   // colName(lower) → colIndex
       sheet.getRow(1).eachCell((cell, col) => {
         const key = String(cell.value || "").trim().toLowerCase();
@@ -203,9 +199,7 @@ const seedPrograms = async () => {
       let sheetUpdated = 0;
       const sheetSeen = new Map();   // dedupe key → first-seen row number
 
-      // ═════════════════════════════════════════════════════════════════════
       // FORMAT 2: MASTER (already-clean rows, e.g. Programs_Master)
-      // ═════════════════════════════════════════════════════════════════════
       if (isMaster) {
         const uniCol = headerMap.get("parent_university_name");
         const nameCol = headerMap.get("name");
@@ -269,9 +263,7 @@ const seedPrograms = async () => {
         }
       }
 
-      // ═════════════════════════════════════════════════════════════════════
       // FORMAT 1: LEGACY (programs.xlsx — names parsed via degree_map.json)
-      // ═════════════════════════════════════════════════════════════════════
       if (isLegacy) {
         const extraCols = [];   // unmapped column names (lower)
         for (const key of headerMap.keys()) {
@@ -288,7 +280,6 @@ const seedPrograms = async () => {
         const uniNameCol = headerMap.get("university name");
         const trackCol = headerMap.get("track") || headerMap.get("shift");
 
-        // ── Resolve university from the first non-empty row ────────────────
         let universityId = null;
         if (uniNameCol) {
           for (let r = 2; r <= sheet.rowCount; r++) {
@@ -316,7 +307,6 @@ const seedPrograms = async () => {
 
           if (!rawName) continue;
 
-          // ── Build extra object from unmapped columns ───────────────────
           let extra = null;
           if (extraCols.length) {
             const obj = {};
@@ -362,7 +352,6 @@ const seedPrograms = async () => {
     }
   }
 
-  // ── Final reports ─────────────────────────────────────────────────────────
   console.log(`[seedPrograms] Total: ${totalInserted} inserted, ${totalUpdated} updated.`);
 
   if (unresolvedReport.length) {

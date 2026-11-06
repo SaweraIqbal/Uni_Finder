@@ -71,7 +71,6 @@ export default function UniversityDashboard() {
     navigate("/login");
   };
 
-  // ── Approved → show full dashboard immediately ──────────────────
   if (status === "approved") {
     return (
       <UniversityAdminDashboard

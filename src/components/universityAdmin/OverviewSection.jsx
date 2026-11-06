@@ -162,18 +162,7 @@ export default function OverviewSection() {
           />
         )}
 
-        {/* Campus approvals — deferred */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 opacity-60">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 rounded-xl bg-slate-100">
-              <MapPin className="w-4 h-4 text-slate-400" />
-            </div>
-            <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-              Campus Approvals
-            </p>
-          </div>
-          <p className="text-xs text-slate-400 italic">Campus module coming soon</p>
-        </div>
+       
       </div>
 
       {/* ── Stats row ── */}

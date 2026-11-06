@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { LogOut, UserRound } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { setFlash } from "../../utils/flash";
 import logo from "../../assets/Logo.png";
@@ -107,7 +108,8 @@ export default function Navbar() {
                       }}
                       className="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 hover:text-orange-500 transition text-left text-sm"
                     >
-                      ?? My Profile
+                      <UserRound size={16} aria-hidden="true" />
+                      <span>My Profile</span>
                     </button>
                     <hr className="border-gray-100" />
                     <button
@@ -116,15 +118,16 @@ export default function Navbar() {
                         logout();
                         setFlash(
                           name
-                            ? `?? Thanks ${name}, see you soon!`
-                            : "?? Thanks for visiting — see you soon!",
+                            ? `Thanks ${name}, see you soon!`
+                            : "Thanks for visiting — see you soon!",
                         );
                         navigate("/");
                         setDropdownOpen(false);
                       }}
                       className="flex items-center gap-3 w-full px-4 py-3 hover:bg-red-50 hover:text-red-500 transition text-left text-sm"
                     >
-                      ?? Log Out
+                      <LogOut size={16} aria-hidden="true" />
+                      <span>Log Out</span>
                     </button>
                   </div>
                 )}
@@ -246,4 +249,3 @@ export default function Navbar() {
     </header>
   );
 }
-

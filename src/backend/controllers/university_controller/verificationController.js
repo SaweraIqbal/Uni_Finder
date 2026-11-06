@@ -9,6 +9,22 @@ const fileUrl = (files, field) =>
     ? `/uploads/${files[field][0].filename}`
     : null;
 
+// ── Phone normalizer (mirrors universityAdminApplicationController) ───────────
+// Accepts: 03XXXXXXXXX  |  +923XXXXXXXXX  |  923XXXXXXXXX  |  0092XXXXXXXXX
+// Returns: canonical "+923XXXXXXXXX" or null when the input is not a valid
+//          Pakistani mobile number.
+const _normalizePhone = (value) => {
+  const input = String(value || "").trim();
+  if (!input) return null;
+  if (!/^\+?[\d \-]+$/.test(input)) return null;
+  let digits = input.replace(/\D/g, "");
+  if (digits.startsWith("0092")) digits = digits.slice(2);
+  if (digits.startsWith("0"))    digits = `92${digits.slice(1)}`;
+  if (!digits.startsWith("92"))  digits = `92${digits}`;
+  const result = `+${digits}`;
+  return /^\+923\d{9}$/.test(result) ? result : null;
+};
+
 /* ─────────────────────────────────────────────────────────────────
    POST /api/university/verification
    Fields (multipart/form-data):
@@ -75,7 +91,7 @@ export const submitVerification = (req, res) => {
             designation?.trim() || null,
             official_email.trim().toLowerCase(),
             domainVerified,
-            phone?.trim() || null,
+            _normalizePhone(phone) ?? phone?.trim() ?? null,
             letterUrl,
           ],
           (insertErr) => {

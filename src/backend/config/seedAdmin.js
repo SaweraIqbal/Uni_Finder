@@ -17,7 +17,7 @@ export const seedSuperAdmin = () =>
     const hashed = bcrypt.hashSync(password, 10);
 
     db.query(
-      "SELECT id FROM Student_signup WHERE email = ?",
+      "SELECT id FROM Student_signup WHERE LOWER(email) = LOWER(?)",
       [email],
       (err, rows) => {
         if (err) {
@@ -28,7 +28,7 @@ export const seedSuperAdmin = () =>
         if (rows.length > 0) {
           // Always sync the password hash so a stale hash never causes a 401
           db.query(
-            "UPDATE Student_signup SET password = ?, name = ?, username = ? WHERE email = ?",
+            "UPDATE Student_signup SET password = ?, name = ?, username = ? WHERE LOWER(email) = LOWER(?)",
             [hashed, name, username, email],
             (updErr) => {
               if (updErr) console.log("Seed admin update error:", updErr.message);

@@ -18,7 +18,7 @@ const PROFILES = [
     match: "central punjab",
     website_url:      "https://www.ucp.edu.pk",
     admissions_email: "admissions@ucp.edu.pk",
-    admissions_phone: "+92 (0)42 111-865-865",
+    admissions_phone: "+92-42-111-865-865",
     established_year: 2002,
     about_text:
       "The University of Central Punjab is a premier institution dedicated to academic excellence and holistic student development. We foster an environment of innovation, critical thinking, and ethical leadership, preparing our graduates to meet global challenges head-on.",
@@ -30,7 +30,7 @@ const PROFILES = [
     match: "lahore",
     website_url:      "https://www.uol.edu.pk",
     admissions_email: "admissions@uol.edu.pk",
-    admissions_phone: "+92 (0)42 99231302",
+    admissions_phone: "+92-42-99231302",
     established_year: 1882,
     about_text:
       "The University of the Punjab is the oldest and largest university in Pakistan, committed to providing a comprehensive and diverse educational environment.",
@@ -114,7 +114,7 @@ const PROFILES = [
     match: "superior",
     website_url:      "https://www.superior.edu.pk",
     admissions_email: "admissions@superior.edu.pk",
-    admissions_phone: "+92-42-35761015-17",
+    admissions_phone: "+92-42-35761015",
     established_year: 2000,
     about_text:
       "Superior University Lahore is a leading private university known for its programs in management sciences, IT, engineering, and the arts.",

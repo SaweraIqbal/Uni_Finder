@@ -16,6 +16,9 @@ import Layout from "./components/Layout";
 import LandingPage from "./pages/landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import ProgramSearchResults from "./pages/ProgramSearchResults";
 import HomePage from "./pages/homepage.jsx";
 import Profile from "./pages/profile.jsx";
 import UniversityDocuments from "./pages/UniversityDocuments.jsx";
@@ -58,6 +61,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/signup/:role" element={<Signup />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/search" element={<ProgramSearchResults />} />
           <Route
             path="/university/dashboard"
             element={

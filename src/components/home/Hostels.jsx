@@ -18,7 +18,7 @@ const hostelList = [
     minFee: "12k",
     maxFee: "18k",
     reviews: "142",
-    image: "https://picsum.photos/seed/hostel-room-1/700/400.jpg",
+    image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=700&auto=format&fit=crop&q=80",
     amenities: [
       "High-speed WiFi",
       "Air Conditioned",
@@ -33,7 +33,7 @@ const hostelList = [
     Location: "Farozpur Road, Lahore",
     minFee: "18k",
     maxFee: "25k",
-    image: "https://picsum.photos/seed/hostel-room-2/700/400.jpg",
+    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=700&auto=format&fit=crop&q=80",
     amenities: [
       "Biometric Entry",
       "AC & Generator",
@@ -49,7 +49,7 @@ const hostelList = [
     minFee: "14k",
     maxFee: "22k",
     reviews: "210",
-    image: "https://picsum.photos/seed/hostel-room-3/700/400.jpg",
+    image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=700&auto=format&fit=crop&q=80",
     amenities: [
       "UPS Back-up",
       "Weekly Mess Menu",
@@ -65,7 +65,7 @@ const hostelList = [
     minFee: "10k",
     maxFee: "16k",
     reviews: "87",
-    image: "https://picsum.photos/seed/hostel-room-4/700/400.jpg",
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=700&auto=format&fit=crop&q=80",
     amenities: ["WiFi", "Mess Included", "Laundry", "Parking"],
     gender: "Boys Hostel",
   },
@@ -75,7 +75,7 @@ const hostelList = [
     Location: "DHA Phase 5, Lahore",
     minFee: "20k",
     maxFee: "30k",
-    image: "https://picsum.photos/seed/hostel-room-5/700/400.jpg",
+    image: "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=700&auto=format&fit=crop&q=80",
     amenities: ["24/7 Security", "AC Rooms", "3 Meals", "Transport"],
     gender: "Girls Hostel",
   },
@@ -85,7 +85,7 @@ const hostelList = [
     Location: "I-8, Islamabad",
     minFee: "12k",
     maxFee: "20k",
-    image: "https://picsum.photos/seed/hostel-room-6/700/400.jpg",
+    image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=700&auto=format&fit=crop&q=80",
     amenities: ["Generator", "Hot Water", "Mess", "Common Room"],
     gender: "Boys Hostel",
   },
@@ -281,8 +281,8 @@ export default function Hostels() {
         </div>
 
         <p className="text-sm text-gray-500 mb-5 max-w-2xl">
-          Physically audited hostels with real room photos, transparent mess
-          menus, and zero-commission direct booking near your campus.
+          Explore student-friendly hostel stays, transparent mess menus, and
+          convenient accommodation near your campus.
         </p>
 
         {/* Carousel */}
@@ -306,7 +306,7 @@ export default function Hostels() {
           {[
             "Physically Audited",
             "Zero Commission",
-            "Real Photos",
+            "Room Previews",
             "Mess Menus Available",
           ].map(function (badge, idx) {
             return (

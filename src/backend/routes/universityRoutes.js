@@ -64,10 +64,18 @@ import {
   syncHec,
   health,
 } from "../controllers/university_controller/universityMeController.js";
+import {
+  getProgramHierarchy,
+  searchCampusesForProgram,
+  searchDistinctPrograms,
+} from "../controllers/programSearchController.js";
 
 const router = express.Router();
 
-// ── Multer instances ──────────────────────────────────────────────────────────
+router.get("/programs/search", searchDistinctPrograms);
+router.get("/programs/hierarchy", getProgramHierarchy);
+router.get("/programs/search/results", searchCampusesForProgram);
+
 
 // Verification letter upload (memory storage, mime checked in controller)
 const applicationLetterUpload = multer({
@@ -118,7 +126,6 @@ const handleUploadError = (uploadMiddleware, fieldName) => (req, res, next) => {
   });
 };
 
-// ── New /me routes (auth required, university role only) ──────────────────────
 
 router.get(
   "/universities/me",
@@ -159,7 +166,6 @@ router.post(
   uploadBanner,
 );
 
-// ── University /me program-requests ──────────────────────────────────────────
 router.post(
   "/universities/me/program-requests",
   verifyToken, authorizeRoles("university"),
@@ -172,17 +178,13 @@ router.get(
   getMyProgramRequests,
 );
 
-// ── Public program catalog (student search) ───────────────────────────────────
 router.get("/programs/catalog", getProgramCatalog);
 
-// ── Admin seed / sync ─────────────────────────────────────────────────────────
 router.post("/seed",     verifyToken, authorizeRoles("admin"), runSeed);
 router.post("/sync-hec", verifyToken, authorizeRoles("admin"), syncHec);
 
-// ── Health ────────────────────────────────────────────────────────────────────
 router.get("/health", health);
 
-// ── Verification flow (existing — untouched) ──────────────────────────────────
 router.post(
   "/university/documents",
   upload.fields([
@@ -214,11 +216,9 @@ router.get("/university/invitation/:token",  showUniversityPasswordSetup);
 router.post("/university/invitation/:token", express.urlencoded({ extended: false }), setUniversityPassword);
 router.get("/university/verification/:uid",  getMyVerification);
 
-// ── University public list / detail ──────────────────────────────────────────
 router.get("/universities",    listUniversities);
 router.get("/universities/:id", getUniversityById);
 
-// ── University images (now auth-guarded on write) ─────────────────────────────
 router.post(
   "/university/images",
   verifyToken, authorizeRoles("university"),
@@ -232,7 +232,6 @@ router.delete(
   deleteImage,
 );
 
-// ── University programs (legacy; now auth-guarded on write) ───────────────────
 router.post(
   "/university/programs",
   verifyToken, authorizeRoles("university"),
@@ -245,7 +244,6 @@ router.delete(
   deleteProgram,
 );
 
-// ── Account / profile (legacy, now auth-guarded on write) ─────────────────────
 router.get("/university/account/:uid", getAccount);
 router.put(
   "/university/account",
@@ -266,7 +264,6 @@ router.post(
   saveUniversity,
 );
 
-// ── Super-Admin verification management ──────────────────────────────────────
 router.get("/admin/search",    verifyToken, authorizeRoles("admin"), searchAccount);
 router.get("/admin/verifications",          verifyToken, authorizeRoles("admin"), listRequests);
 router.put("/admin/verifications/:id/approve", verifyToken, authorizeRoles("admin"), approveRequest);
@@ -282,7 +279,6 @@ router.get(
   streamAuthorizationLetter,
 );
 
-// ── Super-Admin university profiles, programs, activity ───────────────────────
 router.get(
   "/admin/universities",
   verifyToken, authorizeRoles("admin"),
@@ -316,7 +312,6 @@ router.get(
   adminListActivity,
 );
 
-// ── Super-Admin campus registrations ─────────────────────────────────────────
 router.get(
   "/admin/campus-registrations",
   verifyToken, authorizeRoles("admin"),

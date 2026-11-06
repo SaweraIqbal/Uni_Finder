@@ -309,10 +309,8 @@ export default function CampusRegisterPage() {
     setErrors((prev) => ({ ...prev, [field]: errs[field] }));
   };
 
-  // ── normalised phone preview ─────────────────────────────────────────────
   const preview = isValidPhone(form.phone) ? phonePreview(form.phone) : null;
 
-  // ── selected university name (for declaration text) ──────────────────────
   // We store the name separately once chosen so it survives dropdown close
   const [selectedUniName, setSelectedUniName] = useState(registration?.universityName || "");
   const handleUniChange = (id) => {
@@ -323,7 +321,6 @@ export default function CampusRegisterPage() {
     // We'll update it from the universities list in the submit payload instead.
   };
 
-  // ── submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate(form);
@@ -410,7 +407,6 @@ export default function CampusRegisterPage() {
     }
   };
 
-  // ── resubmission required docs ───────────────────────────────────────────
   const requiredDocs = registration?.resubmission?.requiredDocs || [];
 
   return (

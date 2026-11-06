@@ -6,12 +6,14 @@ export const searchAccount = (req, res) => {
   const q = (req.query.q || "").trim();
   if (!q) return res.status(400).json({ message: "Search query is required" });
 
+  const qNorm = q.trim().toLowerCase();
+
   db.query(
     `SELECT id, name, username, email, role, assigned_id, avatar_url
      FROM Student_signup
-     WHERE assigned_id = ? OR email = ? OR assigned_id LIKE ? OR name LIKE ?
+     WHERE assigned_id = ? OR LOWER(email) = ? OR assigned_id LIKE ? OR name LIKE ?
      ORDER BY (assigned_id = ?) DESC LIMIT 1`,
-    [q, q, `%${q}%`, `%${q}%`, q],
+    [q, qNorm, `%${q}%`, `%${q}%`, q],
     (err, rows) => {
       if (err) return res.status(500).json({ message: "DB error", error: err.message });
       if (!rows.length) return res.status(404).json({ message: "No account found for that ID" });

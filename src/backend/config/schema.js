@@ -1,15 +1,12 @@
-// ─── Uni-Finder DB Schema ────────────────────────────────────────────────────
 // Every CREATE TABLE uses IF NOT EXISTS — safe to re-run on every boot.
 // Column additions use the ensureColumns() migration guard (also idempotent).
 // DROP TABLE statements for dead campus tables run once via ensureDrops().
-// ─────────────────────────────────────────────────────────────────────────────
 
 const query = (db, sql, values = []) =>
   new Promise((resolve, reject) => {
     db.query(sql, values, (err, rows) => (err ? reject(err) : resolve(rows)));
   });
 
-// ── 1. Base CREATE TABLE statements ─────────────────────────────────────────
 
 const tables = [
   // ① UNIVERSITIES — HEC master list + ownership (HEC columns written by sync only)
@@ -19,7 +16,11 @@ const tables = [
      username VARCHAR(254),
      email    VARCHAR(254) UNIQUE,
      password VARCHAR(255),
-     role     VARCHAR(20)
+     role     VARCHAR(20),
+     email_verified TINYINT(1) NOT NULL DEFAULT 1,
+     email_verification_expires_at DATETIME NULL,
+     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     INDEX idx_signup_verification_expiry (email_verified, email_verification_expires_at)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 
   // ⓪b STUDENT_PROFILE — 1:1 profile, FK to Student_signup
@@ -28,7 +29,7 @@ const tables = [
      user_uid  VARCHAR(255) NOT NULL,
      full_name VARCHAR(100),
      username  VARCHAR(100),
-     email     VARCHAR(100),
+     email     VARCHAR(254),
      dob       DATE,
      age       INT,
      cnic      VARCHAR(20),
@@ -229,9 +230,46 @@ const tables = [
      source_file VARCHAR(255) PRIMARY KEY,
      imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  // ⑩ NOTIFICATIONS — in-app notification store (used by emailService.js)
+  `CREATE TABLE IF NOT EXISTS notifications (
+     id              VARCHAR(255) PRIMARY KEY,
+     recipient_uid   VARCHAR(255) DEFAULT NULL,
+     recipient_email VARCHAR(254) DEFAULT NULL,
+     subject         VARCHAR(500) NOT NULL,
+     body            TEXT         NOT NULL,
+     type            VARCHAR(60)  DEFAULT NULL,
+     is_read         TINYINT(1)   NOT NULL DEFAULT 0,
+     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+     INDEX idx_notif_uid   (recipient_uid),
+     INDEX idx_notif_email (recipient_email),
+     INDEX idx_notif_type  (type)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  // ⑪ PASSWORD_RESET_TOKENS — for forgot-password flow
+  `CREATE TABLE IF NOT EXISTS password_reset_tokens (
+     id            VARCHAR(255) PRIMARY KEY,
+     user_id        VARCHAR(255) NOT NULL,
+     token_hash     CHAR(64)    NOT NULL UNIQUE,
+     expires_at     DATETIME    NOT NULL,
+     used_at        DATETIME    DEFAULT NULL,
+     created_at     DATETIME    DEFAULT CURRENT_TIMESTAMP,
+     INDEX idx_prt_user (user_id),
+     INDEX idx_prt_hash (token_hash)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
+
+  `CREATE TABLE IF NOT EXISTS email_verification_tokens (
+     id            VARCHAR(255) PRIMARY KEY,
+     user_id       VARCHAR(255) NOT NULL,
+     token_hash    CHAR(64)     NOT NULL UNIQUE,
+     expires_at    DATETIME     NOT NULL,
+     used_at       DATETIME     DEFAULT NULL,
+     created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
+     INDEX idx_evt_user (user_id),
+     INDEX idx_evt_expiry (expires_at)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci`,
 ];
 
-// ── 2. Column migrations (ADD IF MISSING) ────────────────────────────────────
 // Pairs of [table, column, definition].
 // The guard in ensureColumns() checks information_schema before ALTER.
 
@@ -314,12 +352,12 @@ const columnMigrations = [
   ["university_profiles", "banner_path", "VARCHAR(500) NULL"],
 ];
 
-// ── 3. ensureColumns ─────────────────────────────────────────────────────────
 
 const ensureLongEmailColumns = (db, done) => {
   const cols = [
     ["Student_signup", "email"],
     ["Student_signup", "username"],
+    ["Student_Profile", "email"],
     ["university_verification", "official_email"],
   ];
   let idx = 0;
@@ -757,7 +795,6 @@ const ensureProfileRows = async (db) => {
   }
 };
 
-// ── 5b. Sync program_catalog from approved programs ───────────────────────────
 // Builds display names as "degree_type + name" (e.g. "BS Computer Science"),
 // deduplicates purely on the display name (ignoring level) so each distinct
 // human-readable program name appears exactly once.
@@ -805,12 +842,41 @@ const syncProgramCatalog = async (db) => {
   }
 };
 
-// ── 6. initSchema (called from server.js) ────────────────────────────────────
+const ensureSignupVerificationIndex = (db, done) => {
+  db.query(
+    `SELECT COUNT(*) AS count
+     FROM information_schema.STATISTICS
+     WHERE table_schema = DATABASE()
+       AND table_name = 'Student_signup'
+       AND index_name = 'idx_signup_verification_expiry'`,
+    (error, rows) => {
+      if (error) {
+        console.error("[schema] email verification index check failed:", error.message);
+        return done();
+      }
+      if (rows[0].count > 0) return done();
+      db.query(
+        `ALTER TABLE Student_signup
+         ADD INDEX idx_signup_verification_expiry (email_verified, email_verification_expires_at)`,
+        (indexError) => {
+          if (indexError) {
+            console.error("[schema] email verification index creation failed:", indexError.message);
+          }
+          done();
+        },
+      );
+    },
+  );
+};
+
 
 export const initSchema = (db, done) => {
   // First ensure critical columns exist on applications table so approvals
   // work even if the server was already running when schema.js was updated.
   const criticalCols = [
+    ["Student_signup", "email_verified", "TINYINT(1) NOT NULL DEFAULT 1"],
+    ["Student_signup", "email_verification_expires_at", "DATETIME NULL"],
+    ["Student_signup", "created_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"],
     // applications — may be missing on older installs
     ["applications", "reviewed_by", "VARCHAR(255)"],
     ["applications", "reviewed_at", "DATETIME"],
@@ -834,12 +900,14 @@ export const initSchema = (db, done) => {
   const addCritical = () => {
     if (ci >= criticalCols.length) {
       // All critical columns added — now run ensureColumns for remaining migrations
-      return ensureColumns(db, async () => {
-        await ensureCampusTables(db);
-        await ensureProfileRows(db);
-        await syncProgramCatalog(db);
-        if (done) done();
-      });
+      return ensureSignupVerificationIndex(db, () =>
+        ensureColumns(db, async () => {
+          await ensureCampusTables(db);
+          await ensureProfileRows(db);
+          await syncProgramCatalog(db);
+          if (done) done();
+        }),
+      );
     }
     const [tbl, col, def] = criticalCols[ci++];
     db.query(
