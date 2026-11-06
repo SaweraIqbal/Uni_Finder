@@ -40,6 +40,11 @@ const sendVerificationEmail = async ({ userId, email, name, expiresAt }) => {
 
   const verificationUrl = `${emailClientUrl}/verify-email/${token}`;
   const safeName = escapeHtml(name || "there");
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[dev] verification link for ${email}: ${verificationUrl}`);
+  }
+
   try {
     await sendEmail({
       to: email,
@@ -64,6 +69,21 @@ const sendVerificationEmail = async ({ userId, email, name, expiresAt }) => {
     }
     error.isEmailDeliveryError = true;
     throw error;
+  }
+};
+
+const sendVerificationEmailWithRetry = async (payload, attempts = 2) => {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await sendVerificationEmail(payload);
+      return;
+    } catch (error) {
+      console.error(
+        `[verification email] attempt ${attempt}/${attempts} failed for ${payload.email}:`,
+        error.message,
+      );
+      if (attempt < attempts) await new Promise((r) => setTimeout(r, 1500));
+    }
   }
 };
 
@@ -129,29 +149,17 @@ export const signup = (req, res) => {
             return res.status(500).json({ message: "Server error, please try again" });
           }
 
-          sendVerificationEmail({
+          res.status(201).json({
+            message: "Account created. Check your email for a verification link.",
+            verificationRequired: true,
+            email: normalizedEmail,
+          });
+
+          sendVerificationEmailWithRetry({
             userId,
             email: normalizedEmail,
             name: name.trim(),
             expiresAt: verificationExpiresAt,
-          }).then(() => {
-            return res.status(201).json({
-              message: "Account created. Check your email for a verification link.",
-              verificationRequired: true,
-              email: normalizedEmail,
-            });
-          }).catch((mailErr) => {
-            if (!mailErr.isEmailDeliveryError) {
-              console.error("[signup] verification token creation failed:", mailErr.message);
-              return res.status(500).json({ message: "Account created, but verification could not be prepared. Please request a new verification email." });
-            }
-            console.error("[signup] verification email delivery failed:", mailErr.message);
-            return res.status(503).json({
-              message: "Your account was created, but the verification email could not be sent. Please try resending it.",
-              verificationRequired: true,
-              email: normalizedEmail,
-              emailDeliveryFailed: true,
-            });
           });
         },
       );
