@@ -2,8 +2,8 @@
  * Page 7 — Campus Gallery
  * Real API: listCampusImages (via context), addCampusImage, deleteCampusImage, featureCampusImage
  */
-import { useEffect, useState } from "react";
-import { Upload, Star, Pencil, Trash2, X, Plus, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Upload, Star, Pencil, Trash2, X, Plus, RefreshCw, Link2 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   PrimaryBtn,
@@ -11,11 +11,11 @@ import {
   FormInput,
   FormSelect,
   SecondaryBtn,
-  IconBtn,
   ConfirmModal,
 } from "../ui";
 import {
   addCampusImage,
+  addCampusImageLink,
   deleteCampusImage,
   featureCampusImage,
   listCampusImages,
@@ -36,7 +36,6 @@ export default function GalleryPage() {
   const [images,      setImages]      = useState([]);
   const [loading,     setLoading]     = useState(false);
   const [catFilter,   setCatFilter]   = useState("All");
-  const [hoverId,     setHoverId]     = useState(null);
   const [deleteId,    setDeleteId]    = useState(null);
   const [uploadOpen,  setUploadOpen]  = useState(false);
 
@@ -72,15 +71,19 @@ export default function GalleryPage() {
 
   const doDelete = async () => {
     try {
-      const { ok } = await deleteCampusImage(deleteId);
-      if (ok) {
+      const { ok, data } = await deleteCampusImage(deleteId);
+      if (ok || data?.deleted) {
         setImages((imgs) => imgs.filter((img) => img.id !== deleteId));
-        toast.success("Image removed");
+        refetch();
+        if (ok) toast.success("Image removed");
+        else toast.error(data?.message || "Image was removed from the gallery, but its file could not be deleted.");
       } else {
-        toast.error("Delete failed");
+        toast.error(data?.message || "Delete failed");
+        loadImages();
       }
     } catch {
       toast.error("Delete failed");
+      loadImages();
     } finally {
       setDeleteId(null);
     }
@@ -88,6 +91,14 @@ export default function GalleryPage() {
 
   return (
     <div className="space-y-4">
+      {/* ── Banner hint ── */}
+      <div className="flex items-start gap-2 rounded-xl bg-orange-50 border border-orange-100 px-4 py-2.5 text-sm text-orange-700">
+        <Star className="w-4 h-4 mt-0.5 flex-shrink-0 fill-orange-400 text-orange-400" />
+        <span>
+          <strong>Star any photo</strong> to set it as the <strong>banner image</strong> shown on campus cards across the platform. The first uploaded photo is used by default until you star one.
+        </span>
+      </div>
+
       {/* ── Category chips + refresh ── */}
       <div className="flex flex-wrap items-center gap-2">
         {CATEGORIES.map((c) => (
@@ -116,9 +127,7 @@ export default function GalleryPage() {
           {filtered.map((img) => (
             <div
               key={img.id}
-              className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-video group cursor-pointer shadow-sm border border-slate-100"
-              onMouseEnter={() => setHoverId(img.id)}
-              onMouseLeave={() => setHoverId(null)}
+              className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-video group shadow-sm border border-slate-100"
             >
               <img
                 src={imgUrl(img.image_url)}
@@ -129,21 +138,29 @@ export default function GalleryPage() {
                 <p className="text-white text-sm font-medium leading-tight">{img.caption || "—"}</p>
                 <span className="text-xs text-white/70">{img.category}</span>
               </div>
+              {/* Banner badge — visible only on the featured image */}
+              {img.featured && (
+                <span className="absolute top-2 left-10 bg-orange-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow">
+                  Banner
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => toggleFeatured(img.id)}
                 className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-colors focus:outline-none"
-                title={img.featured ? "Unfeature" : "Set as featured"}
+                title={img.featured ? "Remove as banner photo" : "⭐ Set as banner photo (shown on campus cards)"}
               >
                 <Star className={`w-4 h-4 ${img.featured ? "fill-orange-400 text-orange-400" : "text-white"}`} />
               </button>
-              {hoverId === img.id && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3">
-                  <IconBtn danger title="Delete image" onClick={() => setDeleteId(img.id)}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </IconBtn>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setDeleteId(img.id)}
+                aria-label={`Delete ${img.caption || "campus image"}`}
+                title="Delete image"
+                className="absolute top-2 left-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 text-red-600 shadow hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           ))}
 
@@ -168,6 +185,7 @@ export default function GalleryPage() {
         <UploadModal
           onClose={() => setUploadOpen(false)}
           campusId={campusId}
+          defaultCategory={catFilter === "All" ? "Campus Building" : catFilter}
           onUploaded={() => { setUploadOpen(false); loadImages(); toast.success("Image uploaded"); }}
         />
       )}
@@ -185,24 +203,70 @@ export default function GalleryPage() {
 }
 
 /* ─── Upload Modal ─────────────────────────────────────────────────────────── */
-function UploadModal({ onClose, campusId, onUploaded }) {
+function UploadModal({ onClose, campusId, onUploaded, defaultCategory }) {
   const [file,      setFile]      = useState(null);
   const [caption,   setCaption]   = useState("");
-  const [category,  setCategory]  = useState("Campus Building");
+  const [category,  setCategory]  = useState(defaultCategory);
   const [uploading, setUploading] = useState(false);
   const [dragOver,  setDragOver]  = useState(false);
+  const [source,    setSource]    = useState("file");
+  const [imageUrl,  setImageUrl]  = useState("");
+
+  const selectImageFile = useCallback((selectedFile) => {
+    if (!selectedFile) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(selectedFile.type)) {
+      toast.error("Choose a PNG, JPG, or WebP image.");
+      return;
+    }
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      toast.error("Image must be 5 MB or smaller.");
+      return;
+    }
+    setFile(selectedFile);
+    setSource("file");
+  }, []);
+
+  useEffect(() => {
+    const handlePaste = (event) => {
+      const imageItem = Array.from(event.clipboardData?.items || [])
+        .find((item) => item.type.startsWith("image/"));
+      if (!imageItem) return;
+      event.preventDefault();
+      const pastedFile = imageItem.getAsFile();
+      if (pastedFile) {
+        const extension = pastedFile.type.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const namedFile = new File([pastedFile], `pasted-image.${extension}`, { type: pastedFile.type });
+        selectImageFile(namedFile);
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [selectImageFile]);
 
   const handleUpload = async () => {
-    if (!file)      { toast.error("Please select an image"); return; }
+    if (source === "file" && !file) { toast.error("Please select or paste an image"); return; }
+    if (source === "url" && !imageUrl.trim()) { toast.error("Please enter an image URL"); return; }
     if (!campusId)  { toast.error("Campus not loaded"); return; }
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("image",     file);
-      fd.append("caption",   caption);
-      fd.append("category",  category);
-      fd.append("campus_id", campusId);
-      const { ok, data } = await addCampusImage(fd);
+      let result;
+      if (source === "url") {
+        result = await addCampusImageLink({
+            image_url: imageUrl.trim(),
+            caption,
+            category,
+            campus_id: campusId,
+          });
+      } else {
+        const fd = new FormData();
+        fd.append("image", file);
+        fd.append("caption", caption);
+        fd.append("category", category);
+        fd.append("campus_id", campusId);
+        result = await addCampusImage(fd);
+      }
+      const { ok, data } = result;
       if (ok) onUploaded?.();
       else toast.error(data?.message || "Upload failed");
     } catch {
@@ -223,26 +287,46 @@ function UploadModal({ onClose, campusId, onUploaded }) {
           </button>
         </div>
         <div className="px-6 py-5 space-y-4">
-          <label
-            className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl p-8 cursor-pointer transition-colors ${
-              dragOver ? "border-orange-500 bg-orange-50" : "border-gray-200 hover:border-orange-300 hover:bg-orange-50/50"
-            }`}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) setFile(f); }}
-          >
-            <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center">
-              <Upload className="w-5 h-5 text-orange-500" />
-            </div>
-            {file
-              ? <p className="text-sm font-medium text-slate-700">{file.name}</p>
-              : <>
-                  <p className="text-sm font-medium text-slate-600">Drag & drop or click to select</p>
-                  <p className="text-xs text-slate-400">PNG, JPG — max 5 MB</p>
-                </>}
-            <input type="file" className="hidden" accept="image/png,image/jpeg,image/jpg"
-              onChange={(e) => setFile(e.target.files[0])} />
-          </label>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setSource("file")}
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${source === "file" ? "border-orange-400 bg-orange-50 text-orange-700" : "border-gray-200 text-slate-600"}`}>
+              Upload or paste
+            </button>
+            <button type="button" onClick={() => setSource("url")}
+              className={`flex-1 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium ${source === "url" ? "border-orange-400 bg-orange-50 text-orange-700" : "border-gray-200 text-slate-600"}`}>
+              <Link2 className="w-4 h-4" /> Add image link
+            </button>
+          </div>
+          {source === "file" ? (
+            <label
+              className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl p-8 cursor-pointer transition-colors ${
+                dragOver ? "border-orange-500 bg-orange-50" : "border-gray-200 hover:border-orange-300 hover:bg-orange-50/50"
+              }`}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); selectImageFile(e.dataTransfer.files[0]); }}
+            >
+              <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center">
+                <Upload className="w-5 h-5 text-orange-500" />
+              </div>
+              {file
+                ? <p className="text-sm font-medium text-slate-700">{file.name}</p>
+                : <>
+                    <p className="text-sm font-medium text-slate-600">Drag & drop, click to select, or paste an image</p>
+                    <p className="text-xs text-slate-400">PNG, JPG, WebP — max 5 MB</p>
+                  </>}
+              <input type="file" className="hidden" accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => selectImageFile(e.target.files[0])} />
+            </label>
+          ) : (
+            <FormInput
+              label="Image URL"
+              type="url"
+              placeholder="https://example.com/campus-image.jpg"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+            />
+          )}
           <FormSelect label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
             {CATEGORIES.filter((c) => c !== "All").map((c) => <option key={c}>{c}</option>)}
           </FormSelect>

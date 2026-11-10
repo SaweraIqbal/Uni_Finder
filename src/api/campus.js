@@ -85,8 +85,19 @@ export async function addCampusImage(formData) {
   });
   return { ok: res.ok, data: await res.json() };
 }
+export async function addCampusImageLink(payload) {
+  const res = await fetch(`${API}/api/campus/images`, {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return { ok: res.ok, data: await res.json() };
+}
 export async function deleteCampusImage(imageId) {
-  const res = await fetch(`${API}/api/campus/images/${imageId}`, { method: "DELETE" });
+  const res = await fetch(`${API}/api/campus/images/${imageId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
   return { ok: res.ok, data: await res.json() };
 }
 export async function featureCampusImage(imageId) {
@@ -265,5 +276,17 @@ export async function searchCampuses({ city, university, program } = {}) {
 export async function getCampusDetail(id) {
   const res = await fetch(`${API}/api/campuses/${id}`);
   if (!res.ok) return null;
+  return res.json();
+}
+
+/**
+ * compareCampuses — fetch full detail for 2-3 campuses in one round-trip.
+ * @param {string[]} ids - array of 2 or 3 campus IDs
+ * @returns {Promise<object[]>} array of campus detail objects
+ */
+export async function compareCampuses(ids = []) {
+  const qs = ids.join(",");
+  const res = await fetch(`${API}/api/campuses/compare?ids=${encodeURIComponent(qs)}`);
+  if (!res.ok) throw new Error(`Compare fetch failed: ${res.status}`);
   return res.json();
 }

@@ -1256,6 +1256,10 @@ function HomePage() {
           searchUniversity={searchValues.university}
           onResetAll={handleResetAll}
           showFilters={showAdvancedFilters}
+          initialSelection={{
+            preselectedIds: locationState.preselectedIds,
+            openCompare: locationState.openCompare,
+          }}
         />
       </section>
     </div>
@@ -1287,14 +1291,19 @@ function CampusGrid({
   searchCity,
   searchUniversity,
   onResetAll,
+  initialSelection,
 }) {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("");
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef(null);
-  const [selectMode, setSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectMode, setSelectMode] = useState(Boolean(initialSelection?.openCompare));
+  const [selectedIds, setSelectedIds] = useState(() =>
+    Array.isArray(initialSelection?.preselectedIds)
+      ? initialSelection.preselectedIds.slice(0, 3)
+      : []
+  );
   const MAX_SELECT = 3;
 
   const [liveCampuses, setLiveCampuses] = useState([]);

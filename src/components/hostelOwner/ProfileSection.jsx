@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Clock, PencilLine, FileText, MapPin, Check, ChevronDown } from 'lucide-react';
+import MapPicker from '../shared/MapPicker';
 
 const MAX_MB = 10;
 const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -135,6 +136,7 @@ export default function ProfileSection({ initial, campuses = [] }) {
   const [docs, setDocs] = useState({});
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState(initial.verification);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const locked = status === 'submitted' || status === 'approved';
   const v = VERIFICATION[status];
@@ -271,29 +273,58 @@ export default function ProfileSection({ initial, campuses = [] }) {
 
           {/* Map + GPS */}
           <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-            <div
-              className="relative min-h-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"
-              style={{
-                backgroundImage:
-                  'linear-gradient(rgba(148,163,184,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.18) 1px, transparent 1px)',
-                backgroundSize: '36px 36px',
-              }}
-            >
-              <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-[#ff6a00] text-white ring-4 ring-white">
-                  <MapPin size={20} />
-                </div>
-                <span className="rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm">{form.gps}</span>
-              </div>
+            {/* Real map preview + picker trigger */}
+            <div className="relative min-h-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 flex flex-col items-center justify-center gap-3">
+              {form.gps && form.gps.includes(',') ? (
+                (() => {
+                  const parts = form.gps.split(',').map((s) => s.trim());
+                  const la = parseFloat(parts[0]);
+                  const ln = parseFloat(parts[1]);
+                  return !isNaN(la) && !isNaN(ln) ? (
+                    <>
+                      {/* OSM static map preview */}
+                      <img
+                        src={`https://staticmap.openstreetmap.de/staticmap.php?center=${la},${ln}&zoom=15&size=600x260&markers=${la},${ln},red-pushpin`}
+                        alt="Location preview"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                      <div className="absolute bottom-12 left-3 flex items-center gap-1.5 bg-white/90 rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm z-10">
+                        <MapPin size={12} className="text-[#ff6a00]" />
+                        <span>{la.toFixed(5)}, {ln.toFixed(5)}</span>
+                      </div>
+                    </>
+                  ) : null;
+                })()
+              ) : (
+                <>
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-[#ff6a00] text-white ring-4 ring-white">
+                    <MapPin size={20} />
+                  </div>
+                  <span className="rounded-lg bg-white px-3 py-1.5 text-xs shadow-sm text-slate-500">
+                    No location set — click below to pick
+                  </span>
+                </>
+              )}
               <button
                 type="button"
                 disabled={locked}
-                onClick={() => toast.info('Map picker will be connected later.')}
-                className="absolute bottom-4 right-4 rounded-xl bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 disabled:opacity-50"
+                onClick={() => setPickerOpen(true)}
+                className="absolute bottom-4 right-4 rounded-xl bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 disabled:opacity-50 transition-colors z-10"
               >
-                Adjust map pin
+                {form.gps ? 'Adjust map pin' : 'Set on Map'}
               </button>
             </div>
+
+            {pickerOpen && (
+              <MapPicker
+                lat={form.gps?.split(',')[0]?.trim() || ''}
+                lng={form.gps?.split(',')[1]?.trim() || ''}
+                onConfirm={(la, ln) => set('gps', `${la}, ${ln}`)}
+                onClose={() => setPickerOpen(false)}
+              />
+            )}
 
             <div className="space-y-4">
               <Field label="Confirmed GPS Coordinates" htmlFor="h-gps">
@@ -305,7 +336,7 @@ export default function ProfileSection({ initial, campuses = [] }) {
                   value={form.floors} onChange={(e) => set('floors', e.target.value)} />
               </Field>
               <p className="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-500">
-                The coordinate shown beside the map pin is the location that will be submitted.
+                Click the map or drag the pin to set the exact location. Coordinates shown in the field above.
               </p>
             </div>
           </div>

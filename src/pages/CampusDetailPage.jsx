@@ -10,6 +10,7 @@ import CampusTransport from "../components/campus/CampusTransport";
 import Scholarships from "../components/campus/Scholarships";
 import CampusFacilities from "../components/campus/CampusFacilities";
 import NearbyHostels from "../components/campus/NearbyHostels";
+import CampusMapEmbed from "../components/shared/CampusMapEmbed";
 
 import programIcon from "../assets/program.png";
 import activeUsersIcon from "../assets/activeusers.png";
@@ -884,11 +885,13 @@ function OverviewTab({ campus, heroImage }) {
               </div>
             </div>
 
+            {/* ── Embedded map ──────────────────────────────────── */}
+            <CampusMapEmbed lat={campus.lat} lng={campus.lng} label={campus.name} />
+
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-orange-100 transition-all duration-300">
               <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
                 Campus Info
-              </h3>
-              <div className="space-y-2.5">
+              </h3>              <div className="space-y-2.5">
                 {[
                   campus.campus_type && { label: "Campus Type", value: campus.campus_type },
                   campus.gender_policy && { label: "Gender Policy", value: campus.gender_policy },
@@ -1223,7 +1226,9 @@ export default function CampusDetailPage() {
   const id = params.get("id");
   const [campus, setCampus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() =>
+    params.get("tab") === "societies" ? "societies" : "overview"
+  );
 
   useEffect(() => {
     if (!id) {
@@ -1378,4 +1383,3 @@ export default function CampusDetailPage() {
     </main>
   );
 }
-

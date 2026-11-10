@@ -155,7 +155,7 @@ function Login() {
     <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center p-4 bg-gray-100">
       <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
         <div className="relative w-full md:w-1/2 px-5 md:px-[50px] py-8 md:py-[40px] flex flex-col justify-center overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-          <div className="flex items-center gap-2 mb-3">
+          <div  onClick={() => navigate('/')}  className="flex items-center gap-2 mb-3">
             <img src={logo} alt="Uni Finder Logo" className="w-8" />
             <h2 className="text-xl font-semibold text-gray-700">
               Uni <span className="text-orange-500">Finder</span>

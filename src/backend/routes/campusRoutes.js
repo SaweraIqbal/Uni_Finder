@@ -53,6 +53,7 @@ import {
   listCampusesByUniversity,
   searchCampuses,
   getCampusById,
+  compareCampuses,
   getOverviewStats,
   getCampusActivity,
 } from "../controllers/campus_controller/campusController.js";
@@ -150,6 +151,7 @@ router.put("/campus/hostel-approvals/:id/approve",   ...campusAuth, approveHoste
 router.put("/campus/hostel-approvals/:id/reject",    ...campusAuth, express.json(), rejectHostel);
 
 router.get("/campuses",                           searchCampuses);
+router.get("/campuses/compare",                   compareCampuses);
 router.get("/campuses/university/:universityId",  listCampusesByUniversity);
 router.get("/campuses/:id",                       getCampusById);
 

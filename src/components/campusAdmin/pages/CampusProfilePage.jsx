@@ -7,6 +7,7 @@
 import { useMemo, useState } from "react";
 import { Lock, MapPin, Calendar, Plus, Trash2, Info, GraduationCap, Bell } from "lucide-react";
 import { toast } from "react-toastify";
+import MapPicker from "../../shared/MapPicker";
 import {
   Card, FormInput, FormSelect, FormTextarea,
   SaveButton, SectionTitle, StatusPill,
@@ -209,8 +210,9 @@ export default function CampusProfilePage() {
     setAnnouncements((rows) => rows.map((r, i) => (i === idx ? { ...r, [field]: val } : r)));
   };
 
-  const [busy,  setBusy]  = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [busy,       setBusy]       = useState(false);
+  const [saved,      setSaved]      = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const change = (field) => (e) => {
     setIsDirty(true);
@@ -396,12 +398,31 @@ export default function CampusProfilePage() {
             />
             <button
               type="button"
-              className="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
+              onClick={() => setPickerOpen(true)}
+              className="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors"
             >
               <MapPin className="w-3.5 h-3.5" /> Pick on map
             </button>
           </div>
+          {form.lat && form.lng && (
+            <p className="mt-1.5 text-[11px] text-emerald-600">
+              ✓ Location set — {parseFloat(form.lat).toFixed(5)}, {parseFloat(form.lng).toFixed(5)}
+            </p>
+          )}
         </div>
+
+        {pickerOpen && (
+          <MapPicker
+            lat={form.lat}
+            lng={form.lng}
+            onConfirm={(la, ln) => {
+              setIsDirty(true);
+              setSaved(false);
+              setForm((f) => ({ ...f, lat: la, lng: ln }));
+            }}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
 
       </Card>
 

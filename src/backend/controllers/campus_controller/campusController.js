@@ -22,6 +22,7 @@ const SAVE_FIELDS = [
   "quota_policy",
   "announcements",
   "admission_status_override",
+  "cover_image",
   // legacy fields (kept for backward-compat)
   "history", "duration", "fee",
 ];
@@ -462,6 +463,112 @@ export const searchCampuses = async (req, res) => {
   } catch (err) {
     console.error("searchCampuses error:", err);
     return res.status(500).json({ message: "DB error", error: err.message });
+  }
+};
+
+// GET /campuses/compare?ids=id1,id2,id3
+// Returns an array of full campus detail objects (same shape as getCampusById).
+// Max 3 campuses. Each is fetched in parallel.
+export const compareCampuses = async (req, res) => {
+  const raw = String(req.query.ids || "");
+  const ids = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (ids.length < 2) {
+    return res.status(400).json({ message: "At least 2 campus IDs are required." });
+  }
+
+  const fetchOne = async (campusId) => {
+    const rows = await q(
+      `SELECT c.id, c.name, c.campus_type, c.city, c.province, c.address,
+              c.description, c.why_choose, c.lat, c.lng, c.phone, c.whatsapp,
+              c.email, c.office_hours, c.shift_morning, c.shift_evening,
+              c.shift_weekend, c.gender_policy, c.hostel_available, c.is_main,
+              c.admission_open, c.admission_close, c.intake_name, c.classes_start,
+              c.class_arrangement, c.admission_status_override, c.students,
+              c.cover_image, c.required_documents, c.scholarships,
+              c.quota_policy, c.announcements,
+              u.name AS university_name, u.logo_url, u.banner_url AS university_banner,
+              u.university_type AS sector, u.hec_rank, u.oric_domain, u.campus_count,
+              COALESCE(up.established_year, u.established_year) AS university_established_year,
+              u.employment_rate AS university_employment_rate
+       FROM campuses c
+       LEFT JOIN universities u ON u.id = c.university_id
+       LEFT JOIN university_profiles up ON up.university_id = u.id
+       WHERE c.id = ? LIMIT 1`,
+      [campusId]
+    );
+
+    if (!rows.length) return null;
+
+    const [programs, images, facilities, societies, hostels] = await Promise.all([
+      q(
+        `SELECT cp.id, cp.fee, cp.duration, cp.shifts, cp.details,
+                p.name, p.level, p.degree_type
+         FROM campus_programs cp
+         JOIN programs p ON p.id = cp.program_id
+         WHERE cp.campus_id = ? AND cp.status = 'published'
+         ORDER BY p.name`,
+        [campusId]
+      ),
+      q(
+        `SELECT id, image_url, caption, category, featured
+         FROM campus_images WHERE campus_id = ?
+         ORDER BY featured DESC, created_at DESC LIMIT 1`,
+        [campusId]
+      ),
+      q("SELECT * FROM campus_facilities WHERE campus_id = ? LIMIT 1", [campusId]),
+      q(
+        `SELECT id, name, category, description, initials
+         FROM campus_societies WHERE campus_id = ? ORDER BY created_at ASC`,
+        [campusId]
+      ),
+      q(
+        `SELECT id, name, hostel_type, gender, rooms, rent_min, walk_dist, contact, amenities, rooms_detail, status
+         FROM campus_hostels WHERE campus_id = ? AND status = 'live'
+         ORDER BY gender ASC, created_at ASC`,
+        [campusId]
+      ),
+    ]);
+
+    const facility = facilities[0];
+
+    return {
+      ...rows[0],
+      required_documents: parseJson(rows[0].required_documents, []),
+      scholarships: parseJson(rows[0].scholarships, []),
+      announcements: parseJson(rows[0].announcements, []),
+      programs: programs.map((p) => ({
+        ...p,
+        details: parseJson(p.details, {}),
+      })),
+      images,
+      facilities: facility
+        ? {
+            ...facility,
+            selected_ids: parseJson(facility.selected_ids, []),
+            transport_routes: parseJson(facility.transport_routes, []),
+          }
+        : null,
+      societies,
+      hostels: hostels.map((h) => ({
+        ...h,
+        amenities: parseJson(h.amenities, []),
+        rooms_detail: parseJson(h.rooms_detail, []),
+      })),
+    };
+  };
+
+  try {
+    const results = await Promise.all(ids.map(fetchOne));
+    // Filter nulls (not-found campuses) but keep order
+    return res.status(200).json(results.filter(Boolean));
+  } catch (e) {
+    console.error("compareCampuses error:", e);
+    return res.status(500).json({ message: "DB error", error: e.message });
   }
 };
 

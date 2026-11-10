@@ -75,7 +75,7 @@ function RolePicker() {
           <div className="flex-1 min-h-0 overflow-y-auto px-5 py-8 sm:px-8 md:px-[50px] md:py-[40px] [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
 
             {/* Logo */}
-            <div className="flex items-center gap-2 mb-5">
+            <div  onClick={() => navigate('/')} className="flex items-center gap-2 mb-5">
               <img src={logo} alt="Logo" className="w-8" />
               <h2 className="text-xl font-semibold text-gray-700">
                 Uni <span className="text-orange-500">Finder</span>
@@ -349,7 +349,7 @@ function Signup() {
         <div className="relative w-full md:w-1/2 flex flex-col bg-white z-[20]">
           <div className="flex-1 min-h-0 overflow-y-auto px-5 py-8 sm:px-8 sm:py-8 md:px-[50px] md:py-[40px] [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
             {/* Logo */}
-            <div className="flex items-center gap-2 mb-3">
+            <div  onClick={() => navigate('/')}  className="flex items-center gap-2 mb-3">
               <img src={logo} alt="Logo" className="w-8" />
               <h2 className="text-xl font-semibold text-gray-700">
                 Uni <span className="text-orange-500">Finder</span>
