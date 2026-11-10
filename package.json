@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node src/backend/server.js",
+    "server": "node server/index.js",
+    "seed": "node server/seed.js",
     "seed:profiles": "node src/backend/config/seedProfiles.js"
   },
   "dependencies": {

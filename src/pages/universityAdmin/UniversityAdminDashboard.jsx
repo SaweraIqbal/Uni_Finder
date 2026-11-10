@@ -11,14 +11,14 @@ import ProgramsSection from "../../components/universityAdmin/ProgramsSection";
 function DashboardInner() {
   const { currentPage } = useUniversityAdmin();
 
-  const pages = {
-    overview:           <OverviewSection />,
-    profile:            <UniversityProfileSection />,
-    campuses:           <CampusApprovalsSection />,
-    programs:           <ProgramsSection />,
-    "program-requests": <ProgramRequestsSection />,
-    activity:           <ActivityLogSection />,
-  };
+const pages = {
+  overview:              <OverviewSection />,
+  profile:               <UniversityProfileSection />,
+  campuses:              <CampusApprovalsSection />,
+  programs:              <ProgramsSection />,
+  "program-requests":    <ProgramRequestsSection />,
+  activity:              <ActivityLogSection />,
+};
 
   return (
     <div className="h-screen overflow-hidden bg-gray-50 flex font-sans">

@@ -37,9 +37,16 @@ const ROLE_OPTIONS = [
   {
     role: "hostel",
     emoji: "🏠",
-    label: "Hostel Owner",
-    sub: "List and manage your hostel for students",
+    label: "Independent Hostel",
+    sub: "List and manage your own hostel for students",
     accent: "from-emerald-400 to-green-500",
+  },
+  {
+    role: "campus_hostel",
+    emoji: "🏘️",
+    label: "Campus Hostel",
+    sub: "Register a hostel affiliated with a university campus",
+    accent: "from-teal-400 to-cyan-500",
   },
 ];
 
@@ -186,7 +193,7 @@ function Signup() {
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
 
-  const allowedRoles = ["student", "university", "hostel", "campus"];
+  const allowedRoles = ["student", "university", "hostel", "campus", "campus_hostel"];
   const roleIsValid = role && allowedRoles.includes(role);
 
   // If no valid role in URL, render the picker (all hooks already called above)

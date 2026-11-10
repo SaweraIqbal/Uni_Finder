@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import process from "node:process";
 import db from "../../config/db.js";
 
 const q = (sql, vals = []) =>
@@ -596,7 +597,7 @@ export const getCampusById = async (req, res) => {
     if (!rows.length) return res.status(404).json({ message: "Campus not found" });
 
     const campusId = req.params.id;
-    const [programs, images, facilities, societies, hostels] = await Promise.all([
+    const [programs, images, facilities, societies] = await Promise.all([
       q(
         `SELECT cp.id, cp.fee, cp.duration, cp.shifts, cp.details,
                 p.name, p.level, p.degree_type
@@ -618,12 +619,6 @@ export const getCampusById = async (req, res) => {
          FROM campus_societies WHERE campus_id=? ORDER BY created_at ASC`,
         [campusId]
       ),
-      q(
-        `SELECT id, name, hostel_type, gender, rooms, rent_min, walk_dist, contact, amenities, rooms_detail, status
-         FROM campus_hostels WHERE campus_id=? AND status='live'
-         ORDER BY gender ASC, created_at ASC`,
-        [campusId]
-      ),
     ]);
 
     const facility = facilities[0];
@@ -643,13 +638,217 @@ export const getCampusById = async (req, res) => {
         transport_routes: parseJson(facility.transport_routes, []),
       } : null,
       societies,
-      hostels: hostels.map((h) => ({
-        ...h,
-        amenities: parseJson(h.amenities, []),
-        rooms_detail: parseJson(h.rooms_detail, []),
-      })),
     });
   } catch (e) {
     return res.status(500).json({ message: "DB error", error: e.message });
+  }
+};
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// GET /api/campuses/:id/hostels   (PUBLIC)
+// Campus Admin ke Hostels page se bane live hostels, un ki images ke saath.
+// ════════════════════════════════════════════════════════════════════════════
+const toRad = (d) => (d * Math.PI) / 180;
+const haversineKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+const num = (v) => {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+const jsonOr = (v, fallback) => {
+  if (v == null) return fallback;
+  if (typeof v === "object") return v;
+  try { return JSON.parse(v); } catch { return fallback; }
+};
+const genderOf = (v) => {
+  const g = (v || "").toLowerCase();
+  return g === "mixed" ? "both" : g;
+};
+
+export const listApprovedCampusHostels = async (req, res) => {
+  try {
+    const campusId = req.params.id;
+
+    const campusRows = await q(
+      `SELECT lat, lng, name, hostel_available FROM campuses WHERE id=? LIMIT 1`,
+      [campusId]
+    );
+
+    const registeredRows = await q(
+      `SELECT h.id, h.name, h.address, h.lat AS latitude, h.lng AS longitude,
+              h.floors, h.nearby_distance, h.owner_name, h.owner_contact,
+              h.warden_name, h.warden_contact,
+              d.gender, d.contact_phone AS phone, d.description AS about,
+              d.amenities, d.mess_details, d.additional_fees, d.hostel_rules,
+              d.check_in_time, d.check_out_time
+       FROM hostels h
+       LEFT JOIN hostel_listing_details d ON d.hostel_id = h.id
+       WHERE h.campus_id = ? AND h.hostel_type = 'university' AND h.status <> 'rejected'
+       ORDER BY h.created_at ASC`,
+      [campusId]
+    );
+    if (!campusRows.length) {
+      return res.status(404).json({ message: "Campus not found" });
+    }
+    if (!campusRows[0].hostel_available) return res.json([]);
+
+    const cLat = num(campusRows[0].lat);
+    const cLng = num(campusRows[0].lng);
+
+    const rows = await q(
+      `SELECT id, name, gender, hostel_type, address, walk_dist, contact,
+              rooms, rent_min, distance_km, latitude, longitude, amenities
+       FROM campus_hostels
+       WHERE campus_id = ? AND status IN ('live','approved')
+       ORDER BY created_at ASC`,
+      [campusId]
+    );
+
+    const photoRows = rows.length
+      ? await q(
+          `SELECT id, hostel_id, image_url, caption, is_cover
+           FROM campus_hostel_photos
+           WHERE hostel_id IN (${rows.map(() => "?").join(",")})
+           ORDER BY is_cover DESC, sort_order ASC, created_at ASC`,
+          rows.map((r) => r.id)
+        )
+      : [];
+
+    const photosByHostel = new Map();
+    for (const photo of photoRows) {
+      if (!photosByHostel.has(photo.hostel_id)) photosByHostel.set(photo.hostel_id, []);
+      photosByHostel.get(photo.hostel_id).push({
+        id: photo.id,
+        image_url: photo.image_url,
+        caption: photo.caption,
+      });
+    }
+
+    const hostels = rows.map((h) => {
+      const photos = photosByHostel.get(h.id) || [];
+      const stored = num(h.distance_km);
+      const hLat = num(h.latitude);
+      const hLng = num(h.longitude);
+      const computed =
+        stored ??
+        (cLat != null && cLng != null && hLat != null && hLng != null
+          ? Math.round(haversineKm(cLat, cLng, hLat, hLng) * 10) / 10
+          : null);
+
+      return {
+        id: h.id,
+        name: h.name,
+        gender: genderOf(h.gender),
+        address: h.address || h.walk_dist || null,
+        phone: h.contact || null,
+        rooms: num(h.rooms),
+        rent_min: num(h.rent_min),
+        amenities: jsonOr(h.amenities, []),
+        latitude: hLat,
+        longitude: hLng,
+        distance_km: computed,
+        ownership: h.hostel_type || "Campus Hostel",
+        cover_url: photos[0]?.image_url || null,
+        photos,
+      };
+    });
+
+    const registeredIds = registeredRows.map((hostel) => hostel.id);
+    const [registeredPhotos, registeredRooms] = registeredIds.length
+      ? await Promise.all([
+          q(
+            `SELECT id, hostel_id, image_url, caption
+             FROM hostel_photos WHERE hostel_id IN (${registeredIds.map(() => "?").join(",")})
+             ORDER BY created_at ASC`,
+            registeredIds
+          ),
+          q(
+            `SELECT id, hostel_id, room_type, total_rooms, beds_per_room,
+                    available_beds, monthly_rent, description
+             FROM hostel_rooms WHERE hostel_id IN (${registeredIds.map(() => "?").join(",")})
+             ORDER BY created_at ASC`,
+            registeredIds
+          ),
+        ])
+      : [[], []];
+
+    const photosByRegisteredHostel = new Map();
+    for (const photo of registeredPhotos) {
+      if (!photosByRegisteredHostel.has(photo.hostel_id)) photosByRegisteredHostel.set(photo.hostel_id, []);
+      photosByRegisteredHostel.get(photo.hostel_id).push(photo);
+    }
+    const roomsByHostel = new Map();
+    for (const room of registeredRooms) {
+      if (!roomsByHostel.has(room.hostel_id)) roomsByHostel.set(room.hostel_id, []);
+      roomsByHostel.get(room.hostel_id).push(room);
+    }
+
+    const ownerManagedHostels = registeredRows.map((h) => {
+      const photos = photosByRegisteredHostel.get(h.id) || [];
+      const rooms = roomsByHostel.get(h.id) || [];
+      const amenitiesData = jsonOr(h.amenities, {});
+      const amenityItems = Array.isArray(amenitiesData)
+        ? amenitiesData
+        : [
+            ...(Array.isArray(amenitiesData.inRoom?.items) ? amenitiesData.inRoom.items : []),
+            ...(Array.isArray(amenitiesData.facilities) ? amenitiesData.facilities : []),
+          ];
+      const fees = jsonOr(h.additional_fees, {});
+      const latitude = num(h.latitude);
+      const longitude = num(h.longitude);
+      const rents = rooms.map((room) => num(room.monthly_rent)).filter((rent) => rent != null);
+      const distance = cLat != null && cLng != null && latitude != null && longitude != null
+        ? Math.round(haversineKm(cLat, cLng, latitude, longitude) * 10) / 10
+        : null;
+
+      return {
+        id: h.id,
+        name: h.name,
+        gender: genderOf(h.gender),
+        address: h.address,
+        phone: h.phone,
+        rooms: rooms.reduce((sum, room) => sum + Number(room.total_rooms || 0), 0),
+        rent_min: rents.length ? Math.min(...rents) : null,
+        rent_max: rents.length ? Math.max(...rents) : null,
+        amenities: amenityItems.map((item) => typeof item === "string" ? item : item?.name).filter(Boolean),
+        facilities: amenitiesData.facilities || [],
+        latitude,
+        longitude,
+        distance_km: distance,
+        ownership: "Campus Hostel",
+        cover_url: photos[0]?.image_url || null,
+        photos,
+        about: h.about,
+        floors: h.floors,
+        nearby_distance: h.nearby_distance,
+        owner_name: h.owner_name,
+        owner_contact: h.owner_contact,
+        warden_name: h.warden_name,
+        warden_contact: h.warden_contact,
+        hostel_rules: jsonOr(h.hostel_rules, []),
+        mess_details: jsonOr(h.mess_details, {}),
+        additional_fees: fees,
+        check_in_time: h.check_in_time,
+        check_out_time: h.check_out_time,
+        room_details: rooms,
+      };
+    });
+
+    return res.json([...hostels, ...ownerManagedHostels]);
+  } catch (e) {
+    console.error("listApprovedCampusHostels:", e.message);
+    return res.status(500).json({
+      message: "Could not load hostels.",
+      ...(process.env.NODE_ENV !== "production" ? { detail: e.message } : {}),
+    });
   }
 };

@@ -55,6 +55,13 @@ const createTransport = () => {
     host: process.env.SMTP_HOST,
     port,
     secure: port === 465,
+    pool: true,
+    maxConnections: 1,
+    maxMessages: Infinity,
+    idleTimeout: 10 * 60 * 1000,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,

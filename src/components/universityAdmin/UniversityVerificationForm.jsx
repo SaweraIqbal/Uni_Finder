@@ -15,7 +15,7 @@ const DESIGNATIONS = [
   "Other",
 ];
 const PUBLIC_DOMAINS = new Set([
-  "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com",
+   "yahoo.com", "ymail.com", "hotmail.com",
   "outlook.com", "live.com", "msn.com", "icloud.com", "me.com", "aol.com",
   "proton.me", "protonmail.com", "pm.me", "gmx.com", "mail.com", "zoho.com",
   "yandex.com", "qq.com",

@@ -1,5 +1,6 @@
-import { useRef, useEffect, useState } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCampusesForUniversity } from "../../data/campuses";
 import { API } from "../../api/client";
 
 const CAMPUS_DEFAULT_IMAGE =
@@ -166,6 +167,12 @@ export default function UniversityCampuses({ universityId }) {
   const navigate = useNavigate();
   const trackRef = useRef(null);
 
+  // Static snapshot — shown immediately (or as fallback if API fails)
+  const staticCampuses = useMemo(
+    () => getCampusesForUniversity(universityId || "ucp"),
+    [universityId]
+  );
+
   const [liveCampuses, setLiveCampuses] = useState(null); // null = not yet fetched
   const [fetched,      setFetched]      = useState(false);
 
@@ -188,11 +195,13 @@ export default function UniversityCampuses({ universityId }) {
 
   // Normalize live API campus rows to match what CampusCard expects
   const normalizeLive = (c) => {
+    // campus_type can be "Main Campus", "main", "City Campus", "city", null etc.
     const type = (c.campus_type || "").toLowerCase();
     const isMain =
       c.is_main === 1 || c.is_main === true ||
       type === "main" || type === "main campus";
 
+    // Resolve cover image — prefix API base if it's a relative path
     let coverImg = c.cover_image || c.university_banner || null;
     if (coverImg && !/^https?:\/\//i.test(coverImg)) {
       coverImg = `${API}${coverImg}`;
@@ -203,11 +212,16 @@ export default function UniversityCampuses({ universityId }) {
       name:        c.name || c.campusName || "Campus",
       cover_image: coverImg,
       is_main:     isMain,
+      // campus_type display label — normalise to human-readable
       campus_type: isMain ? "Main Campus" : (c.campus_type || "City Campus"),
     };
   };
 
-  const campuses = liveCampuses ? liveCampuses.map(normalizeLive) : [];
+  // Prefer live data; fall back to static while loading or when live is empty
+  const campuses =
+    liveCampuses && liveCampuses.length > 0
+      ? liveCampuses.map(normalizeLive)
+      : staticCampuses;
 
   if (fetched && campuses.length === 0) {
     // Show a placeholder so the section heading always appears
@@ -225,7 +239,7 @@ export default function UniversityCampuses({ universityId }) {
       </section>
     );
   }
-  if (!fetched) return null;
+  if (!fetched && campuses.length === 0) return null;
 
   const scroll = (direction) => {
     if (trackRef.current) {

@@ -1,7 +1,7 @@
 /**
  * CampusRegisterPage.jsx  —  /campus/register
  *
- * Sections A–D: campus affiliation, identity & location, verification, declaration.
+ * Sections A–D: campus affiliation, identity, verification, and declaration.
  * Map picker removed. Phone accepts 03XXXXXXXXX or +923XXXXXXXXX.
  * Universities fetched live from GET /api/universities/approved.
  * Submit → POST /api/campus-registrations (FormData + optional PDF).
@@ -269,7 +269,8 @@ function validate(f) {
 
 const FIELD_ORDER = [
   "universityId","campusType","officialName","province","city",
-  "registrantName","designation","phone","officialEmail","declaration",
+  "registrantName","designation","phone","officialEmail",
+  "declaration",
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════ */
@@ -313,13 +314,6 @@ export default function CampusRegisterPage() {
 
   // We store the name separately once chosen so it survives dropdown close
   const [selectedUniName, setSelectedUniName] = useState(registration?.universityName || "");
-  const handleUniChange = (id) => {
-    set("universityId")(id);
-    // name is fetched async inside UniversitySelect; read from the dropdown state
-    // by listening to a shared list isn't worth the coupling — the declaration
-    // text will show the stored name once the user picks.
-    // We'll update it from the universities list in the submit payload instead.
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -359,7 +353,6 @@ export default function CampusRegisterPage() {
         // UploadTile stores the raw File on _file when a real file is chosen
         fd.append("document", form.document._file);
       }
-
       const isResub  = isResubmission && registration?.id;
       const endpoint = isResub
         ? `${API}/api/campus-registrations/${registration.id}/resubmit`

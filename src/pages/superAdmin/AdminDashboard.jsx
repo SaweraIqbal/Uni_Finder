@@ -25,7 +25,7 @@ import UniversityProfiles from "../../components/admin/UniversityProfiles.jsx";
 import CampusApprovals from "../../components/admin/CampusApprovals.jsx";
 import ProgramManagement from "../../components/admin/ProgramManagement.jsx";
 import ProgramApprovals from "../../components/admin/ProgramApprovals.jsx";
-import HostelApprovals from "../../components/admin/HostelApprovals.jsx";
+import HostelApprovals from "../../components/shared/HostelReviewDashboard.jsx";
 import Analytics from "../../components/admin/Analytics.jsx";
 import ActivityLog from "../../components/admin/ActivityLog.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -50,7 +50,7 @@ function renderScreen(screen, navigate) {
     case "program-approvals":
       return <ProgramApprovals />;
     case "hostel-approvals":
-      return <HostelApprovals />;
+      return <HostelApprovals reviewer="admin" />;
     case "analytics":
       return <Analytics onNavigate={navigate} />;
     case "activity-log":
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
     verifications: 0,
     campus: 0,
     programs: 0,
-    hostels: 2,
+    hostels: 0,
   });
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -84,16 +84,20 @@ export default function AdminDashboard() {
     if (!sessionStorage.getItem("token")) return;
     try {
       setLoadingNotifications(true);
-      const [verRes, campusRes, progRes] = await Promise.allSettled([
+      const [verRes, campusRes, progRes, hostelRes] = await Promise.allSettled([
         listVerifications("pending"),
         adminListCampusRegistrations({ status: "pending", limit: 50 }),
         adminListProgramRequests({ status: "pending", limit: 50 }),
+        fetch("http://localhost:5000/api/hostels/review-queue", {
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+        }).then(async (response) => ({ ok: response.ok, data: await response.json() })),
       ]);
 
       const items = [];
       let verCount = 0;
       let campusCount = 0;
       let progCount = 0;
+      let hostelCount = 0;
 
       // 1. University Verifications
       if (verRes.status === "fulfilled" && verRes.value?.ok) {
@@ -149,25 +153,20 @@ export default function AdminDashboard() {
         });
       }
 
-      // 4. Hostel Approvals
-      const hostelItems = [
-        {
-          id: "hostel-1",
+      // 4. Independent hostel approvals
+      if (hostelRes.status === "fulfilled" && hostelRes.value?.ok) {
+        const hostelList = hostelRes.value.data?.hostels || [];
+        const pendingHostels = hostelList.filter((hostel) => hostel.status === "pending_admin");
+        hostelCount = pendingHostels.length;
+        pendingHostels.forEach((hostel) => items.push({
+          id: `hostel-${hostel.id}`,
           type: "hostel",
-          title: "Hostel: Al-Noor Boys Hostel",
-          description: "Pending Admin Approval · Lahore",
+          title: `Hostel: ${hostel.name}`,
+          description: `Pending super admin review · ${hostel.address || "Independent hostel"}`,
           targetScreen: "hostel-approvals",
-        },
-        {
-          id: "hostel-3",
-          type: "hostel",
-          title: "Hostel: FAST Boys Residence",
-          description: "Pending Admin Approval · Faisalabad",
-          targetScreen: "hostel-approvals",
-        },
-      ];
-      items.push(...hostelItems);
-      const hostelCount = hostelItems.length;
+          date: hostel.created_at,
+        }));
+      }
 
       setCounts({
         verifications: verCount,
@@ -213,7 +212,7 @@ export default function AdminDashboard() {
     },
     {
       id: "hostel-approvals",
-      label: "Hostel Approvals",
+      label: "Independent Hostels",
       icon: <BedDouble size={18} />,
       badge: counts.hostels > 0 ? counts.hostels : null,
     },

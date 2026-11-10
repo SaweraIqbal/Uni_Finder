@@ -122,11 +122,27 @@ export default function CampusRegistrationStatusPage() {
 
   /* ── timeline configs ─────────────────────────────────────────────────── */
   const timelines = {
-    [STATUSES.PENDING]: [
-      { label: "Submitted",                state: "done",    sub: subDate },
-      { label: "University verification",  state: "current", sub: `Awaiting ${uniName}` },
-      { label: "Campus live on UniFinder", state: "future" },
-    ],
+   [STATUSES.PENDING]: [
+  { label: "Submitted", state: "done", sub: subDate },
+
+  {
+    label: "University verification",
+    state: reg?.tier1?.approved ? "done" : "current",
+    sub: reg?.tier1?.approved
+      ? `Approved by ${uniName}`
+      : `Awaiting ${uniName}`,
+  },
+
+  {
+    label: "Super Admin review",
+    state: reg?.tier1?.approved ? "current" : "future",
+    sub: reg?.tier1?.approved
+      ? "Awaiting final approval"
+      : "Waiting for University approval",
+  },
+
+  { label: "Campus live on UniFinder", state: "future" },
+],
     [STATUSES.REJECTED]: [
       { label: "Submitted",                state: "done",    sub: subDate },
       { label: "University verification",  state: "current", sub: "Action required" },

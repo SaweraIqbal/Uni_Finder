@@ -239,26 +239,6 @@ export async function setHostelAvailability(campusId, available) {
   });
   return { ok: res.ok, data: await res.json() };
 }
-export async function listHostelApprovals(campusId) {
-  const res = await fetch(`${API}/api/campus/${campusId}/hostel-approvals`, {
-    headers: authHeaders(),
-  });
-  return res.json();
-}
-export async function approveHostel(id) {
-  const res = await fetch(`${API}/api/campus/hostel-approvals/${id}/approve`, {
-    method: "PUT", headers: authHeaders(),
-  });
-  return { ok: res.ok, data: await res.json() };
-}
-export async function rejectHostel(id, reason) {
-  const res = await fetch(`${API}/api/campus/hostel-approvals/${id}/reject`, {
-    method: "PUT",
-    headers: { ...authHeaders(), "Content-Type": "application/json" },
-    body: JSON.stringify({ reason }),
-  });
-  return { ok: res.ok, data: await res.json() };
-}
 
 /* ── Public search / detail ────────────────────────────────────────────────── */
 export async function listUniversitiesForPicker() {

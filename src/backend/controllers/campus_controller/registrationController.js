@@ -12,7 +12,7 @@
  *   uni_tier1_approved_at  DATETIME NULL
  *   uni_tier1_approved_by  VARCHAR(255) NULL
  */
-import db from "../../config/db.js";
+import db, { createTransactionConnection } from "../../config/db.js";
 import { sendEmail } from "../../utils/emailService.js";
 
 const query = (sql, values = []) =>
@@ -60,7 +60,11 @@ const shapeRow = (reg) => {
     rejection: reg.rejection_reason
       ? { reason:    reg.rejection_reason,
           note:      reg.rejection_note,
-          decidedAt: reg.rejection_decidedAt }
+          decidedAt: reg.rejection_decidedAt,
+          // 'university' | 'super_admin'. Old rows (no rejected_by): super admin
+          // can only reject after tier-1 approval, so infer from that.
+          by:        reg.rejected_by ||
+                     (Number(reg.uni_tier1_approved) === 1 ? "super_admin" : "university") }
       : null,
     resubmission: reg.resubmission_requestedAt
       ? { requiredDocs: safe(reg.resubmission_requiredDocs) || [],
@@ -70,7 +74,7 @@ const shapeRow = (reg) => {
     history: safe(reg.history) || [],
     // tier-1 summary for UI
     tier1: {
-      approved:   !!reg.uni_tier1_approved,
+      approved: Number(reg.uni_tier1_approved) === 1,
       approvedAt: reg.uni_tier1_approved_at || null,
       approvedBy: reg.uni_tier1_approved_by || null,
     },
@@ -92,103 +96,213 @@ export const getApprovedUniversities = async (_req, res) => {
 };
 
 // 2. POST /api/campus-registrations   (auth: campus role)
+// ════════════════════════════════════════════════════════════════════════════
+
 export const submitRegistration = async (req, res) => {
-  const userId    = req.user.id;
+  const userId = req.user.id;
   const userEmail = req.user.email;
 
   const {
-    universityId, campusType, officialName, province, city, address,
-    registrantName, designation, phone, officialEmail, declarationAccepted,
+    universityId,
+    campusType,
+    officialName,
+    province,
+    city,
+    address,
+    registrantName,
+    designation,
+    phone,
+    officialEmail,
+    declarationAccepted,
   } = req.body;
 
   const errors = {};
-  const CAMPUS_TYPES = ["Main Campus","Sub Campus","Regional Campus","City Campus"];
-  const DESIGNATIONS = ["Campus Coordinator","Registrar","Deputy Registrar","Director","Other"];
+  const CAMPUS_TYPES = [
+    "Main Campus",
+    "Sub Campus",
+    "Regional Campus",
+    "City Campus",
+  ];
+  const DESIGNATIONS = [
+    "Campus Coordinator",
+    "Registrar",
+    "Deputy Registrar",
+    "Director",
+    "Other",
+  ];
 
-  if (!universityId)                                errors.universityId   = "Please select a university.";
-  if (!CAMPUS_TYPES.includes(campusType))           errors.campusType     = "Invalid campus type.";
-  if (!officialName || officialName.trim().length < 3) errors.officialName = "Must be at least 3 characters.";
-  if (!province)                                    errors.province       = "Province is required.";
-  if (!city || !city.trim())                        errors.city           = "City is required.";
-  if (!registrantName || registrantName.trim().length < 3) errors.registrantName = "Must be at least 3 characters.";
-  if (!DESIGNATIONS.includes(designation))          errors.designation    = "Please select a valid designation.";
+  if (!universityId) errors.universityId = "Please select a university.";
+  if (!CAMPUS_TYPES.includes(campusType))
+    errors.campusType = "Invalid campus type.";
+  if (!officialName?.trim() || officialName.trim().length < 3)
+    errors.officialName = "Must be at least 3 characters.";
+  if (!province) errors.province = "Province is required.";
+  if (!city?.trim()) errors.city = "City is required.";
+  if (!registrantName?.trim() || registrantName.trim().length < 3)
+    errors.registrantName = "Must be at least 3 characters.";
+  if (!DESIGNATIONS.includes(designation))
+    errors.designation = "Please select a valid designation.";
 
   const canonPhone = normalisePhone(phone);
-  if (!phone || !phone.trim()) errors.phone = "Contact number is required.";
-  else if (!canonPhone)        errors.phone = "Enter a valid number: 03XXXXXXXXX or +92 3XX XXXXXXX";
+  if (!canonPhone) errors.phone = "Enter a valid contact number.";
 
-  if (officialEmail?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(officialEmail.trim()))
+  if (
+    officialEmail?.trim() &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(officialEmail.trim())
+  ) {
     errors.officialEmail = "Enter a valid email address.";
-  if (declarationAccepted !== "true" && declarationAccepted !== true)
+  }
+
+  if (declarationAccepted !== "true" && declarationAccepted !== true) {
     errors.declarationAccepted = "You must accept the declaration.";
+  }
 
-  if (Object.keys(errors).length) return res.status(400).json({ errors });
+  if (Object.keys(errors).length) {
+    return res.status(400).json({ errors });
+  }
 
-  const unis = await query(
-    "SELECT id, name FROM universities WHERE id = ? AND status = 'approved'", [universityId]
-  ).catch(() => []);
-  if (!unis.length) return res.status(400).json({ errors: { universityId: "Invalid or unapproved university." } });
+  let connection;
 
-  const dupes = await query(
-    `SELECT id FROM campus_registrations
-     WHERE universityId = ?
+  try {
+    connection = createTransactionConnection().promise();
+
+    await connection.connect();
+    await connection.beginTransaction();
+
+    const [unis] = await connection.query(
+      "SELECT id FROM universities WHERE id = ? AND status = 'approved'",
+      [universityId]
+    );
+
+    if (!unis.length) {
+      await connection.rollback();
+      return res.status(400).json({
+        errors: { universityId: "Invalid or unapproved university." },
+      });
+    }
+
+    const [dupes] = await connection.query(
+      `SELECT id FROM campus_registrations
+       WHERE universityId = ?
        AND LOWER(TRIM(officialName)) = LOWER(TRIM(?))
-       AND status IN ('pending','approved','resubmission_requested')`,
-    [universityId, officialName.trim()]
-  ).catch(() => []);
-  if (dupes.length) {
-    return res.status(409).json({
-      message: `A campus registration for "${officialName.trim()}" already exists or is pending review.`,
+       AND status IN ('pending', 'approved', 'resubmission_requested')`,
+      [universityId, officialName.trim()]
+    );
+
+    if (dupes.length) {
+      await connection.rollback();
+      return res.status(409).json({
+        message: "A campus registration with this name already exists.",
+      });
+    }
+
+    const registrationId =
+      `cr_${Date.now()}${Math.floor(Math.random() * 10000)}`;
+
+    const publicId = genPublicId();
+
+    const history = JSON.stringify([
+      {
+        status: "pending",
+        note: "Initial submission",
+        at: new Date(),
+      },
+    ]);
+
+    const campusDocument = req.file || null;
+
+    await connection.query(
+      `INSERT INTO campus_registrations
+       (
+         id, publicId, registrantUserId, registrantEmail,
+         universityId, campusType, officialName, province,
+         city, address, registrantName, designation,
+         phone, officialEmail, document_originalName,
+         document_storedPath, document_size,
+         declarationAccepted, status, history, submittedAt
+       )
+       VALUES (
+         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'pending',?,NOW()
+       )`,
+      [
+        registrationId,
+        publicId,
+        userId,
+        userEmail,
+        universityId,
+        campusType,
+        officialName.trim(),
+        province,
+        city.trim(),
+        (address || "").trim(),
+        registrantName.trim(),
+        designation,
+        canonPhone,
+        officialEmail?.trim() || null,
+        campusDocument?.originalname || null,
+        campusDocument?.path || null,
+        campusDocument?.size || null,
+        history,
+      ]
+    );
+
+    await connection.commit();
+
+    const userInfo = await getUserInfo(userId);
+    if (userInfo.email) {
+      sendEmail({
+        to: userInfo.email,
+        subject: `Campus Registration Submitted (${publicId})`,
+        text:
+          `Hello ${userInfo.name || "Campus Admin"},\n\n` +
+          `Your campus registration for "${officialName.trim()}" has been submitted successfully.\n` +
+          `Reference ID: ${publicId}\n\n` +
+          `Your application will be reviewed first by the university admin, then by the Super Admin.\n` +
+          `You will be notified at each stage of the review.\n\n` +
+          `Regards,\nUni Finder Team`,
+        html:
+          `<p>Hello ${userInfo.name || "Campus Admin"},</p>` +
+          `<p>Your campus registration for <strong>"${officialName.trim()}"</strong> has been submitted successfully.</p>` +
+          `<p>Reference ID: <strong>${publicId}</strong></p>` +
+          `<p>Your application will be reviewed first by the university admin, then by the Super Admin. You will be notified at each stage of the review.</p>` +
+          `<p>Regards,<br>Uni Finder Team</p>`,
+      }).catch((e) => console.error("Campus registration submit email failed (non-fatal):", e.message));
+    }
+
+    return res.status(201).json({
+      message: "Campus registration submitted successfully.",
+      data: {
+        publicId,
+        registrationId,
+      },
     });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("Rollback error:", rollbackError.message);
+      }
+    }
+
+    console.error("submitRegistration error:", error);
+
+    return res.status(500).json({
+      message: "Could not submit campus registration.",
+    });
+  } finally {
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (endError) {
+        console.error("Connection close error:", endError.message);
+      }
+    }
   }
-
-  const id       = `cr_${Date.now()}${Math.floor(Math.random() * 10000)}`;
-  const publicId = genPublicId();
-  const history  = JSON.stringify([{ status: "pending", note: "Initial submission", at: new Date() }]);
-  const docName  = req.file?.originalname || null;
-  const docPath  = req.file?.path         || null;
-  const docSize  = req.file?.size         || null;
-
-  await query(
-    `INSERT INTO campus_registrations
-       (id, publicId, registrantUserId, registrantEmail,
-        universityId, campusType, officialName, province, city, address,
-        registrantName, designation, phone, officialEmail,
-        document_originalName, document_storedPath, document_size,
-        declarationAccepted, status, history, submittedAt)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'pending',?,NOW())`,
-    [
-      id, publicId, userId, userEmail,
-      universityId, campusType, officialName.trim(), province, city.trim(), (address || "").trim(),
-      registrantName.trim(), designation, canonPhone, officialEmail?.trim() || null,
-      docName, docPath, docSize, history,
-    ]
-  );
-
-  const userInfo = await getUserInfo(userId);
-  if (userInfo.email) {
-    sendEmail({
-      to: userInfo.email,
-      subject: `Campus Registration Submitted (${publicId})`,
-      text:
-        `Hello ${userInfo.name || "Campus Admin"},\n\n` +
-        `Your campus registration for "${officialName.trim()}" has been submitted successfully.\n` +
-        `Reference ID: ${publicId}\n\n` +
-        `Your application will be reviewed first by the university admin, then by the Super Admin.\n` +
-        `You will be notified at each stage of the review.\n\n` +
-        `Regards,\nUni Finder Team`,
-      html:
-        `<p>Hello ${userInfo.name || "Campus Admin"},</p>` +
-        `<p>Your campus registration for <strong>"${officialName.trim()}"</strong> has been submitted successfully.</p>` +
-        `<p>Reference ID: <strong>${publicId}</strong></p>` +
-        `<p>Your application will be reviewed first by the university admin, then by the Super Admin. You will be notified at each stage of the review.</p>` +
-        `<p>Regards,<br>Uni Finder Team</p>`,
-    }).catch((e) => console.error("Campus registration submit email failed (non-fatal):", e.message));
-  }
-
-  res.status(201).json({ data: { publicId } });
 };
 
+
+// ════════════════════════════════════════════════════════════════════════════
 // 3. GET /api/campus-registrations/mine   (auth: campus role)
 export const getMyRegistration = async (req, res) => {
   const userId = req.user.id;
@@ -276,7 +390,7 @@ export const resubmitRegistration = async (req, res) => {
        campusType=?, officialName=?, province=?, city=?, address=?,
        registrantName=?, designation=?, phone=?, officialEmail=?,
        status='pending',
-       rejection_reason=NULL, rejection_note=NULL, rejection_decidedAt=NULL,
+       rejection_reason=NULL, rejection_note=NULL, rejection_decidedAt=NULL, rejected_by=NULL,
        resubmission_requiredDocs=NULL, resubmission_note=NULL, resubmission_requestedAt=NULL,
        uni_tier1_approved=0, uni_tier1_approved_at=NULL, uni_tier1_approved_by=NULL,
        history=?
@@ -458,7 +572,7 @@ export const uniUpdateRegistrationStatus = async (req, res) => {
     await query(
       `UPDATE campus_registrations
        SET status='rejected', rejection_reason=?, rejection_note=?,
-           rejection_decidedAt=NOW(), uni_tier1_approved=0,
+           rejection_decidedAt=NOW(), rejected_by='university', uni_tier1_approved=0,
            history=?, updatedAt=NOW()
        WHERE id=?`,
       [reason.trim(), note?.trim() || null, JSON.stringify(history), id]
@@ -614,7 +728,8 @@ export const updateRegistrationStatus = async (req, res) => {
     history.push({ status: "rejected", note: reason + (note ? `: ${note}` : ""), at: new Date() });
     await query(
       `UPDATE campus_registrations
-       SET status='rejected', rejection_reason=?, rejection_note=?, rejection_decidedAt=NOW(), history=?
+       SET status='rejected', rejection_reason=?, rejection_note=?, rejection_decidedAt=NOW(),
+           rejected_by='super_admin', history=?
        WHERE id=?`,
       [reason.trim(), note?.trim() || null, JSON.stringify(history), id]
     );
@@ -684,3 +799,5 @@ export const updateRegistrationStatus = async (req, res) => {
 
   res.json({ message: "Status updated." });
 };
+
+

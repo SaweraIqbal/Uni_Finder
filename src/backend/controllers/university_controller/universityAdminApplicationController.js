@@ -28,7 +28,7 @@ const DESIGNATIONS = [
   "Other",
 ];
 const PUBLIC_EMAIL_DOMAINS = new Set([
-  "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com",
+  "yahoo.com", "ymail.com", "hotmail.com",
   "outlook.com", "live.com", "msn.com", "icloud.com", "me.com", "aol.com",
   "proton.me", "protonmail.com", "pm.me", "gmx.com", "mail.com", "zoho.com",
   "yandex.com", "qq.com",
@@ -386,26 +386,27 @@ export const submitUniversityAdminApplication = async (req, res) => {
         ipAddress,
       ],
     );
-
-    const verificationUrl = `${registrationApiUrl}/api/university/verification/confirm/${verificationToken}`;
-    try {
-      await sendRegistrationEmail({
-        to: email,
-        subject: `Verify your Uni Finder application (${referenceNo})`,
-        text:
-          `Hello ${fullName},\n\n` +
-          `Your university admin application reference is ${referenceNo}.\n` +
-          `Verify that you own this email address to send your application for review:\n${verificationUrl}\n\n` +
-          `The link expires in 24 hours. If you did not submit this application, ignore this email.`,
-      });
-    } catch (mailError) {
-      await query("DELETE FROM applications WHERE id = ?", [applicationId]);
-      if (savedLetterPath) await fsp.unlink(savedLetterPath).catch(() => {});
-      console.error("University application verification email failed:", mailError.message);
-      return res.status(503).json({
-        message: "We could not send the verification email. Please try again later.",
-      });
-    }
+const signupEmail = users[0].email;
+const verificationUrl = `${registrationApiUrl}/api/university/verification/confirm/${verificationToken}`;
+try {
+  console.log("Sending mail to:", signupEmail);
+  await sendRegistrationEmail({
+    to: signupEmail,
+    subject: `Verify your Uni Finder application (${referenceNo})`,
+    text:
+      `Hello ${fullName},\n\n` +
+      `Your university admin application reference is ${referenceNo}.\n` +
+      `Verify your email address to send your application for review:\n${verificationUrl}\n\n` +
+      `The link expires in 24 hours. If you did not submit this application, ignore this email.`,
+  });
+} catch (mailError) {
+  await query("DELETE FROM applications WHERE id = ?", [applicationId]);
+  if (savedLetterPath) await fsp.unlink(savedLetterPath).catch(() => {});
+  console.error("University application verification email failed:", mailError.message);
+  return res.status(503).json({
+    message: "We could not send the verification email. Please try again later.",
+  });
+}
 
     return res.status(201).json({
       message: "Application received. Check your email to verify your address.",
@@ -560,8 +561,7 @@ export const confirmUniversityAdminEmail = async (req, res) => {
 
 export const streamAuthorizationLetter = async (req, res) => {
   try {
-    // Look up from applications table first (new flow), then fall back to
-    // university_verification (legacy rows submitted before the migration).
+
     let loe = null;
     const appRows = await query(
       "SELECT loe_path FROM applications WHERE id = ? LIMIT 1",

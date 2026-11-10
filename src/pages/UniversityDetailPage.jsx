@@ -1,30 +1,37 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import HeroSection        from "../components/shared/heroSection";
-import UniversityStats    from "../components/university/universityStats";
-import UniversityInfo     from "../components/university/universityInfo";
-import UniversityGallery  from "../components/university/universityGallery";
+import HeroSection       from "../components/shared/heroSection";
+import UniversityStats   from "../components/university/universityStats";
+import UniversityInfo    from "../components/university/universityInfo";
+import UniversityGallery from "../components/university/universityGallery";
 import UniversityCampuses from "../components/university/universityCampuses";
-import ContactAdmissions  from "../components/university/ContactAdmissions";
+import ContactAdmissions from "../components/university/ContactAdmissions";
 import { getUniversityById } from "../api/university";
+import { findUniversity }    from "../data/universities";
 
+/**
+ * UniversityDetailPage
+ *
+ * Data strategy:
+ *   1. Immediately show the static snapshot from universities.js so there's
+ *      no empty flash while the API call is in-flight.
+ *   2. Replace with live API data as soon as it arrives.
+ *   3. If the API call fails (network error, 404, etc.) keep showing the
+ *      static snapshot so the page is never blank.
+ */
 export default function UniversityDetailPage() {
   const { id: routeId } = useParams();
   const [params] = useSearchParams();
-  const id = routeId || params.get("id");
+  const id = routeId || params.get("id") || "ucp";
 
-  const [university, setUniversity] = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState(null);
+  // Static snapshot as initial state (instant paint, no layout shift)
+  const [university, setUniversity] = useState(() => findUniversity(id));
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
 
   useEffect(() => {
-    if (!id) {
-      setError("No university specified.");
-      setLoading(false);
-      return;
-    }
-
-    setUniversity(null);
+    // Reset to static snapshot when the id changes
+    setUniversity(findUniversity(id));
     setLoading(true);
     setError(null);
 
@@ -51,33 +58,6 @@ export default function UniversityDetailPage() {
     return () => { cancelled = true; };
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-400">Loading university...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !university) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
-        <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
-            fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01" />
-          </svg>
-        </div>
-        <h2 className="text-lg font-semibold text-gray-700 mb-1">University not found</h2>
-        <p className="text-sm text-gray-400">{error || "The university you are looking for does not exist."}</p>
-      </div>
-    );
-  }
-
   return (
     <main className="overflow-x-hidden bg-gray-50 text-gray-900 text-base font-normal">
       {/* Hero — full-width 320 px tall */}
@@ -100,6 +80,25 @@ export default function UniversityDetailPage() {
 
       {/* Photo gallery */}
       <UniversityGallery universityId={university?.id} />
+
+      {/* Subtle error toast — only shown if the live fetch failed */}
+      {error && (
+        <div
+          role="alert"
+          className="
+            fixed bottom-4 right-4 z-50
+            bg-white border border-orange-200 text-orange-700
+            text-sm rounded-xl px-4 py-3 shadow-lg max-w-xs
+          "
+        >
+          <span className="font-semibold">Note: </span>{error}
+          <span className="text-slate-400"> Showing cached data.</span>
+        </div>
+      )}
     </main>
   );
 }
+
+
+
+

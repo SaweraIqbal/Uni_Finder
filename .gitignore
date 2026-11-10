@@ -65,3 +65,6 @@ node_modules/
 **/.env
 src/backend/uploads/
 src/backend/backups/
+# Visual Studio
+.vs/
+.vscode/

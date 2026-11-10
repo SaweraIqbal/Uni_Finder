@@ -1,27 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useState } from "react";
 import { toast } from 'react-toastify';
-import { Clock, PencilLine, FileText, MapPin, Check, ChevronDown } from 'lucide-react';
+import { Clock, PencilLine, MapPin, ChevronDown } from 'lucide-react';
 import MapPicker from '../shared/MapPicker';
 
-const MAX_MB = 10;
-const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png'];
-
-const DOCS = [
-  { id: 'cnic', title: 'Owner CNIC' },
-  { id: 'ownership', title: 'Proof of Ownership or Lease' },
-  { id: 'utility', title: 'Recent Utility Bill' },
-];
+const API = "http://localhost:5000";
 
 const VERIFICATION = {
-  not_submitted: {
-    pill: 'Not Submitted',
-    pillCls: 'bg-slate-100 text-slate-700',
-    text: 'Complete the profile and submit when you are ready. Filling fields alone does not start review.',
-  },
   submitted: {
     pill: 'Under review',
     pillCls: 'bg-amber-100 text-amber-800',
-    text: 'Your profile is with the university verification team. Fields are locked until review finishes.',
+    text: 'Your profile is with the review team. You can keep editing and saving while you wait.',
   },
   approved: {
     pill: 'Approved',
@@ -89,94 +77,225 @@ function SectionHeader({ icon: Icon, title, subtitle }) {
   );
 }
 
-function DocCard({ title, file, onPick, disabled }) {
-  const ref = useRef(null);
-  return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
-      <div className="flex items-start justify-between">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-white text-[#ff6a00] shadow-sm">
-          <FileText size={18} />
-        </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            file ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
-          }`}
-        >
-          {file ? 'Uploaded' : 'Not Uploaded'}
-        </span>
-      </div>
-      <p className="mt-4 text-sm font-medium">{title}</p>
-      <p className="mt-1 truncate text-xs text-slate-500">
-        {file ? file.name : `PDF, JPG or PNG · Max ${MAX_MB} MB`}
-      </p>
-      <input
-        ref={ref}
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
-        className="hidden"
-        onChange={(e) => {
-          onPick(e.target.files?.[0]);
-          e.target.value = '';
-        }}
-      />
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => ref.current?.click()}
-        className="mt-4 w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
-      >
-        {file ? 'Replace file' : 'Choose file'}
-      </button>
-    </div>
-  );
-}
-
-export default function ProfileSection({ initial, campuses = [] }) {
-  const [form, setForm] = useState(initial);
-  const [docs, setDocs] = useState({});
+export default function ProfileSection({
+  hostelId,
+  initial,
+  campuses = [],
+  hostelRole = "hostel",
+}) {
+  const [form, setForm] = useState({ ...initial, gps: "", nearbyDistance: "" });
   const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState(initial.verification);
+  const [status, setStatus] = useState(initial?.verification || "submitted");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const locked = status === 'submitted' || status === 'approved';
-  const v = VERIFICATION[status];
+  useEffect(() => {
+    if (!hostelId) return;
+
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      try {
+        setLoadingProfile(true);
+
+        const token = sessionStorage.getItem("token");
+
+        const response = await fetch(
+          `http://localhost:5000/api/hostels/${hostelId}/profile`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load profile"
+          );
+        }
+
+        if (cancelled) return;
+
+        const profile = data.profile;
+        setForm((previous) => ({
+          ...previous,
+          name: profile.name ?? "",
+          about: profile.about ?? "",
+          gender: profile.gender ?? "boys",
+          ownership: profile.hostel_type === "university" || hostelRole === "campus_hostel" ? "campus" : "private",
+          campusId: profile.campus_id ?? "",
+          address: profile.address ?? "",
+          nearbyDistance: profile.nearby_distance ?? "",
+          gps:
+            profile.lat != null && profile.lng != null
+              ? `${profile.lat}, ${profile.lng}`
+              : "",
+          floors: profile.floors ?? "",
+          owner: {
+            name: profile.owner_name ?? "",
+            contact: profile.owner_contact ?? "",
+          },
+          warden: {
+            name: profile.warden_name ?? "",
+            contact: profile.warden_contact ?? "",
+          },
+        }));
+
+        const statusMap = {
+          approved: "approved",
+          rejected: "rejected",
+        };
+
+        setStatus(statusMap[profile.status] ?? "submitted");
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Load Profile Error:", error);
+          toast.error(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingProfile(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hostelId, hostelRole]);
+
+  const v = VERIFICATION[status] ?? VERIFICATION.submitted;
+
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
   const setPerson = (who, key, value) =>
     setForm((f) => ({ ...f, [who]: { ...f[who], [key]: value } }));
 
-  const pickDoc = (id, file) => {
-    if (!file) return;
-    if (!ALLOWED.includes(file.type)) return toast.error('Only PDF, JPG or PNG files are allowed.');
-    if (file.size > MAX_MB * 1024 * 1024) return toast.error(`File must be under ${MAX_MB} MB.`);
-    setDocs((d) => ({ ...d, [id]: file }));
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Current location is not supported by this browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        set("gps", `${coords.latitude.toFixed(7)}, ${coords.longitude.toFixed(7)}`);
+        toast.success("Current location added. Save the profile to store it.");
+      },
+      (error) => toast.error(error.message || "Could not get your current location."),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const validate = () => {
     const e = {};
-    if (!form.name.trim()) e.name = 'Enter the hostel name.';
-    if (!form.about.trim()) e.about = 'Add a short introduction.';
-    if (form.ownership === 'campus' && !form.campusId) e.campusId = 'Select the affiliated campus.';
-    if (!form.address.trim()) e.address = 'Enter the full address.';
-    if (!form.nearbyDistance.trim()) e.nearbyDistance = 'Enter the distance to the nearest campus.';
+    if (!String(form.name ?? '').trim()) e.name = 'Enter the hostel name.';
+    if (!String(form.about ?? '').trim()) e.about = 'Add a short introduction.';
+    if (hostelRole === 'campus_hostel' && !form.campusId) e.campusId = 'Select the affiliated campus.';
+    if (!String(form.address ?? '').trim()) e.address = 'Enter the full address.';
+    const parts = String(form.gps ?? '').split(',').map(x => Number(x.trim()));
+    if (!String(form.gps ?? '').trim() || parts.length !== 2 ||
+        !parts.every(Number.isFinite) || parts[0] < -90 || parts[0] > 90 ||
+        parts[1] < -180 || parts[1] > 180) {
+      e.gps = 'Enter valid GPS coordinates as latitude, longitude.';
+    }
     if (!form.floors || Number(form.floors) < 1) e.floors = 'Enter the number of floors.';
-    if (!form.owner.name.trim() || !form.owner.contact.trim()) e.owner = 'Enter the owner name and contact.';
-    if (!form.warden.name.trim() || !form.warden.contact.trim()) e.warden = 'Enter the warden name and contact.';
-    const missing = DOCS.filter((d) => !docs[d.id]);
-    if (missing.length) e.docs = `Upload: ${missing.map((m) => m.title).join(', ')}.`;
+    if (!String(form.owner?.name ?? '').trim() || !String(form.owner?.contact ?? '').trim()) e.owner = 'Enter owner name and contact.';
+    if (!String(form.warden?.name ?? '').trim() || !String(form.warden?.contact ?? '').trim()) e.warden = 'Enter warden name and contact.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!validate()) {
-      toast.error('Please fix the highlighted fields before submitting.');
+const [saving, setSaving] = useState(false);
+
+const handleSaveProfile = async () => {
+  if (!hostelId) {
+    toast.error("Please select a hostel.");
+    return;
+  }
+
+  if (!validate()) {
+    toast.error("Please fill the highlighted profile fields before saving.");
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    const token = sessionStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Please login again.");
       return;
     }
-    // TODO: send form + docs to the API
-    setStatus('submitted');
-    toast.success('Submitted for verification.');
-  };
+
+    const gpsParts = String(form.gps || "")
+      .split(",")
+      .map((value) => Number(value.trim()));
+
+    const hasGps =
+      gpsParts.length === 2 &&
+      gpsParts.every(Number.isFinite) &&
+      gpsParts[0] >= -90 && gpsParts[0] <= 90 &&
+      gpsParts[1] >= -180 && gpsParts[1] <= 180;
+
+    if (form.gps?.trim() && !hasGps) {
+      toast.error("Enter GPS as latitude, longitude.");
+      return;
+    }
+
+    const payload = {
+      name: form.name,
+      about: form.about,
+      gender: form.gender,
+      address: form.address,
+      nearby_distance: form.nearbyDistance,
+      floors: Number(form.floors),
+      owner_name: form.owner.name,
+      owner_contact: form.owner.contact,
+      warden_name: form.warden.name,
+      warden_contact: form.warden.contact,
+    };
+
+    if (hasGps) {
+      payload.lat = gpsParts[0];
+      payload.lng = gpsParts[1];
+    }
+
+    const response = await fetch(
+      `${API}/api/hostels/${hostelId}/profile`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to save profile");
+    }
+
+    toast.success("Hostel profile saved successfully!");
+  } catch (error) {
+    console.error("Save Profile Error:", error);
+    toast.error(error.message);
+  } finally {
+    setSaving(false);
+  }
+};
+  if (loadingProfile) {
+    return <div className="rounded-2xl bg-white p-6 text-slate-600">Loading hostel profile from database...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -201,33 +320,30 @@ export default function ProfileSection({ initial, campuses = [] }) {
         />
         <div className="space-y-6 p-6">
           <Field label="Hostel Name" htmlFor="h-name" error={errors.name}>
-            <input id="h-name" className={input} value={form.name} disabled={locked}
+            <input id="h-name" className={input} value={form.name}
               onChange={(e) => set('name', e.target.value)} />
           </Field>
 
           <Field label="About This Hostel" htmlFor="h-about" error={errors.about}>
-            <textarea id="h-about" rows={4} className={`${input} resize-y`} disabled={locked}
+            <textarea id="h-about" rows={4} className={`${input} resize-y`}
               placeholder="Share a short introduction, the hostel environment, and what makes it a good place to live."
               value={form.about} onChange={(e) => set('about', e.target.value)} />
           </Field>
 
           <div className="grid gap-6 md:grid-cols-2">
             <Field label="Hostel Gender Type">
-              <Segmented label="Hostel gender type" value={form.gender} disabled={locked}
+              <Segmented label="Hostel gender type" value={form.gender}
                 onChange={(val) => set('gender', val)}
                 options={[{ value: 'boys', label: 'Boys' }, { value: 'girls', label: 'Girls' }]} />
             </Field>
-            <Field label="Ownership Type">
-              <Segmented label="Ownership type" value={form.ownership} disabled={locked}
-                onChange={(val) =>
-                  setForm((f) => ({ ...f, ownership: val, campusId: val === 'campus' ? f.campusId : '' }))
-                }
-                options={[{ value: 'private', label: 'Private Hostel' }, { value: 'campus', label: 'Campus Hostel' }]} />
-              <p className="mt-2 text-xs text-amber-700">Ownership Type locks when you submit for verification.</p>
+            <Field label="Hostel Category">
+              <p className={`${input} bg-slate-50`}>
+                {hostelRole === "campus_hostel" ? "Campus Hostel" : "Independent Hostel"}
+              </p>
             </Field>
           </div>
 
-          {form.ownership === 'campus' && (
+          {hostelRole === 'campus_hostel' && (
             <div className="rounded-2xl border border-orange-100 bg-orange-50 p-6">
               <label htmlFor="h-campus" className="mb-2 block text-xs font-medium text-slate-700">
                 Affiliated Campus (required)
@@ -236,11 +352,10 @@ export default function ProfileSection({ initial, campuses = [] }) {
                 <select
                   id="h-campus"
                   value={form.campusId}
-                  disabled={locked}
                   onChange={(e) => set('campusId', e.target.value)}
                   className={`${input} appearance-none pr-10`}
                 >
-                  <option value="">Select campus for Tier-1 review</option>
+                  <option value="">Select affiliated campus</option>
                   {campuses.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -253,19 +368,16 @@ export default function ProfileSection({ initial, campuses = [] }) {
                 />
               </div>
               {errors.campusId && <p className="mt-1 text-xs text-red-600">{errors.campusId}</p>}
-              <p className="mt-2 text-xs text-slate-500">
-                Your submission is routed to this campus administration for Tier-1 approval.
-              </p>
             </div>
           )}
 
           <div className="grid gap-6 md:grid-cols-2">
             <Field label="Full Address" htmlFor="h-address" error={errors.address}>
-              <textarea id="h-address" rows={3} className={`${input} resize-y`} disabled={locked}
+              <textarea id="h-address" rows={3} className={`${input} resize-y`}
                 value={form.address} onChange={(e) => set('address', e.target.value)} />
             </Field>
             <Field label="Nearby Campus / University Distance" htmlFor="h-distance" error={errors.nearbyDistance}>
-              <input id="h-distance" className={input} disabled={locked}
+              <input id="h-distance" className={input}
                 placeholder="Example: 0.8 km from UCP Lahore"
                 value={form.nearbyDistance} onChange={(e) => set('nearbyDistance', e.target.value)} />
             </Field>
@@ -307,14 +419,22 @@ export default function ProfileSection({ initial, campuses = [] }) {
                   </span>
                 </>
               )}
-              <button
-                type="button"
-                disabled={locked}
-                onClick={() => setPickerOpen(true)}
-                className="absolute bottom-4 right-4 rounded-xl bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 disabled:opacity-50 transition-colors z-10"
-              >
-                {form.gps ? 'Adjust map pin' : 'Set on Map'}
-              </button>
+              <div className="absolute bottom-4 right-4 z-10 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className="rounded-xl bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-slate-50"
+                >
+                  {form.gps ? 'Adjust map pin' : 'Set on Map'}
+                </button>
+                <button
+                  type="button"
+                  onClick={useCurrentLocation}
+                  className="rounded-xl bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50"
+                >
+                  Use current location
+                </button>
+              </div>
             </div>
 
             {pickerOpen && (
@@ -327,12 +447,13 @@ export default function ProfileSection({ initial, campuses = [] }) {
             )}
 
             <div className="space-y-4">
-              <Field label="Confirmed GPS Coordinates" htmlFor="h-gps">
-                <input id="h-gps" className={input} disabled={locked} value={form.gps}
+              <Field label="Confirmed GPS Coordinates" htmlFor="h-gps" error={errors.gps}>
+                <input id="h-gps" className={input} value={form.gps}
                   onChange={(e) => set('gps', e.target.value)} />
               </Field>
+              <p className="-mt-3 text-xs text-slate-500">Enter latitude, longitude manually, or use the current-location button on the map.</p>
               <Field label="Total Floors" htmlFor="h-floors" error={errors.floors}>
-                <input id="h-floors" type="number" min="1" className={input} disabled={locked}
+                <input id="h-floors" type="number" min="1" className={input}
                   value={form.floors} onChange={(e) => set('floors', e.target.value)} />
               </Field>
               <p className="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-500">
@@ -352,11 +473,11 @@ export default function ProfileSection({ initial, campuses = [] }) {
                 <h3 className="font-semibold">{title}</h3>
                 <div className="mt-3 grid gap-4 sm:grid-cols-2">
                   <Field label="Full Name" htmlFor={`${key}-name`}>
-                    <input id={`${key}-name`} className={input} disabled={locked} value={form[key].name}
+                    <input id={`${key}-name`} className={input} value={form[key].name}
                       onChange={(e) => setPerson(key, 'name', e.target.value)} />
                   </Field>
                   <Field label="Contact" htmlFor={`${key}-contact`}>
-                    <input id={`${key}-contact`} type="tel" className={input} disabled={locked}
+                    <input id={`${key}-contact`} type="tel" className={input}
                       value={form[key].contact} onChange={(e) => setPerson(key, 'contact', e.target.value)} />
                   </Field>
                 </div>
@@ -367,36 +488,14 @@ export default function ProfileSection({ initial, campuses = [] }) {
         </div>
       </div>
 
-      {/* Documents */}
-      <div className={card}>
-        <SectionHeader icon={FileText} title="Verification Documents" subtitle="Upload clear, valid documents for review." />
-        <div className="p-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            {DOCS.map((d) => (
-              <DocCard key={d.id} title={d.title} file={docs[d.id]} disabled={locked}
-                onPick={(f) => pickDoc(d.id, f)} />
-            ))}
-          </div>
-          {errors.docs && <p className="mt-3 text-xs text-red-600">{errors.docs}</p>}
-        </div>
-      </div>
-
-      {/* Submit */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-orange-100 bg-orange-50 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6">
         <div>
-          <h2 className="font-semibold">Ready to start verification?</h2>
-          <p className="text-sm text-slate-600">
-            Submitting locks Ownership Type and starts the approval pipeline. Autosaved drafts are not sent for review.
-          </p>
+          <h2 className="font-semibold text-slate-900">Save Hostel Profile</h2>
+          <p className="mt-1 text-sm text-slate-500">Save your latest hostel profile changes.</p>
         </div>
-        <button
-          type="button"
-          disabled={locked}
-          onClick={handleSubmit}
-          className="flex items-center gap-2 rounded-xl bg-[#ff6a00] px-5 py-3 text-sm font-semibold text-white hover:bg-[#e65f00] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {locked && <Check size={16} />}
-          {locked ? 'Submitted' : 'Submit for Verification'}
+        <button type="button" onClick={handleSaveProfile} disabled={saving}
+          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+          {saving ? 'Saving...' : 'Save Profile'}
         </button>
       </div>
     </div>

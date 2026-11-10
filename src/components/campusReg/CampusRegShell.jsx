@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Logo from "../../assets/Logo.png";
 import { setFlash } from "../../utils/flash";
 
-export default function CampusRegShell({ children }) {
+export default function CampusRegShell({ children, panelLabel = "Campus Panel" }) {
   const navigate = useNavigate();
 
   const user     = JSON.parse(sessionStorage.getItem("user") || "{}");
@@ -35,7 +35,7 @@ export default function CampusRegShell({ children }) {
               <span className="text-orange-500">Uni</span>
               <span className="text-slate-900">Finder</span>
             </span>
-            <span className="text-sm text-slate-400 ml-2 font-normal">Campus Panel</span>
+            <span className="text-sm text-slate-400 ml-2 font-normal">{panelLabel}</span>
           </div>
         </div>
 
