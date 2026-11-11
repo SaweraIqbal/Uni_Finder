@@ -30,7 +30,67 @@ import {
 import { compareCampuses, CAMPUS_DEFAULT_IMAGE } from "../api/campus";
 import { API, fileUrl } from "../api/client";
 
-// ── Haversine ─────────────────────────────────────────────────────────────────
+// ── Road distance — ORS with OSRM fallback ────────────────────────────────────
+// ORS free tier: 2 000 req/day. OSRM is completely free, no key needed.
+const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
+
+/**
+ * Try OpenRouteService first (POST + Authorization header — works in browsers).
+ * If ORS fails for any reason, automatically falls back to the free OSRM public API.
+ * Returns { km, minutes, source } or throws if both fail.
+ */
+async function fetchRoadDistance(originLat, originLng, destLat, destLng) {
+  // ── 1. Try ORS (POST with Authorization header — newer API format) ──────────
+  if (ORS_API_KEY) {
+    try {
+      const orsRes = await fetch(
+        "https://api.openrouteservice.org/v2/directions/driving-car",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": ORS_API_KEY,
+            "Content-Type": "application/json",
+            "Accept": "application/json, application/geo+json",
+          },
+          body: JSON.stringify({
+            coordinates: [
+              [originLng, originLat],
+              [destLng,   destLat],
+            ],
+          }),
+        }
+      );
+      if (orsRes.ok) {
+        const data = await orsRes.json();
+        const seg  = data?.features?.[0]?.properties?.segments?.[0];
+        if (seg) {
+          return {
+            km:      seg.distance / 1000,
+            minutes: Math.round(seg.duration / 60),
+            source:  "ors",
+          };
+        }
+      }
+    } catch { /* fall through to OSRM */ }
+  }
+
+  // ── 2. Fallback: OSRM public API — no key, OpenStreetMap routing engine ─────
+  const osrmUrl =
+    `https://router.project-osrm.org/route/v1/driving/` +
+    `${originLng},${originLat};${destLng},${destLat}?overview=false`;
+  const osrmRes = await fetch(osrmUrl);
+  if (!osrmRes.ok) throw new Error(`OSRM ${osrmRes.status}`);
+  const osrmData = await osrmRes.json();
+  const leg = osrmData?.routes?.[0]?.legs?.[0];
+  if (!leg) throw new Error("OSRM: no route found");
+  return {
+    km:      leg.distance / 1000,
+    minutes: Math.round(leg.duration / 60),
+    source:  "osrm",
+  };
+}
+
+// ── Haversine (kept as fallback only) ─────────────────────────────────────────
 function haversineKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const r = (d) => (d * Math.PI) / 180;
@@ -587,22 +647,42 @@ function Row({ label, value, highlight }) {
 
 // ── Distance ──────────────────────────────────────────────────────────────────
 function DistanceSection({ campuses, userCoords, locationError, requestLocation, onOpenMap }) {
-  const distances = useMemo(() => {
-    if (!userCoords) return campuses.map(() => null);
-    return campuses.map((c) =>
-      hasCoordinates(c) ? haversineKm(userCoords.lat, userCoords.lng, Number(c.lat), Number(c.lng)) : "no_coords"
-    );
-  }, [campuses, userCoords]);
+  // road distances fetched from OpenRouteService
+  // shape per campus: null | "no_coords" | "loading" | "error" | { km, minutes }
+  const [roadDistances, setRoadDistances] = useState({});
+
+  // Re-fetch whenever user location or campus list changes
+  useEffect(() => {
+    if (!userCoords) return;
+    let active = true;
+
+    campuses.forEach((c) => {
+      if (!hasCoordinates(c)) return;
+      const key = `${userCoords.lat},${userCoords.lng}:${c.id}:${c.lat},${c.lng}`;
+      fetchRoadDistance(
+        userCoords.lat, userCoords.lng,
+        Number(c.lat), Number(c.lng)
+      )
+        .then((result) => {
+          if (active) setRoadDistances((previous) => ({ ...previous, [key]: result }));
+        })
+        .catch(() => {
+          if (active) setRoadDistances((previous) => ({ ...previous, [key]: "error" }));
+        });
+    });
+
+    return () => { active = false; };
+  }, [userCoords, campuses]);
 
   const anyCoordsSet = campuses.some(hasCoordinates);
 
   return (
     <div className="space-y-4">
-      {/* Action row */}
+      {/* Action row — no location yet */}
       {!userCoords && (
         <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200">
           <Navigation size={15} className="text-blue-500 flex-shrink-0" />
-          <p className="text-sm text-blue-700 flex-1 min-w-0">Share your location to see distances.</p>
+          <p className="text-sm text-blue-700 flex-1 min-w-0">Share your location to see driving distances.</p>
           <button type="button" onClick={requestLocation}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors flex-shrink-0">
             Use my GPS
@@ -613,6 +693,8 @@ function DistanceSection({ campuses, userCoords, locationError, requestLocation,
           </button>
         </div>
       )}
+
+      {/* Location error */}
       {locationError && (
         <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
           <AlertCircle size={15} className="text-amber-500 flex-shrink-0" />
@@ -623,9 +705,13 @@ function DistanceSection({ campuses, userCoords, locationError, requestLocation,
           </button>
         </div>
       )}
+
+      {/* Location active banner */}
       {userCoords && (
         <div className="flex items-center justify-between gap-3 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 border border-emerald-200">
-          <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> Location set — straight-line distance.</span>
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 size={13} /> Location set — fetching actual road distances…
+          </span>
           <button type="button" onClick={onOpenMap}
             className="text-xs font-semibold text-emerald-700 hover:underline flex-shrink-0">
             Change →
@@ -633,41 +719,88 @@ function DistanceSection({ campuses, userCoords, locationError, requestLocation,
         </div>
       )}
 
-      {/* No campus coords warning */}
+      {/* No campus coords at all */}
       {!anyCoordsSet && (
         <div className="flex items-start gap-2 p-3 rounded-xl bg-gray-50 border border-gray-200">
           <Info size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-gray-500">
-            These campuses don’t have map coordinates yet. An address or city alone isn’t precise enough to calculate distance.
-            A campus admin must set its pin in Campus Profile → Map Coordinates. City and province are shown as a reference.
+            These campuses don't have map coordinates yet. A campus admin must set its pin in Campus Profile → Map Coordinates.
           </p>
         </div>
       )}
 
+      {/* Distance cards */}
       <div className={`grid gap-3 ${campusGridColumns(campuses.length)}`}>
         {campuses.map((c, i) => {
-          const dist = distances[i];
           const hasCoords = hasCoordinates(c);
+          const distanceKey = userCoords && hasCoords
+            ? `${userCoords.lat},${userCoords.lng}:${c.id}:${c.lat},${c.lng}`
+            : null;
+          const rd = !userCoords
+            ? null
+            : !hasCoords
+              ? "no_coords"
+              : roadDistances[distanceKey] || "loading";
+          const mapsUrl =
+            `https://www.google.com/maps/dir/?api=1` +
+            `&origin=${userCoords?.lat},${userCoords?.lng}` +
+            `&destination=${Number(c.lat)},${Number(c.lng)}`;
+
           return (
             <div key={c.id} className={`rounded-xl border-2 p-4 text-center ${COL_BG[i]} ${COL_BORDER[i]}`}>
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 truncate">{c.name}</p>
-              <MapPin size={22} className={`mx-auto mb-2 ${typeof dist === "number" ? "text-orange-500" : "text-gray-300"}`} />
+              <MapPin size={22} className={`mx-auto mb-2 ${rd && rd !== "no_coords" && rd !== "loading" && rd !== "error" ? "text-orange-500" : "text-gray-300"}`} />
+
+              {/* No location set */}
               {!userCoords && !hasCoords && <p className="text-sm text-gray-400">No location data</p>}
               {!userCoords &&  hasCoords && <p className="text-sm text-gray-400">Enable location to calculate</p>}
-              {userCoords  && dist === "no_coords" && (
+
+              {/* Campus has no coords */}
+              {userCoords && rd === "no_coords" && (
                 <>
                   <p className="text-sm font-semibold text-gray-500">Coordinates not set</p>
                   <p className="text-xs text-gray-400 mt-1">{[c.city, c.province].filter(Boolean).join(", ") || "Unknown location"}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">Address is not converted to coordinates; ask the campus admin to set its map pin.</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Ask the campus admin to set its map pin.</p>
                 </>
               )}
-              {typeof dist === "number" && (
+
+              {/* Loading spinner */}
+              {userCoords && rd === "loading" && (
+                <div className="flex flex-col items-center gap-1 py-1">
+                  <svg className="animate-spin h-6 w-6 text-orange-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <p className="text-xs text-gray-400">Calculating…</p>
+                </div>
+              )}
+
+              {/* ORS fetch error */}
+              {userCoords && rd === "error" && (
+                <>
+                  <p className="text-sm font-semibold text-red-400">Route unavailable</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{[c.city, c.province].filter(Boolean).join(", ")}</p>
+                  {userCoords && hasCoords && (
+                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-orange-300 text-orange-600 hover:bg-orange-50 transition-colors shadow-sm">
+                      <MapPin size={11} /> Open in Google Maps →
+                    </a>
+                  )}
+                </>
+              )}
+
+              {/* ✅ Actual road distance from ORS */}
+              {userCoords && rd && rd !== "no_coords" && rd !== "loading" && rd !== "error" && (
                 <>
                   <p className="text-2xl font-bold text-gray-800">
-                    {dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`}
+                    {rd.km < 1 ? `${(rd.km * 1000).toFixed(0)} m` : `${rd.km.toFixed(1)} km`}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">straight-line distance</p>
+                  <p className="text-xs text-gray-500 mt-0.5">road distance</p>
                   <p className="text-[10px] text-gray-400 mt-0.5">{[c.city, c.province].filter(Boolean).join(", ")}</p>
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-orange-300 text-orange-600 hover:bg-orange-50 transition-colors shadow-sm">
+                    <MapPin size={11} /> Open in Google Maps →
+                  </a>
                 </>
               )}
             </div>
@@ -683,7 +816,6 @@ function DistanceSection({ campuses, userCoords, locationError, requestLocation,
     </div>
   );
 }
-
 // ── Hostels ───────────────────────────────────────────────────────────────────
 function HostelsSection({ campuses }) {
   return (
