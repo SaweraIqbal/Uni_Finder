@@ -11,7 +11,6 @@
   }
 }
 
-/* Custom Smooth Animations */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-8px); }
@@ -34,7 +33,6 @@
   animation: pulseGlow 3s ease-in-out infinite;
 }
 
-/* Glassmorphic Cards for Light Theme */
 .glass-card-light {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
@@ -49,12 +47,10 @@
   box-shadow: 0 16px 32px -8px rgba(249, 115, 22, 0.12);
 }
 
-/* Parallax background */
 .parallax-bg {
   background-attachment: fixed;
 }
 
-/* Scrollbar customization */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -77,7 +73,6 @@
   scrollbar-width: none;
 }
 
-/* Shimmer skeleton loading effect */
 .shimmer {
   position: relative;
   overflow: hidden;
@@ -97,7 +92,6 @@
   animation: shimmerSweep 1.5s infinite;
 }
 
-/* Smooth reveal utility */
 .reveal-fade-up {
   opacity: 0;
   transform: translateY(20px);
@@ -108,7 +102,6 @@
   transform: translateY(0);
 }
 
-/* Modal & overlay animations */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }

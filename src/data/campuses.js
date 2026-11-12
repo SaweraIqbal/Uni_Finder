@@ -1,10 +1,4 @@
-/**
- * Static campus data for the UniFinder search/results page.
- * Each entry = ONE physical campus.
- */
-
 export const campuses = [
-  // UCP
   {
     id: "ucp-gulberg",
     campusName: "Lahore (Gulberg)",
@@ -106,7 +100,6 @@ export const campuses = [
     lat: 31.4504,
     lng: 73.135,
   },
-  // LUMS
   {
     id: "lums-main",
     campusName: "LUMS Main Campus",
@@ -138,7 +131,6 @@ export const campuses = [
     lat: 31.4108,
     lng: 74.2302,
   },
-  // NUST
   {
     id: "nust-h12",
     campusName: "NUST H-12 Campus",
@@ -205,7 +197,6 @@ export const campuses = [
     lat: 24.8936,
     lng: 67.0835,
   },
-  // FAST
   {
     id: "fast-lahore",
     campusName: "FAST Lahore Campus",
@@ -301,7 +292,6 @@ export const campuses = [
     lat: 33.6509,
     lng: 72.9956,
   },
-  // UET
   {
     id: "uet-lahore-main",
     campusName: "UET Main Campus",
@@ -362,7 +352,6 @@ export const campuses = [
     lat: 31.7767,
     lng: 74.1478,
   },
-  // Riphah
   {
     id: "riphah-raiwind",
     campusName: "Riphah Raiwind Campus",
@@ -450,7 +439,6 @@ export const campuses = [
     lat: 31.4504,
     lng: 73.135,
   },
-  // Kinnaird
   {
     id: "kinnaird-main",
     campusName: "Kinnaird College Main Campus",
@@ -482,7 +470,6 @@ export const campuses = [
     lat: 31.5497,
     lng: 74.3436,
   },
-  // QAU
   {
     id: "qau-main",
     campusName: "QAU Main Campus",
@@ -517,7 +504,6 @@ export const campuses = [
     lat: 33.7468,
     lng: 73.137,
   },
-  // IBA
   {
     id: "iba-main",
     campusName: "IBA Main Campus",
@@ -575,7 +561,6 @@ export const campuses = [
     lat: 24.8737,
     lng: 67.0256,
   },
-  // PUCIT
   {
     id: "pucit-main",
     campusName: "PUCIT Main Campus",

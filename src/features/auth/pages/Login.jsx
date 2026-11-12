@@ -1,0 +1,402 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import emailIcon from "../../../assets/email.png";
+import passwordIcon from "../../../assets/password.png";
+import logo from "../../../assets/Logo.png";
+import google from "../../../assets/google.png";
+
+import { useAuth } from "../AuthContext";
+import { setFlash } from "../../../shared/utils/flash";
+import { API, forgotPassword as forgotPasswordApi, resendVerificationEmail } from "../../../shared/api/client";
+
+function Login() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [resendState, setResendState] = useState({ sending: false, message: "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
+  };
+
+  const validate = () => {
+    let newErrors = {};
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Invalid Email";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        await login({
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
+          username: data.user.username,
+          role: data.user.role,
+        });
+
+        sessionStorage.setItem("userId", data.user.id);
+        sessionStorage.setItem("token", data.token);
+
+        setFlash("Login Successful");
+
+        const role = data.user.role;
+
+        if (role === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+        } else if (role === "student") {
+          navigate("/homepage", { replace: true });
+        } else if (role === "university") {
+          navigate("/university/dashboard", { replace: true });
+        } else if (role === "campus") {
+          navigate("/campus/dashboard", { replace: true });
+        } else if (role === "hostel" || role === "campus_hostel") {
+          try {
+            const hostelResponse = await fetch("http://localhost:5000/api/hostels/mine", {
+              headers: { Authorization: `Bearer ${data.token}` },
+            });
+            const hostelData = await hostelResponse.json();
+            const registrations = Array.isArray(hostelData.hostels) ? hostelData.hostels : [];
+            const approved = registrations.some((hostel) => hostel.status === "approved");
+            navigate(
+              approved
+                ? "/hostel/dashboard"
+                : registrations.length
+                  ? "/hostel/registration-status"
+                  : `/hostel/register/${role}`,
+              { replace: true },
+            );
+          } catch {
+            navigate(`/hostel/register/${role}`, { replace: true });
+          }
+        } else {
+          navigate("/homepage", { replace: true });
+        }
+      } else if (res.status === 403 && data.verificationRequired) {
+        setUnverifiedEmail(formData.email.trim().toLowerCase());
+        setResendState({ sending: false, message: "" });
+      } else {
+        toast.error(data.message || "Invalid email or password");
+      }
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error("Server error ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResendState({ sending: true, message: "" });
+    try {
+      const { data } = await resendVerificationEmail(unverifiedEmail);
+      setResendState({
+        sending: false,
+        message: data.message || "If an unverified account exists, a verification email will be sent.",
+      });
+    } catch (error) {
+      setResendState({
+        sending: false,
+        message: error.message || "Could not reach the server. Please try again.",
+      });
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!forgotEmail) {
+      toast.error("Email is required");
+      return;
+    }
+    if (!emailRegex.test(forgotEmail)) {
+      toast.error("Invalid email format");
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await fetch(`${API}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await res.json();
+      setForgotSent(true);
+      toast.success(data.message || "If that email exists, a reset link has been sent.");
+    } catch (error) {
+      console.log("Error:", error);
+      toast.error("Server error");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed top-0 left-0 w-full h-screen flex justify-center items-center p-4 bg-gray-100">
+      <div className="relative flex w-[1000px] min-h-[560px] max-w-[95%] max-h-[94vh] bg-white rounded-[40px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.15)]">
+        <div className="relative w-full md:w-1/2 px-5 md:px-[50px] py-8 md:py-[40px] flex flex-col justify-center overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          <div  onClick={() => navigate('/')}  className="flex items-center gap-2 mb-3">
+            <img src={logo} alt="Uni Finder Logo" className="w-8" />
+            <h2 className="text-xl font-semibold text-gray-700">
+              Uni <span className="text-orange-500">Finder</span>
+            </h2>
+          </div>
+
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
+            Welcome Back
+          </h1>
+          <p className="text-gray-500 mb-5">
+            Log in to your account to{" "}
+            <span className="text-orange-500 font-semibold">continue</span>
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-2">
+            <div>
+              <div
+                className={`flex items-center gap-3 border-2 rounded-2xl px-4 py-3 transition-colors ${
+                  errors.email
+                    ? "border-red-400"
+                    : "border-gray-200 focus-within:border-orange-500"
+                }`}
+              >
+                <img src={emailIcon} alt="" className="w-5 h-5 opacity-70" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email address"
+                  className="border-none outline-none w-full text-[15px] bg-transparent"
+                />
+              </div>
+              {errors.email && (
+                <p className="text-red-500 text-xs ml-2 mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <div
+                className={`flex items-center gap-3 border-2 rounded-2xl px-4 py-3 transition-colors ${
+                  errors.password
+                    ? "border-red-400"
+                    : "border-gray-200 focus-within:border-orange-500"
+                }`}
+              >
+                <img src={passwordIcon} alt="" className="w-5 h-5 opacity-70" />
+                <input
+                  type={showPass ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  className="border-none outline-none w-full text-[15px] bg-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass((v) => !v)}
+                  className="text-[11px] font-bold text-orange-500 hover:text-orange-600"
+                >
+                  {showPass ? "HIDE" : "SHOW"}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs ml-2 mt-1">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            {unverifiedEmail && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-xs text-amber-800">
+                <p className="font-semibold">Verify your email first</p>
+                <p className="mt-1 break-all">
+                  {unverifiedEmail} is not verified yet. Open the link we mailed you, or resend it below.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendState.sending}
+                  className="mt-2 font-semibold text-orange-600 hover:underline disabled:opacity-60"
+                >
+                  {resendState.sending ? "Sending..." : "Resend verification email"}
+                </button>
+                {resendState.message && <p className="mt-1 text-amber-700">{resendState.message}</p>}
+              </div>
+            )}
+
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setShowForgot(true)}
+                className="text-sm text-orange-500 font-medium hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-2xl bg-orange-500 text-white text-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-orange-600 hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0"
+            >
+              {loading ? "Logging in…" : "Log In"}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-gray-500 mt-5">
+            Don't have an account?{" "}
+            <span
+              onClick={() => navigate("/signup")}
+              className="text-orange-500 font-semibold cursor-pointer hover:underline"
+            >
+              Sign Up
+            </span>
+          </p>
+
+          <div className="flex items-center my-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <p className="mx-4 text-xs text-gray-400 font-medium">
+              Or log in with
+            </p>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <div className="flex gap-3 justify-center">
+            <button className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-orange-400 hover:-translate-y-[1px]">
+              <img src={google} alt="Google" className="w-5 h-5" />
+              Google
+            </button>
+
+          </div>
+        </div>
+
+        <div className="relative w-1/2 hidden md:block overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80"
+            alt="University students group"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent to-white/30" />
+        </div>
+
+        {showForgot && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 rounded-[40px]">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+              {forgotSent ? (
+                <>
+                  <h2 className="text-xl font-bold text-gray-800 mb-3">Check your email</h2>
+                  <p className="text-sm text-gray-500 mb-5">
+                    If an account exists for <span className="font-medium text-gray-700">{forgotEmail}</span>,
+                    you will receive a password reset link shortly. The link expires in 1 hour.
+                  </p>
+                  <button
+                    onClick={() => { setShowForgot(false); setForgotSent(false); setForgotEmail(""); }}
+                    className="w-full py-3 rounded-2xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition"
+                  >
+                    Back to Login
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">Forgot Password?</h2>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                  <form onSubmit={handleForgotPassword} className="space-y-3">
+                    <div className="flex items-center gap-3 border-2 border-gray-200 rounded-2xl px-4 py-3 focus-within:border-orange-500">
+                      <img src={emailIcon} alt="" className="w-5 h-5 opacity-70" />
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        className="border-none outline-none w-full text-[15px] bg-transparent"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgot(false)}
+                        className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={forgotLoading}
+                        className="flex-1 py-3 rounded-2xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition disabled:opacity-60"
+                      >
+                        {forgotLoading ? "Sending…" : "Send Reset Link"}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default Login;

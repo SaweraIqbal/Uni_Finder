@@ -22,21 +22,21 @@ const db = createConnection({
 const sql = readFileSync(join(__dirname, "migrate_campus_phase2.sql"), "utf8");
 
 db.connect((err) => {
-  if (err) { console.error("❌ DB connect failed:", err.message); process.exit(1); }
-  console.log("✅ Connected to", process.env.DB_NAME);
+  if (err) { console.error(" DB connect failed:", err.message); process.exit(1); }
+  console.log(" Connected to", process.env.DB_NAME);
 
   db.query(sql, (err2, results) => {
     if (err2) {
-      console.error("❌ Migration failed:", err2.message);
+      console.error(" Migration failed:", err2.message);
       db.end();
       process.exit(1);
     }
     // Last result is the SELECT confirmation message
     const last = Array.isArray(results) ? results[results.length - 1] : null;
     if (last && last[0]) {
-      console.log("✅", last[0].result);
+      console.log("good", last[0].result);
     } else {
-      console.log("✅ Migration completed.");
+      console.log(" Migration completed.");
     }
     console.log("\nTables created:");
     const tables = ["campus_verification","campuses","campus_images","campus_programs","campus_societies","campus_facilities","campus_hostels"];

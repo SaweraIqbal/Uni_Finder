@@ -54,3 +54,6 @@ export const POPULAR_CITIES = [
   "Lahore","Karachi","Islamabad","Rawalpindi","Faisalabad",
   "Multan","Peshawar","Quetta","Hyderabad","Sialkot",
 ];
+
+/** Provincial capitals — curated default shown in the SearchBar city dropdown */
+export const FEATURED_CITIES = ["Karachi", "Lahore", "Islamabad", "Peshawar", "Quetta"];

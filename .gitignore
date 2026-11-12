@@ -65,3 +65,20 @@ node_modules/
 **/.env
 src/backend/uploads/
 src/backend/backups/
+# Visual Studio
+.vs/
+.vscode/
+
+# Local DB backups, dumps and private uploads — never commit
+_backup_before_refactor/
+src/backend/data/backups/
+src/backend/private_uploads/
+src/backend/data/Universities/*.sql
+src/backend/data/Universities/**/*.sql
+src/backend/data/wikidata-cache.json
+src/backend/data/media-sync-log.json
+comsats_full_reset.sql
+nu_fast_full_seed.sql
+uol_full_seed.sql
+uni_finder_data.sql
+uni_finder_dump.sql
