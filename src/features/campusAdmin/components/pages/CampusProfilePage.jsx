@@ -227,7 +227,8 @@ export default function CampusProfilePage() {
         toast.success("Changes saved");
         setTimeout(() => setSaved(false), 3000);
       } else {
-        toast.error(data?.message || "Save failed");
+        const fieldError = data?.errors ? Object.values(data.errors)[0] : null;
+        toast.error(fieldError || data?.message || "Save failed");
       }
     } catch {
       toast.error("Something went wrong");

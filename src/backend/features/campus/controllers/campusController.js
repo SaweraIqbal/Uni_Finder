@@ -108,7 +108,7 @@ export const saveCampus = (req, res) => {
       const PK_LANDLINE_RE = /^\+92\d{9,12}$/;
 
       const isValidCampusPhone    = (v) => !v || PK_MOBILE_RE.test(stripSeps(v)) || PK_LANDLINE_RE.test(stripSeps(v));
-      const isValidCampusWhatsApp = (v) => !v || PK_MOBILE_RE.test(stripSeps(v));
+      const isValidCampusWhatsApp = (v) => !v || PK_MOBILE_RE.test(stripSeps(v)) || PK_LANDLINE_RE.test(stripSeps(v));
 
       const phoneVal    = req.body.phone    !== undefined ? req.body.phone    : undefined;
       const whatsappVal = req.body.whatsapp !== undefined ? req.body.whatsapp : undefined;
@@ -118,7 +118,7 @@ export const saveCampus = (req, res) => {
         contactErrors.phone = "Enter a valid Pakistani phone number (e.g., +92-42-111-128-128 or +923001234567).";
       }
       if (whatsappVal !== undefined && whatsappVal !== "" && whatsappVal !== null && !isValidCampusWhatsApp(whatsappVal)) {
-        contactErrors.whatsapp = "WhatsApp must be a Pakistani mobile number (e.g., +923001234567).";
+        contactErrors.whatsapp = "Enter a valid Pakistani phone number (e.g., +923001234567 or +92-42-111-128-128).";
       }
       if (Object.keys(contactErrors).length) {
         return res.status(422).json({ errors: contactErrors });
