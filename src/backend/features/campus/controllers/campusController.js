@@ -671,7 +671,7 @@ export const listApprovedCampusHostels = async (req, res) => {
     );
 
     const registeredRows = await q(
-      `SELECT h.id, h.name, h.address, h.lat AS latitude, h.lng AS longitude,
+      `SELECT h.id, h.name, h.hostel_type, h.address, h.lat AS latitude, h.lng AS longitude,
               h.floors, h.nearby_distance, h.owner_name, h.owner_contact,
               h.warden_name, h.warden_contact,
               d.gender, d.contact_phone AS phone, d.description AS about,
@@ -679,7 +679,7 @@ export const listApprovedCampusHostels = async (req, res) => {
               d.check_in_time, d.check_out_time
        FROM hostels h
        LEFT JOIN hostel_listing_details d ON d.hostel_id = h.id
-       WHERE h.campus_id = ? AND h.hostel_type = 'university' AND h.status <> 'rejected'
+       WHERE h.campus_id = ? AND h.status <> 'rejected'
        ORDER BY h.created_at ASC`,
       [campusId]
     );
@@ -811,7 +811,7 @@ export const listApprovedCampusHostels = async (req, res) => {
         latitude,
         longitude,
         distance_km: distance,
-        ownership: "Campus Hostel",
+        ownership: h.hostel_type === "university" ? "Campus Hostel" : "Private Hostel",
         cover_url: photos[0]?.image_url || null,
         photos,
         about: h.about,

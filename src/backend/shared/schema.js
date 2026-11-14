@@ -1033,27 +1033,7 @@ export const initSchema = (db, done) => {
        WHERE owner_uid IS NULL AND status = 'approved'`,
       (e2) => {
         if (e2) console.log("University status correction:", e2.message);
-
-        db.query(
-          `INSERT INTO campuses
-             (id, university_id, campus_admin_uid, verification_id,
-              name, campus_type, city, province, address, phone, email)
-           SELECT
-             UUID(), cr.universityId, cr.registrantUserId, NULL,
-             cr.officialName, cr.campusType, cr.city, cr.province, cr.address,
-             cr.phone, COALESCE(cr.officialEmail, cr.registrantEmail)
-           FROM campus_registrations cr
-           WHERE cr.status = 'approved'
-             AND NOT EXISTS (
-               SELECT 1 FROM campuses c
-               WHERE c.campus_admin_uid COLLATE utf8mb4_general_ci
-                   = cr.registrantUserId COLLATE utf8mb4_general_ci
-             )`,
-          (e3) => {
-            if (e3) console.log("Campuses sync from registrations:", e3.message);
-            fixCollations();
-          }
-        );
+        fixCollations();
       }
     );
   });

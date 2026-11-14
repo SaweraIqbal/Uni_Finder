@@ -1,0 +1,327 @@
+{
+  "privateHostels": [
+    {
+      "id": "18539461-b5b0-42bf-b031-75116951fc94",
+      "name": "AMDC Boys Hostel",
+      "images": [
+        "https://q-xx.bstatic.com/xdata/images/hotel/840x460/80420057.jpg?k=d5f9bd902b530a3bcdd1be80bd38ee129d718c0a92b0692a09f4914d24b38493&o=",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9",
+        "https://images.trvl-media.com/lodging/12000000/11940000/11938600/11938526/ca74a203.jpg?impolicy=fcrop&w=1200&h=800&p=1&q=medium"
+      ]
+    },
+    {
+      "id": "b0c01c4a-94f8-42a1-9804-8c5bbab43a89",
+      "name": "AMDC Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-07/E927-3.jpg?itok=PfeBH3tK",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI"
+      ]
+    },
+    {
+      "id": "9031aa86-2536-4596-8e17-6583fc9c50ae",
+      "name": "Bahria Town Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-06/Amenities_-23_0.jpg?itok=-oTRRsyL",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-01/Vega%20amenities%206_0.jpg?itok=GAbMJSPd",
+        "https://www.vitastudent.com/wp-content/uploads/2023/03/VG_Southampton%20RH_Disabled%20Room%20126%20RT.jpg"
+      ]
+    },
+    {
+      "id": "9bd6bb9e-644b-47a6-a4a9-d138c4217175",
+      "name": "Fatima Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-12/IMG_5877.jpeg?itok=QW4qJoyh",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://image.student.com/max_1250x700/property-22799-a7682810e53e6cd27e013c2d849fa179.jpeg"
+      ]
+    },
+    {
+      "id": "19df6032-c9c5-47af-a066-b3521a8c1e81",
+      "name": "Hostel City",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2018-07/Copy%20of%20Copy%20of%20The-Arcade-bedroom-shot-1_2.jpg?itok=bqIMZpt_",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI"
+      ]
+    },
+    {
+      "id": "b48c129e-092d-4ede-b6d6-7d4cd6dfc73a",
+      "name": "Independent",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Edinburgh-Elliott-House-NEW-Platinum_Studio_Plus(3).jpg?itok=R840ok5L",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9",
+        "https://dimg04.c-ctrip.com/images/0223x12000kvvf0qeC7D5_W_1280_853_R5_Q70.jpg"
+      ]
+    },
+    {
+      "id": "ad5747fa-883f-4b88-b19e-d0e9df3db9ee",
+      "name": "JK Group Of Hostels",
+      "images": [
+        "https://cdn.brandfolder.io/2EZAWJN8/at/2h6nrg6qjp7cjkfbsf5qcxvv/PREMIUM_ROOM_601_WESTGATE_VITA_NEWCASTLE_-_AUG_20222320.auto?width=1024",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://images.homify.com/c_fill,f_auto,q_auto:eco,w_980/v1482335336/p/photo/image/1744508/_DSC4445.jpg"
+      ]
+    },
+    {
+      "id": "c5f3ed5b-db14-4e50-8fe6-151f42c73bd7",
+      "name": "Khayaban Boys Hostel",
+      "images": [
+        "https://q-xx.bstatic.com/xdata/images/hotel/840x460/246821196.jpg?k=3968bc30f40c2fa9d9a2a637af6b5cc484e15615e36780201262c4c7e6d0ea26&o=",
+        "https://images.trvl-media.com/lodging/12000000/11940000/11938600/11938526/ca74a203.jpg?impolicy=fcrop&w=1200&h=800&p=1&q=medium",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9"
+      ]
+    },
+    {
+      "id": "5226d22d-b88c-42ca-8696-18fa2c098f5a",
+      "name": "Lux Inn Boys Hostel",
+      "images": [
+        "https://q-xx.bstatic.com/xdata/images/hotel/840x460/634669522.jpg?k=0a0d078060fccc00808f0b998b1403cadf2ef444d7d9f968f9598110f2c91b30&o=",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI"
+      ]
+    },
+    {
+      "id": "ab673eee-47c8-431b-98a6-a83b7b9dd1f8",
+      "name": "Manahil Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2022-03/iQ-Student-Accommodation-Leicester-Opal-Court-Bedrooms-B3-Gold-B57e-Gold-Gold_En_Suite_B57E(5).jpg?itok=TENYjhzN",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-01/Vega%20amenities%206_0.jpg?itok=GAbMJSPd",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl"
+      ]
+    },
+    {
+      "id": "1e8b13b5-4751-4041-8100-e0d3d1395987",
+      "name": "Nexus Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-10/iQ-Student-Accommodation-London-Haywood-House-Bedrooms-Block-B-Deluxe_En_Suite(5).jpg?itok=4O8Pudyv",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI",
+        "https://www.vitastudent.com/wp-content/uploads/2023/03/VG_Southampton%20RH_Disabled%20Room%20126%20RT.jpg"
+      ]
+    },
+    {
+      "id": "7f8a9197-d5dc-4507-8914-229387b4e0bf",
+      "name": "Ostello Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2022-11/iQ-Student-Accommodation-Edinburgh-Fountainbridge-Bedrooms-Platinum_Studio_Plus(6)_0.jpg?itok=BUvQn26f",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://image.student.com/max_1250x700/property-22799-a7682810e53e6cd27e013c2d849fa179.jpeg"
+      ]
+    },
+    {
+      "id": "9d80d4c3-40d8-4491-872e-0ddc22ea0096",
+      "name": "Peace Group of Hostels",
+      "images": [
+        "https://cdn.brandfolder.io/2EZAWJN8/at/mhwq3hj55tvqr349snr4rht/CLASSIC_321_VITA_EXETER_-_JULY_20251022_RT.auto?width=1024",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://dimg04.c-ctrip.com/images/0223x12000kvvf0qeC7D5_W_1280_853_R5_Q70.jpg"
+      ]
+    },
+    {
+      "id": "1b22712a-dee1-4b08-a7d8-e95616c3f6dc",
+      "name": "private Hostal",
+      "preserveExisting": true,
+      "cover": "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-02/IQ8ADC_1.jpg?itok=CLK9K9md"
+    },
+    {
+      "id": "bd634ed9-289f-4ab8-8bb0-100df53132db",
+      "name": "Saira Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-12/IQ-Vega-Bedrooms-copy-2-Room-90-Room-1(2).jpg?itok=Bw8qTGdI",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-01/Vega%20amenities%206_0.jpg?itok=GAbMJSPd",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI"
+      ]
+    },
+    {
+      "id": "823d12f6-f6b1-4326-aa0f-fac3784b2be0",
+      "name": "Tabinda Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-06/805-7_0.jpg?itok=KOrOAyp9",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9"
+      ]
+    },
+    {
+      "id": "5b453851-2bdc-4f9e-8e25-e76f14f58839",
+      "name": "University View Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-06/805-10_0.jpg?itok=GvJ6uM7I",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI",
+        "https://image.student.com/max_1250x700/property-22799-a7682810e53e6cd27e013c2d849fa179.jpeg"
+      ]
+    },
+    {
+      "id": "99906ee2-d069-43ed-ba4e-cf11e6d8ee01",
+      "name": "Youth Hostel",
+      "images": [
+        "https://cdn.brandfolder.io/2EZAWJN8/at/stphjhqf8qcxw3mqvh97c6/DELUXE_ROOM_503_VITA_LEEDS_PC_-_JULY_20220545.auto?width=1024",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://images.homify.com/c_fill,f_auto,q_auto:eco,w_980/v1482335336/p/photo/image/1744508/_DSC4445.jpg"
+      ]
+    }
+  ],
+  "campusHostels": [
+    {
+      "id": "89def6f2-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Ayesha Block Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Silver_En_Suite_Plus(14)_0.jpg?itok=Ot40VK0D",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-01/Vega%20amenities%206_0.jpg?itok=GAbMJSPd"
+      ]
+    },
+    {
+      "id": "89ccd89f-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Kaghan Block Boys Hostel",
+      "images": [
+        "https://q-xx.bstatic.com/xdata/images/hotel/840x460/535065555.jpg?k=4a4cdb0e904ead3d548f98f5ae020841c4dc80e605fd726491bd5e3360e5f38c&o=",
+        "https://images.trvl-media.com/lodging/12000000/11940000/11938600/11938526/ca74a203.jpg?impolicy=fcrop&w=1200&h=800&p=1&q=medium",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9"
+      ]
+    },
+    {
+      "id": "89cf8ce2-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Naran Block Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Silver_Studio_Plus(5)_0.jpg?itok=c5sV7DXP",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI",
+        "https://www.vitastudent.com/wp-content/uploads/2023/03/VG_Southampton%20RH_Disabled%20Room%20126%20RT.jpg"
+      ]
+    },
+    {
+      "id": "89d8d75c-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Farabi Boys Hostel",
+      "images": [
+        "https://images.trvl-media.com/lodging/9000000/8420000/8410400/8410367/bd762de2.jpg?impolicy=fcrop&w=1200&h=800&p=1&q=medium",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9"
+      ]
+    },
+    {
+      "id": "89dbb8fa-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Khadija Block Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-06/701-5_0.jpg?itok=A8smk7RF",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-01/Vega%20amenities%206_0.jpg?itok=GAbMJSPd",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl"
+      ]
+    },
+    {
+      "id": "89c34b06-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "CUI Islamabad Boys Hostel Block",
+      "images": [
+        "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?fm=jpg&q=60&w=3000&auto=format&fit=crop",
+        "https://images.trvl-media.com/lodging/12000000/11940000/11938600/11938526/ca74a203.jpg?impolicy=fcrop&w=1200&h=800&p=1&q=medium",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI"
+      ]
+    },
+    {
+      "id": "89c59d52-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "CUI Islamabad Girls Hostel Block",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-02/IQ24FE_1_0.jpg?itok=DV1poQ3V",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI",
+        "https://image.student.com/max_1250x700/property-22799-a7682810e53e6cd27e013c2d849fa179.jpeg"
+      ]
+    },
+    {
+      "id": "89ca5783-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Fatima Jinnah Girls Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-10/Apartment%2010-2_1.jpg?itok=-EYVjd2R",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://dimg04.c-ctrip.com/images/0223x12000kvvf0qeC7D5_W_1280_853_R5_Q70.jpg"
+      ]
+    },
+    {
+      "id": "89c7fb1b-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Liaquat Block Boys Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2025-02/IQA932_1.jpg?itok=5OqurG6g",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://images.homify.com/c_fill,f_auto,q_auto:eco,w_980/v1482335336/p/photo/image/1744508/_DSC4445.jpg"
+      ]
+    },
+    {
+      "id": "5b272e76-ccd1-11f1-8b95-8c04ba146d31",
+      "name": "On-campus hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/default/public/2021-07/iQ-Student-Accommodation-Preston-Kopa-Bedrooms-Silver_En_Suite_15B%286%29.jpg?itok=Mk6jQKU_",
+        "https://images.trvl-media.com/lodging/12000000/11940000/11938600/11938526/ca74a203.jpg?impolicy=fcrop&w=1200&h=800&p=1&q=medium",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9"
+      ]
+    },
+    {
+      "id": "276731a9-4235-5830-bc16-05b788f6f22a",
+      "name": "Female Hostel (Faisalabad Campus)",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Edinburgh-Elliott-House-NEW-Bronze_Studio_Plus(4)_0.jpg?itok=drLyJip7",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-01/Vega%20amenities%206_0.jpg?itok=GAbMJSPd"
+      ]
+    },
+    {
+      "id": "39563eec-4b40-506c-91e3-eaa4f6348236",
+      "name": "Male Hostel (Faisalabad Campus)",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/default/public/2021-07/iQ-Student-Accommodation-Preston-Kopa-Bedrooms-Platinum_En_Suite_18E%282%29.jpg?itok=L3HLE52_",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI"
+      ]
+    },
+    {
+      "id": "dbd975fd-bdef-5266-aa69-8f9708c8adad",
+      "name": "Female Hostel (Main Campus)",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accomodation-Birmingham-Broderick-House-Bedrooms-Level-5-Platinum_Studio(3).jpg?itok=r_DHLIcH",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI",
+        "https://image.student.com/max_1250x700/property-22799-a7682810e53e6cd27e013c2d849fa179.jpeg"
+      ]
+    },
+    {
+      "id": "0b411dab-eda9-5a44-8767-15a47482a5d3",
+      "name": "Male Hostel (Main Campus)",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/default/public/2021-07/iQ-Student-Accommodation-Preston-Kopa-Bedrooms-Gold_En_Suite_59C%283%29.jpg?itok=Td2K4KUb",
+        "https://images.trvl-media.com/lodging/12000000/11940000/11938600/11938526/ca74a203.jpg?impolicy=fcrop&w=1200&h=800&p=1&q=medium",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9"
+      ]
+    },
+    {
+      "id": "f35766ad-f50d-4891-9b59-0cd2f1bf9274",
+      "name": "University of Lahore - Boys Hostel",
+      "images": [
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accomodation-Birmingham-Broderick-House-Bedrooms-Level-5-Platinum_Studio(2).jpg?itok=Roj6GF5f",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://images.homify.com/c_fill,f_auto,q_auto:eco,w_980/v1482335336/p/photo/image/1744508/_DSC4445.jpg"
+      ]
+    },
+    {
+      "id": "95eb1338-d07c-43c0-91e8-ce3f84f4342f",
+      "name": "University of Lahore - Girls Hostel",
+      "images": [
+        "https://www.vitastudent.com/wp-content/uploads/2023/03/VG_Southampton_RH_Deluxe_216_RT.jpg",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-10/iQ-Student-Accommodation-Highbury-Bedrooms-Kitchen(4).jpg?itok=mdM9F5xl",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2024-01/Vega%20amenities%206_0.jpg?itok=GAbMJSPd"
+      ]
+    },
+    {
+      "id": "89d5f302-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Fatima Block Girls Hostel",
+      "images": [
+        "https://www.vitastudent.com/wp-content/uploads/2023/03/VG_Southampton%20RH_Deluxe%20220%20RT.jpg",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2026-03/Highbury%20Amenities-33.jpg?itok=Q90A_kWI",
+        "https://www.vitastudent.com/wp-content/uploads/2023/03/VG_Southampton%20RH_Disabled%20Room%20126%20RT.jpg"
+      ]
+    },
+    {
+      "id": "89d2f847-ccc6-11f1-8b95-8c04ba146d31",
+      "name": "Sir Syed Block Boys Hostel",
+      "images": [
+        "https://image.student.com/max_1250x700/property-43043-b9ea859025dcff3f42cd5ced095e2690.jpeg",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2023-11/iQ-Student-Accommodation-Nottingham-Newland-House-Amenities-11092023_124716.jpg?itok=09yC3Utk",
+        "https://www.iqstudentaccommodation.com/sites/default/files/styles/slider/public/2021-09/iQ-Student-Accommodation-Leeds-Altus-House-Floors-3-5-10-Kitchen_1(3)_1.jpg?itok=1wjbh5n9"
+      ]
+    }
+  ]
+}
