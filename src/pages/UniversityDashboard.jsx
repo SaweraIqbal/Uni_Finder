@@ -45,7 +45,7 @@ export default function UniversityDashboard() {
 
   useEffect(() => {
     if (!uid) {
-      navigate("/login");
+      navigate("/login", { replace: true });
       return;
     }
     loadVerification();
@@ -68,7 +68,7 @@ export default function UniversityDashboard() {
         ? `👋 Thanks ${name}, see you soon!`
         : "👋 Thanks for visiting — see you soon!",
     );
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   if (status === "approved") {

@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev:front": "npm start",
+    "dev:backend": "cd src/backend && npm start",
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:backend\"",
     "start": "vite",
     "build": "vite build",
     "lint": "eslint .",
@@ -42,6 +45,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
+    "concurrently": "^10.0.7",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",

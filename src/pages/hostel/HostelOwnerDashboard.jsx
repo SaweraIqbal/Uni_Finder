@@ -1,6 +1,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 import HostelOwnerLayout, {
   NAV_ITEMS,
@@ -36,6 +37,7 @@ export default function HostelOwnerDashboard() {
   const [ownerName, setOwnerName] = useState("Hostel Owner");
 
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const user = useMemo(() => {
     try { return JSON.parse(sessionStorage.getItem("user") || "{}"); }
     catch { return {}; }
@@ -164,8 +166,8 @@ export default function HostelOwnerDashboard() {
   }, [active, campusHostel, selectedHostel, user]);
 
   const handleSignOut = () => {
-    sessionStorage.removeItem("token");
-    navigate("/login");
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (

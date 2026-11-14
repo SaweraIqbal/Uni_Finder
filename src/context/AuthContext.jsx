@@ -36,7 +36,9 @@ export const AuthProvider = ({ children }) => {
             username: u.username ?? parsed.username,
             assigned_id: u.assigned_id ?? parsed.assigned_id,
             avatar: u.avatar_url
-              ? `http://localhost:5000${u.avatar_url}`
+              ? (u.avatar_url.startsWith("http")
+                  ? u.avatar_url
+                  : `http://localhost:5000${u.avatar_url}`)
               : parsed.avatar,
           };
           setUser(merged);
@@ -61,7 +63,9 @@ export const AuthProvider = ({ children }) => {
         username: completeUser.username,
         assigned_id: completeUser.assigned_id,
         avatar: completeUser.avatar_url
-          ? `http://localhost:5000${completeUser.avatar_url}`
+          ? (completeUser.avatar_url.startsWith("http")
+              ? completeUser.avatar_url
+              : `http://localhost:5000${completeUser.avatar_url}`)
           : undefined,
       };
 

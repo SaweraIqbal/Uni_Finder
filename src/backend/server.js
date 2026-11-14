@@ -20,6 +20,8 @@ import createHostelSchema from "./config/hostelSchema.js";
 import hostelRoutes from "./routes/hostelRoutes.js";
 import hostelModuleRoutes from "./routes/hostelModuleRoutes.js";
 import hostelProfileRoutes from "./routes/hostelProfileRoutes.js";
+import initStudentProfileSchema from "./config/studentProfileSchema.js";
+import studentProfileRoutes from "./routes/auth_route/studentProfileRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -43,6 +45,9 @@ dbReady
     initSchema(db, () => {
       createHostelSchema(db).catch((err) => {
         console.error("Hostel schema initialization failed:", err.message);
+      });
+      initStudentProfileSchema(db).catch((err) => {
+        console.error("Student profile schema initialization failed:", err.message);
       });
 
       let cleanupInProgress = false;
@@ -84,11 +89,25 @@ app.use("/api", contactRoutes);
 app.use("/api/hostels", hostelRoutes);
 app.use("/api/hostels", hostelModuleRoutes);
 app.use("/api/hostels", hostelProfileRoutes);
+app.use("/api/student", studentProfileRoutes);
 
 app.use(
   "/uploads/hostels/photos",
   express.static(path.resolve("uploads/hostels/photos"))
 );
+
+// Student profile photos are public (safe — no PII, just photos)
+app.use(
+  "/uploads/students/avatars",
+  express.static(path.join(__dirname, "uploads", "students", "avatars"), {
+    maxAge: "1d",
+    etag: true,
+  })
+);
+
+// NOTE: /uploads/students/{userId}/ subdirs are intentionally NOT served as static.
+// Sensitive documents (CNIC, transcripts) are only served through the
+// authenticated /api/student/files/:filename endpoint.
 
 app.use((err, req, res, next) => {
   if (err) {

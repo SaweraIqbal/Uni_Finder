@@ -20,9 +20,9 @@ import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProgramSearchResults from "./pages/ProgramSearchResults";
 import HomePage from "./pages/homepage.jsx";
-import Profile from "./pages/profile.jsx";
+import Profile from "./pages/StudentProfile.jsx";
 import UniversityDocuments from "./pages/UniversityDocuments.jsx";
-import ProtectedRoute from "./components/shared/ProtectedRoute";
+import ProtectedRoute, { PublicOnlyRoute } from "./components/shared/ProtectedRoute";
 import UniversityDetailPage from "./pages/UniversityDetailPage.jsx";
 import CampusDetailPage from "./pages/CampusDetailPage.jsx";
 import CompareCampusesPage from "./pages/CompareCampusesPage.jsx";
@@ -60,12 +60,28 @@ function App() {
         <ToastContainer position="top-right" autoClose={2500} />
         <FlashToaster />
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/signup/:role" element={<Signup />} />
+          <Route path="/login" element={
+            <PublicOnlyRoute>
+              <Login />
+            </PublicOnlyRoute>
+          } />
+          <Route path="/signup" element={
+            <PublicOnlyRoute>
+              <Signup />
+            </PublicOnlyRoute>
+          } />
+          <Route path="/signup/:role" element={
+            <PublicOnlyRoute>
+              <Signup />
+            </PublicOnlyRoute>
+          } />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
-          <Route path="/search" element={<ProgramSearchResults />} />
+          <Route path="/search" element={
+            <ProtectedRoute role="student">
+              <ProgramSearchResults />
+            </ProtectedRoute>
+          } />
           <Route
             path="/university/dashboard"
             element={
@@ -118,37 +134,81 @@ function App() {
           />
 
           <Route element={<Layout />}>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={
+              <PublicOnlyRoute>
+                <LandingPage />
+              </PublicOnlyRoute>
+            } />
 
-            <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute role="student">
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
 
             {/* <Route
               path="/compareUniversitiesPage"
               element={<CompareUniversitiesPage />}
             /> */}
 
-            <Route path="/university" element={<UniversityDetailPage />} />
+            <Route
+              path="/university"
+              element={
+                <ProtectedRoute role="student">
+                  <UniversityDetailPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/universities/:id"
-              element={<UniversityDetailPage />}
+              element={
+                <ProtectedRoute role="student">
+                  <UniversityDetailPage />
+                </ProtectedRoute>
+              }
             />
 
-            {/* Campus Page (static demo) */}
-            {/* <Route path="/campus" element={<CampusPage />} /> */}
-
             {/* Campus Detail Page (data-driven, accepts ?id=) */}
-            <Route path="/campus-detail" element={<CampusDetailPage />} />
+            <Route
+              path="/campus-detail"
+              element={
+                <ProtectedRoute role="student">
+                  <CampusDetailPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Compare Campuses Page */}
-            <Route path="/compare-campuses" element={<CompareCampusesPage />} />
+            <Route
+              path="/compare-campuses"
+              element={
+                <ProtectedRoute role="student">
+                  <CompareCampusesPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* University Documents */}
             <Route
               path="/university/documents"
-              element={<UniversityDocuments />}
+              element={
+                <ProtectedRoute role="student">
+                  <UniversityDocuments />
+                </ProtectedRoute>
+              }
             />
 
-            <Route path="/homepage" element={<HomePage />} />
+            <Route
+              path="/homepage"
+              element={
+                <ProtectedRoute role="student">
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/hostel/dashboard"
               element={
