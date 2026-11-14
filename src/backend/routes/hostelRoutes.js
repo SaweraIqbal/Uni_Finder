@@ -5,6 +5,11 @@ import {
   verifyToken,
   authorizeRoles,
 } from "../middleware/authMiddleware.js";
+import {
+  getHostelCompletion,
+  getPublicHostelById,
+  getPublicHostels,
+} from "../controllers/hostel_controller/publicHostelController.js";
 
 import {
   createHostel,
@@ -22,6 +27,9 @@ import hostelRegistrationUpload from "../middleware/hostelRegistrationUpload.js"
 
 const router = express.Router();
 
+router.get("/public", getPublicHostels);
+router.get("/public/:id", getPublicHostelById);
+
 router.get("/review-queue", verifyToken, authorizeRoles("admin", "campus"), getHostelReviewQueue);
 router.patch("/:id/review", verifyToken, authorizeRoles("admin", "campus"), express.json(), reviewHostelRegistration);
 router.get("/:id/review-documents/:documentId", verifyToken, authorizeRoles("admin", "campus"), downloadHostelReviewDocument);
@@ -31,6 +39,7 @@ router.use(verifyToken, authorizeRoles("hostel", "campus_hostel"));
 
 router.post("/register", hostelRegistrationUpload, registerHostel);
 router.get("/mine", getMyHostels);
+router.get("/:id/completion", getHostelCompletion);
 router.post("/:id/resubmit", resubmitHostelRegistration);
 router.post("/", createHostel);
 router.get("/:id", getMyHostelById);

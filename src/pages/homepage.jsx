@@ -2,6 +2,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import heroVideo from "../assets/video1.mp4";
 import SearchBar from "../components/shared/SearchBar";
+import PublicHostelsSection from "../components/hostel/PublicHostelsSection";
 import { API } from "../api/client";
 import { getProgramHierarchy } from "../api/university";
 
@@ -1262,6 +1263,7 @@ function HomePage() {
           }}
         />
       </section>
+      <PublicHostelsSection />
     </div>
   );
 }

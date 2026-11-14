@@ -7,6 +7,7 @@ import CampusApprovalsSection from "../../components/universityAdmin/CampusAppro
 import ProgramRequestsSection from "../../components/universityAdmin/ProgramRequestsSection";
 import ActivityLogSection from "../../components/universityAdmin/ActivityLogSection";
 import ProgramsSection from "../../components/universityAdmin/ProgramsSection";
+import UniversityHostelsSection from "../../components/universityAdmin/UniversityHostelsSection";
 
 function DashboardInner() {
   const { currentPage } = useUniversityAdmin();
@@ -15,6 +16,7 @@ const pages = {
   overview:              <OverviewSection />,
   profile:               <UniversityProfileSection />,
   campuses:              <CampusApprovalsSection />,
+  hostels:               <UniversityHostelsSection />,
   programs:              <ProgramsSection />,
   "program-requests":    <ProgramRequestsSection />,
   activity:              <ActivityLogSection />,

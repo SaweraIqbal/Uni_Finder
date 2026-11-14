@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { API, authHeaders } from "../../api/client";
 
 import HostelOwnerLayout, {
   NAV_ITEMS,
@@ -12,7 +13,6 @@ import ProfileSection from "../../components/hostelOwner/ProfileSection";
 import ListingSection from "../../components/hostelOwner/ListingSection";
 import StatusSection from "../../components/hostelOwner/StatusSection";
 
-const API = "http://localhost:5000";
 const emptyOverview = {
   status: "under_review",
   roomsListed: 0,
@@ -112,15 +112,21 @@ export default function HostelOwnerDashboard() {
   useEffect(() => {
     if (!selectedHostel) return;
     let cancelled = false;
-    const token = sessionStorage.getItem("token");
-    const headers = { Authorization: `Bearer ${token}` };
+    const fetchJson = async (url) => {
+      const response = await fetch(url, { headers: authHeaders() });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Could not load hostel details.");
+      return data;
+    };
     Promise.all([
-      fetch(`${API}/api/hostels/${selectedHostel.id}/profile`, { headers }).then((res) => res.json()),
-      fetch(`${API}/api/hostels/${selectedHostel.id}/rooms`, { headers }).then((res) => res.json()),
-    ]).then(([profileData, roomsData]) => {
+      fetchJson(`${API}/api/hostels/${selectedHostel.id}/profile`),
+      fetchJson(`${API}/api/hostels/${selectedHostel.id}/rooms`),
+      fetchJson(`${API}/api/hostels/${selectedHostel.id}/completion`),
+    ]).then(([profileData, roomsData, completionData]) => {
       if (cancelled) return;
       const profile = profileData.profile || {};
       const rooms = Array.isArray(roomsData.rooms) ? roomsData.rooms : [];
+      const completion = completionData.completion || null;
       const totalRooms = rooms.reduce((sum, room) => sum + Number(room.total_rooms || 0), 0);
       const totalSeats = rooms.reduce((sum, room) => sum + Number(room.total_rooms || 0) * Number(room.beds_per_room || 0), 0);
       const profileFields = [
@@ -140,24 +146,39 @@ export default function HostelOwnerDashboard() {
       const filledProfileFields = profileFields.filter((value) =>
         typeof value === "boolean" ? value : String(value ?? "").trim() !== ""
       ).length;
-      const profileCompleteness = Math.round((filledProfileFields / profileFields.length) * 100);
+      const profileCompleteness = completion?.profileCompleteness
+        ?? Math.round((filledProfileFields / profileFields.length) * 100);
+      const roomCheck = completion?.listingChecks?.find((check) => check.key === "rooms");
+      const photoCheck = completion?.listingChecks?.find((check) => check.key === "photos");
       setOwnerName(profile.owner_name || user.name || user.full_name || "Hostel Owner");
       setOverview({
-        status: selectedHostel.status === "rejected"
+        status: completion?.displayStatus || (selectedHostel.status === "rejected"
           ? "rejected"
-          : selectedHostel.status === "approved" ? "approved" : "under_review",
+          : selectedHostel.status === "approved" ? "live" : "pending_approval"),
         reviewerLabel: campusHostel
           ? `the campus admin of ${selectedHostel.campus_name || "your campus"}`
           : "the UniFinder super admin",
         rejectionReason: selectedHostel.review_reason || "",
-        completeness: profileCompleteness,
-        roomsListed: totalRooms,
-        roomTypes: new Set(rooms.map((room) => room.room_type)).size,
-        seatsAvailable: rooms.reduce((sum, room) => sum + Number(room.available_beds || 0), 0),
-        totalSeats,
+        completeness: completion?.completeness ?? profileCompleteness,
+        roomsListed: completion?.counts?.roomsCount ?? totalRooms,
+        roomTypes: completion?.counts?.roomTypes ?? new Set(rooms.map((room) => room.room_type)).size,
+        seatsAvailable: completion?.counts?.seatsAvailable
+          ?? rooms.reduce((sum, room) => sum + Number(room.available_beds || 0), 0),
+        totalSeats: completion?.counts?.totalSeats ?? totalSeats,
+        missing: completion?.missing || [],
         setup: [
-          { id: "profile", label: "Hostel profile details", done: profileCompleteness === 100, nav: "profile" },
-          { id: "rooms", label: "Room inventory and pricing", done: rooms.length > 0, nav: "listing" },
+          {
+            id: "profile",
+            label: "Hostel profile details",
+            done: completion?.profileChecks?.every((check) => check.done) ?? profileCompleteness === 100,
+            nav: "profile",
+          },
+          {
+            id: "rooms",
+            label: "Room inventory and photos",
+            done: Boolean(roomCheck?.done && photoCheck?.done) || (!completion && rooms.length > 0),
+            nav: "listing",
+          },
           { id: "location", label: "Hostel location", done: Boolean(profile.address && profile.lat != null && profile.lng != null), nav: "profile" },
         ],
       });

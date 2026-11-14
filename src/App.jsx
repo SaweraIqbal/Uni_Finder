@@ -29,6 +29,7 @@ import CompareCampusesPage from "./pages/CompareCampusesPage.jsx";
 import HostelOwnerDashboard from "./pages/hostel/HostelOwnerDashboard";
 import HostelRegistrationPage from "./pages/hostel/HostelRegistrationPage.jsx";
 import HostelRegistrationStatusPage from "./pages/hostel/HostelRegistrationStatusPage.jsx";
+import PublicHostelDetailPage from "./pages/hostel/PublicHostelDetailPage.jsx";
 
 // Campus Registration pre-dashboard flow
 import CampusRegisterPage from "./pages/CampusRegisterPage.jsx";
@@ -134,6 +135,7 @@ function App() {
           />
 
           <Route element={<Layout />}>
+            <Route path="/hostels/:id" element={<PublicHostelDetailPage />} />
             <Route path="/" element={
               <PublicOnlyRoute>
                 <LandingPage />

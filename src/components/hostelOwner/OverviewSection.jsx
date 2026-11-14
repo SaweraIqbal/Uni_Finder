@@ -41,6 +41,36 @@ const STATUS = {
     text: 'Check the reviewer notes in Status Tracking, fix the issues and resubmit.',
     icon: XCircle,
   },
+  pending_approval: {
+    listing: 'Under review',
+    banner: 'bg-amber-50 border-amber-200',
+    iconBox: 'bg-amber-100 text-amber-700',
+    pill: 'bg-amber-200 text-amber-800',
+    pillText: 'In review',
+    title: 'Pending approval',
+    text: 'Your hostel is waiting for review. You can keep editing the details while you wait.',
+    icon: Clock,
+  },
+  pending_details: {
+    listing: 'Details needed',
+    banner: 'bg-amber-50 border-amber-200',
+    iconBox: 'bg-amber-100 text-amber-700',
+    pill: 'bg-amber-200 text-amber-800',
+    pillText: 'Not published',
+    title: 'Complete your listing',
+    text: 'Your hostel is approved, but students cannot see it until all required details are complete.',
+    icon: FileText,
+  },
+  live: {
+    listing: 'Live',
+    banner: 'bg-emerald-50 border-emerald-200',
+    iconBox: 'bg-emerald-100 text-emerald-700',
+    pill: 'bg-emerald-200 text-emerald-800',
+    pillText: 'Live',
+    title: 'Your hostel is live',
+    text: 'Students can now find your hostel on UniFinder.',
+    icon: CheckCircle2,
+  },
 };
 
 const card = 'rounded-2xl border border-slate-200 bg-white shadow-sm';
@@ -61,7 +91,7 @@ function StatCard({ icon: Icon, label, value, hint }) {
 export default function OverviewSection({ data, onNavigate }) {
   const s = STATUS[data.status] ?? STATUS.under_review;
   const StatusIcon = s.icon;
-  const bannerText = data.status === 'under_review' && data.reviewerLabel
+  const bannerText = ['under_review', 'pending_approval'].includes(data.status) && data.reviewerLabel
     ? `Waiting for review by ${data.reviewerLabel}. You can keep editing and saving while you wait.`
     : data.status === 'rejected' && data.rejectionReason
       ? `${s.text} Reason: ${data.rejectionReason}`
@@ -187,6 +217,29 @@ export default function OverviewSection({ data, onNavigate }) {
           </button>
         </div>
       </section>
+
+      {data.missing?.length > 0 && (
+        <section className={`${card} p-6`}>
+          <h2 className="font-semibold">Details still needed to publish</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Complete these hostel details to make the approved listing visible to students.
+          </p>
+          <ul className="mt-3 divide-y divide-slate-100">
+            {data.missing.map((item) => (
+              <li key={item.key}>
+                <button
+                  type="button"
+                  onClick={() => onNavigate(item.nav)}
+                  className="flex w-full items-center justify-between gap-4 py-3 text-left text-sm text-slate-700 hover:text-orange-600"
+                >
+                  {item.label}
+                  <ChevronRight size={16} className="shrink-0 text-slate-300" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
