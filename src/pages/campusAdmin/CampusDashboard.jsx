@@ -18,8 +18,10 @@ import { API, authHeaders } from "../../api/client";
 import { CampusAdminProvider } from "../../components/campusAdmin/CampusAdminContext";
 import CampusAdminDashboard from "../../components/campusAdmin/CampusAdminDashboard";
 import { setFlash } from "../../utils/flash";
+import { useAuth } from "../../context/AuthContext";
 export default function CampusDashboard() {
   const navigate = useNavigate();
+  const { logout: authLogout } = useAuth();
   const uid  = sessionStorage.getItem("userId");
   const user = JSON.parse(sessionStorage.getItem("user") || "{}");
 
@@ -28,6 +30,7 @@ export default function CampusDashboard() {
 
   const handleLogout = () => {
     const name = (JSON.parse(sessionStorage.getItem("user") || "{}").name || "").split(" ")[0];
+    authLogout();
     sessionStorage.clear();
     setFlash(name ? `👋 Thanks ${name}, see you soon!` : "👋 Thanks for visiting — see you soon!");
     navigate("/login", { replace: true });

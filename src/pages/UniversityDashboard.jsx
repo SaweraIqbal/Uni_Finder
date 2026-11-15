@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import logo from "../assets/Logo.png";
 import { getMyVerification } from "../api/verification";
 import { setFlash } from "../utils/flash";
+import { useAuth } from "../context/AuthContext";
 import UniversityAdminDashboard from "./universityAdmin/UniversityAdminDashboard.jsx";
 import UniversityVerificationForm from "../components/universityAdmin/UniversityVerificationForm";
 import VerificationPendingScreen from "../components/universityAdmin/VerificationPendingScreen";
@@ -11,6 +12,7 @@ import VerificationRejectedScreen from "../components/universityAdmin/Verificati
 
 export default function UniversityDashboard() {
   const navigate = useNavigate();
+  const { logout: authLogout } = useAuth();
   const [verification, setVerification] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -62,6 +64,7 @@ export default function UniversityDashboard() {
 
   const handleLogout = () => {
     const name = (user.name || "").split(" ")[0];
+    authLogout();
     sessionStorage.clear();
     setFlash(
       name
