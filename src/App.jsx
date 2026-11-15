@@ -137,7 +137,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/hostels/:id" element={<PublicHostelDetailPage />} />
             <Route path="/" element={
-              <PublicOnlyRoute>
+              <PublicOnlyRoute allowStudent>
                 <LandingPage />
               </PublicOnlyRoute>
             } />

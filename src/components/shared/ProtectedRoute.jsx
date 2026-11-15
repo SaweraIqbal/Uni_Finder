@@ -11,13 +11,14 @@ const ROLE_HOME = {
 };
 
 /** Prevents logged-in non-student roles from accessing landing, login, signup */
-export const PublicOnlyRoute = ({ children }) => {
+export const PublicOnlyRoute = ({ children, allowStudent = false }) => {
   const { user, loading } = useAuth();
 
   if (loading) return null;
 
-  // Logged in → send to their dashboard (students go to /homepage)
   if (user) {
+    // Students can pass through if the route explicitly allows it
+    if (allowStudent && user.role === "student") return children;
     return <Navigate to={ROLE_HOME[user.role] ?? "/homepage"} replace />;
   }
 
